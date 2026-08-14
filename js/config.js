@@ -19,8 +19,8 @@ window.CONFIG = {
      escribir a quien no tiene sesion de staff.
      NUNCA pongas aqui la clave "service_role".
   ------------------------------------------------------------ */
-  SUPABASE_URL:  'PEGA-AQUI-TU-PROJECT-URL',
-  SUPABASE_ANON: 'PEGA-AQUI-TU-CLAVE-ANON',
+  SUPABASE_URL:  'https://akdzvhnxkajwbrfyqqmt.supabase.co',
+  SUPABASE_ANON: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFrZHp2aG54a2Fqd2JyZnlxcW10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3Mjk1MjIsImV4cCI6MjEwMjMwNTUyMn0.GxvsCs3cTLNfe-cAhfHFWFF_O9mG3QHicE3bL_qAXeg',
 
 
   /* ---- 2. DATOS DEL EVENTO ---------------------------------- */
