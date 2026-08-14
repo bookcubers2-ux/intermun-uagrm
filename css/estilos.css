@@ -264,11 +264,14 @@ table.datos td.num { text-align: right; font-variant-numeric: tabular-nums; }
   color: var(--oro-claro); letter-spacing: .12em; margin-bottom: .3rem;
 }
 .credencial h2 { color: #fff; font-size: 1.5rem; margin: 0 0 .5rem 0; }
-.credencial .cred-datos { display: grid; gap: .45rem; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); margin-top: .8rem; }
+.credencial .cred-datos { display: grid; gap: .6rem; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); margin-top: .9rem; }
+.credencial .cred-dato { display: block; min-width: 0; }
 .credencial .cred-dato .k {
+  display: block;
   font-size: .62rem; text-transform: uppercase; letter-spacing: .1em; color: #9db4c6;
+  line-height: 1.3; margin-bottom: .12rem;
 }
-.credencial .cred-dato .v { font-size: .96rem; font-weight: 600; }
+.credencial .cred-dato .v { display: block; font-size: .96rem; font-weight: 600; line-height: 1.3; }
 
 /* ---------- Lista de comidas ---------- */
 .comida-fila {

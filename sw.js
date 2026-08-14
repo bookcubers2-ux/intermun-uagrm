@@ -6,7 +6,7 @@
    se guardan en cache: siempre tienen que ser datos frescos.
    ============================================================== */
 
-var CACHE = 'intermun-v1';
+var CACHE = 'intermun-v2';
 
 var ARCHIVOS = [
   './',
