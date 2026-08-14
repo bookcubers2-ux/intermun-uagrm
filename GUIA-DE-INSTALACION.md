@@ -1,5 +1,22 @@
 # Guía de instalación, InterMUN UAGRM
 
+> ## ✅ Las partes 1 y 2 ya están hechas
+>
+> El sistema **ya está instalado, publicado y funcionando** en
+> **https://bookcubers2-ux.github.io/intermun-uagrm/**
+>
+> La base de datos está creada, el sitio está conectado y ya existe una cuenta de staff
+> con el correo `bookcubers2@gmail.com`. La contraseña está en el archivo
+> `CLAVE-STAFF.txt`, dentro de la carpeta `APPS/InterMUN` de tu computadora.
+>
+> **Lo único que te queda es la Parte 3:** cargar tus comidas reales, tus delegados
+> e imprimir los códigos QR.
+>
+> Las partes 1 y 2 quedan abajo solo como referencia, por si algún día necesitas
+> reinstalar todo desde cero o entender cómo está armado.
+
+---
+
 Todo el proceso toma entre 20 y 30 minutos y no cuesta nada. No necesitas saber programar: es copiar, pegar y hacer clic.
 
 Hazlo en este orden.
