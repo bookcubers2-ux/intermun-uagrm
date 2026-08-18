@@ -1,19 +1,32 @@
-/* ==============================================================
-   InterMUN UAGRM - Service Worker
-   --------------------------------------------------------------
-   Guarda el sitio en el telefono para que abra aunque el wifi
-   del campus este caido. Las consultas a la base de datos NUNCA
-   se guardan en cache: siempre tienen que ser datos frescos.
-   ============================================================== */
+/* ====================================================================
+   InterMUN UAGRM | Service Worker
+   --------------------------------------------------------------------
+   Guarda la aplicacion en el dispositivo para que abra aunque el wifi
+   del campus este caido, y para que se pueda instalar como aplicacion.
 
-var CACHE = 'intermun-v2';
+   Las consultas a la base de datos NUNCA se guardan: el control de
+   comidas siempre tiene que trabajar con datos frescos.
+   ==================================================================== */
+
+var CACHE = 'intermun-v3-accesible';
 
 var ARCHIVOS = [
   './',
   './index.html',
+  './manifest.webmanifest',
   './css/estilos.css',
+  './fuentes/atkinson-400.woff2',
+  './fuentes/atkinson-400-ext.woff2',
+  './fuentes/atkinson-700.woff2',
+  './fuentes/atkinson-700-ext.woff2',
+  './img/icono-192.png',
+  './img/icono-512.png',
   './js/config.js',
   './js/contenido.js',
+  './js/middleware.js',
+  './js/a11y.js',
+  './js/voz.js',
+  './js/instalar.js',
   './js/ui.js',
   './js/db.js',
   './js/app.js',
@@ -21,15 +34,14 @@ var ARCHIVOS = [
   './js/vistas-admin.js',
   './js/vendor/supabase.min.js',
   './js/vendor/qrcode-generator.js',
-  './js/vendor/html5-qrcode.min.js',
-  './manifest.webmanifest'
+  './js/vendor/html5-qrcode.min.js'
 ];
 
 self.addEventListener('install', function (ev) {
   ev.waitUntil(
     caches.open(CACHE).then(function (c) {
       return Promise.all(ARCHIVOS.map(function (a) {
-        return c.add(a).catch(function () { /* si uno falla no rompe la instalacion */ });
+        return c.add(a).catch(function () { /* si uno falla, no rompe la instalacion */ });
       }));
     }).then(function () { return self.skipWaiting(); })
   );
@@ -47,15 +59,15 @@ self.addEventListener('activate', function (ev) {
 
 self.addEventListener('fetch', function (ev) {
   var req = ev.request;
-
   if (req.method !== 'GET') return;
 
-  var url = new URL(req.url);
+  var url;
+  try { url = new URL(req.url); } catch (e) { return; }
 
-  /* Nunca cachear la base de datos ni la autenticacion */
+  /* Nunca guardar la base de datos ni la autenticacion. */
   if (url.hostname.indexOf('supabase') >= 0) return;
 
-  /* Solo manejamos lo que vive en nuestro propio dominio */
+  /* Solo se maneja lo que vive en este mismo dominio. */
   if (url.origin !== location.origin) return;
 
   ev.respondWith(
@@ -70,7 +82,7 @@ self.addEventListener('fetch', function (ev) {
         return guardado || caches.match('./index.html');
       });
 
-      /* Devuelve lo guardado al instante y actualiza por detras */
+      /* Se devuelve lo guardado al instante y se actualiza por detras. */
       return guardado || red;
     })
   );

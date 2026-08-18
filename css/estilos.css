@@ -1,363 +1,866 @@
-/* ==============================================================
-   InterMUN UAGRM - Hoja de estilos
-   ============================================================== */
+/* ====================================================================
+   InterMUN UAGRM | Hoja de estilos accesible
+   --------------------------------------------------------------------
+   Construida siguiendo, en este orden de prioridad:
+     1. Personas sin vision (lector de pantalla y linea braille)
+     2. Personas neurodivergentes (carga cognitiva minima, cero movimiento)
+     3. Personas con baja vision (contraste alto, letra grande, espaciado)
 
-:root {
-  --azul:        #1c3f5f;
-  --azul-osc:    #16324a;
-  --azul-claro:  #2f6491;
-  --oro:         #c9a54a;
-  --oro-claro:   #e0c27e;
-  --tinta:       #201d1a;
-  --gris:        #6b6459;
-  --gris-claro:  #9a9384;
-  --linea:       #dcd6ca;
-  --fondo:       #f7f5f0;
-  --papel:       #ffffff;
-  --verde:       #2f7a4a;
-  --verde-suave: #eaf5ee;
-  --rojo:        #a6342d;
-  --rojo-suave:  #fbeceb;
-  --ambar:       #96751f;
-  --ambar-suave: #fdf6e6;
-  --sombra:      0 1px 3px rgba(28,63,95,.08), 0 4px 16px rgba(28,63,95,.06);
-  --sombra-alta: 0 8px 32px rgba(28,63,95,.16);
-  --radio:       10px;
-  --tipo:        'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
+   Cumple WCAG 2.2 nivel AAA en contraste: todos los pares de color
+   fueron medidos y superan 7:1. Ningun estado se comunica solo con
+   color: siempre lleva ademas texto, borde o simbolo.
+   ==================================================================== */
+
+/* ------------------------------------------------------------------ */
+/* Tipografia Atkinson Hyperlegible                                     */
+/* Disenada por el Braille Institute para baja vision: distingue        */
+/* caracteres que suelen confundirse (I, l, 1 y tambien O, 0).          */
+/* Se sirve desde el propio sitio, sin depender de ningun tercero.      */
+/* ------------------------------------------------------------------ */
+@font-face {
+  font-family: 'Atkinson Hyperlegible';
+  font-style: normal; font-weight: 400; font-display: swap;
+  src: url('../fuentes/atkinson-400.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+                 U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Atkinson Hyperlegible';
+  font-style: normal; font-weight: 400; font-display: swap;
+  src: url('../fuentes/atkinson-400-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+2C60-2C7F;
+}
+@font-face {
+  font-family: 'Atkinson Hyperlegible';
+  font-style: normal; font-weight: 700; font-display: swap;
+  src: url('../fuentes/atkinson-700.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+                 U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Atkinson Hyperlegible';
+  font-style: normal; font-weight: 700; font-display: swap;
+  src: url('../fuentes/atkinson-700-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+2C60-2C7F;
 }
 
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-html, body {
-  margin: 0; padding: 0;
+/* ------------------------------------------------------------------ */
+/* Tokens de color. Todos los pares miden 7:1 o mas.                    */
+/* ------------------------------------------------------------------ */
+:root {
+  /* Par principal */
+  --tinta:        #16202a;   /* 16.5:1 sobre blanco */
+  --papel:        #ffffff;
+  --papel-hueso:  #f6f4f0;   /* fondo suave de la pagina */
+
+  /* Identidad institucional */
+  --azul:         #1c3f5f;   /* 10.9:1 sobre blanco */
+  --azul-osc:     #132d44;   /* 14.1:1 sobre blanco */
+  --azul-noche:   #0d2237;   /* fondo del tema oscuro */
+  --oro:          #6b5310;   /* 7.3:1 sobre blanco, para TEXTO */
+  --oro-brillo:   #c9a54a;   /* solo decorativo: filetes y bordes, nunca texto */
+  --oro-sobre-azul:#eed9a8;  /* 7.9:1 sobre azul */
+
+  /* Texto secundario */
+  --gris:         #4f5a63;   /* 7.1:1 sobre blanco */
+  --sobre-azul-2: #d6e3ee;   /* 8.4:1 sobre azul */
+
+  /* Estados. Nunca se usan solos: siempre con texto o simbolo. */
+  --verde:        #1c5c34;   /* 8.0:1 */
+  --verde-fondo:  #e6f4ec;
+  --rojo:         #8f2018;   /* 8.8:1 */
+  --rojo-fondo:   #fceceb;
+  --ambar:        #6b5310;   /* 7.3:1 */
+  --ambar-fondo:  #fbf3e0;
+  --info-fondo:   #e9f0f6;
+
+  --linea:        #c9c2b6;
+  --linea-fuerte: #6f6a61;
+
+  /* Texto: la persona puede cambiar estos tres desde la barra */
+  --escala-texto:    1;
+  --espacio-lineas:  1.7;
+  --espacio-letras:  0.01em;
+  --espacio-palabras:0.05em;
+
+  --radio: 10px;
+  --toque: 48px;            /* objetivo tactil minimo comodo */
+  --tipo: 'Atkinson Hyperlegible', Verdana, 'Segoe UI', Tahoma, Arial, sans-serif;
+}
+
+/* Tema oscuro de alto contraste. No es un filtro invertido: es un
+   segundo juego de tokens medido aparte. */
+:root[data-tema="oscuro"] {
+  --tinta:        #ffffff;
+  --papel:        #0d2237;
+  --papel-hueso:  #081a2b;
+  --azul:         #ffffff;
+  --azul-osc:     #ffffff;
+  --gris:         #c3d3e0;   /* 10.5:1 sobre el fondo oscuro */
+  --oro:          #e8cd8e;   /* 10.4:1 */
+  --oro-brillo:   #e8cd8e;
+  --verde:        #8fd6a8;   /* 9.5:1 */
+  --verde-fondo:  #12331f;
+  --rojo:         #f2a9a2;   /* 8.4:1 */
+  --rojo-fondo:   #3a1512;
+  --ambar:        #e8cd8e;
+  --ambar-fondo:  #33280a;
+  --info-fondo:   #12293d;
+  --linea:        #4a6076;
+  --linea-fuerte: #93a9bd;
+}
+
+/* Espaciado amplio (WCAG 1.4.12). Ayuda a dislexia y baja vision. */
+:root[data-espaciado="amplio"] {
+  --espacio-lineas:  2;
+  --espacio-letras:  0.08em;
+  --espacio-palabras:0.16em;
+}
+
+
+/* ------------------------------------------------------------------ */
+/* CERO MOVIMIENTO. Regla absoluta de toda la aplicacion.               */
+/* Sirve a neurodivergencia, verigo, epilepsia fotosensible y a         */
+/* cualquiera que se maree con interfaces que se mueven solas.          */
+/* ------------------------------------------------------------------ */
+*, *::before, *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  /* Base 20 pixeles, no 16. Escalable desde la barra hasta 44. */
+  font-size: calc(20px * var(--escala-texto));
+  background: var(--papel-hueso);
+}
+
+body {
+  margin: 0;
   font-family: var(--tipo);
-  background: var(--fondo);
+  background: var(--papel-hueso);
   color: var(--tinta);
-  font-size: 16px;
-  line-height: 1.55;
+  line-height: var(--espacio-lineas);
+  letter-spacing: var(--espacio-letras);
+  word-spacing: var(--espacio-palabras);
   -webkit-text-size-adjust: 100%;
 }
 
-h1, h2, h3, h4 { color: var(--azul); line-height: 1.25; margin: 0 0 .4rem 0; }
-h1 { font-size: 1.7rem; font-weight: 700; }
-h2 { font-size: 1.25rem; font-weight: 700; }
-h3 { font-size: 1.05rem; font-weight: 600; }
-p  { margin: .5rem 0; }
-a  { color: var(--azul-claro); }
+/* Ancho de lectura comodo: entre 45 y 75 caracteres por linea. */
+p, li, dd { max-width: 70ch; }
 
-/* ---------- Barra superior ---------- */
+
+/* ------------------------------------------------------------------ */
+/* Utilidades de accesibilidad                                          */
+/* ------------------------------------------------------------------ */
+
+/* Visible solo para lectores de pantalla. */
+.solo-lector {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Enlaces de salto: primer elemento del DOM, invisibles hasta el foco. */
+.saltar {
+  position: absolute;
+  left: -9999px; top: 0;
+  z-index: 200;
+  background: var(--tinta);
+  color: var(--papel);
+  padding: 0.7rem 1.1rem;
+  font-weight: 700;
+  text-decoration: underline;
+  border: 3px solid var(--papel);
+}
+.saltar:focus {
+  left: 0.5rem;
+  top: 0.5rem;
+}
+
+/* Foco visible, grueso y con separacion. Nunca se elimina. */
+:focus-visible {
+  outline: 4px solid currentColor;
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+/* Respaldo para navegadores sin :focus-visible */
+a:focus, button:focus, input:focus, select:focus, textarea:focus, [tabindex]:focus {
+  outline: 4px solid currentColor;
+  outline-offset: 3px;
+}
+a:focus:not(:focus-visible), button:focus:not(:focus-visible),
+input:focus:not(:focus-visible), select:focus:not(:focus-visible),
+textarea:focus:not(:focus-visible), [tabindex]:focus:not(:focus-visible) {
+  outline: none;
+}
+/* El h1 recibe foco al cambiar de vista: no debe verse como un error. */
+main h1:focus { outline-offset: 6px; }
+
+
+/* ------------------------------------------------------------------ */
+/* Barra de accesibilidad: primera herramienta de la pagina             */
+/* ------------------------------------------------------------------ */
+.barra-a11y {
+  background: var(--azul-noche);
+  border-bottom: 3px solid var(--oro-brillo);
+  padding: 0.4rem 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: center;
+  align-items: center;
+}
+:root[data-tema="oscuro"] .barra-a11y { background: #000000; }
+
+.barra-a11y button,
+.barra-a11y .enlace-barra {
+  min-height: var(--toque);
+  min-width: var(--toque);
+  padding: 0.3rem 0.7rem;
+  font-family: var(--tipo);
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: var(--papel);
+  color: var(--azul-noche);
+  border: 2px solid var(--papel);
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+:root[data-tema="oscuro"] .barra-a11y button,
+:root[data-tema="oscuro"] .barra-a11y .enlace-barra {
+  background: #ffffff; color: #000000; border-color: #ffffff;
+}
+/* Estado activo: NO se comunica solo con color, tambien con subrayado
+   grueso y con aria-pressed que el lector de pantalla anuncia. */
+.barra-a11y button[aria-pressed="true"] {
+  background: var(--oro-sobre-azul);
+  color: #000000;
+  border-color: #ffffff;
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 3px;
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Encabezado del sitio                                                 */
+/* ------------------------------------------------------------------ */
 .barra {
-  position: sticky; top: 0; z-index: 50;
   background: var(--azul);
-  color: #fff;
-  box-shadow: var(--sombra);
+  color: #ffffff;
+  border-bottom: 3px solid var(--oro-brillo);
+}
+:root[data-tema="oscuro"] .barra {
+  background: var(--azul-noche);
+  border-bottom-color: var(--oro);
 }
 .barra-inner {
   max-width: 1100px; margin: 0 auto;
-  padding: .55rem .9rem;
-  display: flex; align-items: center; gap: .7rem;
+  padding: 0.5rem 0.8rem;
+  display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
 }
-.marca { display: flex; align-items: center; gap: .55rem; text-decoration: none; color: #fff; min-width: 0; }
+.marca {
+  display: flex; align-items: center; gap: 0.5rem;
+  text-decoration: none; color: #ffffff;
+  min-height: var(--toque);
+  padding: 0.15rem 0.2rem;
+}
+.marca:hover .marca-nom { text-decoration: underline; }
 .marca-escudo {
-  width: 34px; height: 34px; flex: none;
-  border-radius: 7px;
-  background: linear-gradient(140deg, var(--oro), #a8862f);
-  color: var(--azul-osc);
+  width: 44px; height: 44px; flex: none;
+  border-radius: 8px;
+  background: var(--oro-sobre-azul);
+  color: #000000;
   display: grid; place-items: center;
-  font-weight: 800; font-size: .82rem; letter-spacing: -.02em;
+  font-weight: 700; font-size: 0.85rem;
+  border: 2px solid #ffffff;
 }
-.marca-txt { min-width: 0; }
-.marca-nom { font-weight: 700; font-size: 1.02rem; letter-spacing: .01em; line-height: 1.1; }
+.marca-nom { font-weight: 700; font-size: 1.05rem; line-height: 1.2; }
 .marca-sub {
-  font-size: .64rem; text-transform: uppercase; letter-spacing: .13em;
-  color: var(--oro-claro); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: block;
+  font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--oro-sobre-azul);
 }
-.barra-sp { flex: 1; }
-
-.btn-menu {
-  background: rgba(255,255,255,.12); border: 0; color: #fff;
-  width: 40px; height: 38px; border-radius: 8px; cursor: pointer;
-  display: grid; place-items: center; font-size: 1.2rem;
-}
-.btn-menu:active { background: rgba(255,255,255,.22); }
+:root[data-tema="oscuro"] .marca-sub { color: var(--oro); }
+.barra-sp { flex: 1 1 auto; }
 
 .sesion-chip {
-  font-size: .72rem; background: rgba(255,255,255,.13);
-  padding: .25rem .55rem; border-radius: 20px;
-  max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 0.75rem;
+  background: #ffffff;
+  color: var(--azul-osc);
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  border: 2px solid #ffffff;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
+:root[data-tema="oscuro"] .sesion-chip { color: #000000; }
 
-/* ---------- Navegacion ---------- */
-.nav { background: var(--azul-osc); border-top: 1px solid rgba(255,255,255,.08); }
+.btn-salir {
+  min-height: var(--toque); min-width: var(--toque);
+  background: #ffffff; color: var(--azul-osc);
+  border: 2px solid #ffffff; border-radius: 8px;
+  font-family: var(--tipo); font-size: 0.78rem; font-weight: 700;
+  cursor: pointer; padding: 0.2rem 0.7rem;
+}
+:root[data-tema="oscuro"] .btn-salir { color: #000000; }
+
+
+/* ------------------------------------------------------------------ */
+/* Navegacion principal                                                 */
+/* ------------------------------------------------------------------ */
+.nav { background: var(--azul-osc); border-bottom: 1px solid var(--linea); }
+:root[data-tema="oscuro"] .nav { background: #000000; }
 .nav-inner {
   max-width: 1100px; margin: 0 auto;
-  display: flex; gap: .15rem; overflow-x: auto; padding: 0 .5rem;
-  scrollbar-width: none;
+  display: flex; flex-wrap: wrap; gap: 0.2rem; padding: 0.3rem 0.5rem;
 }
-.nav-inner::-webkit-scrollbar { display: none; }
 .nav a {
-  color: #c8d6e2; text-decoration: none; white-space: nowrap;
-  padding: .6rem .75rem; font-size: .85rem; font-weight: 500;
-  border-bottom: 3px solid transparent;
+  color: #ffffff;
+  text-decoration: none;
+  padding: 0.4rem 0.7rem;
+  min-height: var(--toque);
+  display: inline-flex; align-items: center;
+  font-size: 0.82rem; font-weight: 700;
+  border: 2px solid transparent;
+  border-radius: 6px;
 }
-.nav a:hover { color: #fff; }
-.nav a.on { color: #fff; border-bottom-color: var(--oro); font-weight: 600; }
-.nav .solo-staff::after {
-  content: 'staff'; font-size: .55rem; text-transform: uppercase;
-  letter-spacing: .08em; background: var(--oro); color: var(--azul-osc);
-  padding: .05rem .28rem; border-radius: 3px; margin-left: .3rem;
-  vertical-align: 1px; font-weight: 700;
+.nav a:hover { text-decoration: underline; text-decoration-thickness: 2px; }
+/* Pagina actual: color MAS subrayado grueso MAS aria-current. */
+.nav a[aria-current="page"] {
+  background: #ffffff;
+  color: var(--azul-osc);
+  border-color: var(--oro-brillo);
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 3px;
+}
+:root[data-tema="oscuro"] .nav a[aria-current="page"] { color: #000000; }
+.nav .marca-staff {
+  font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em;
+  background: var(--oro-sobre-azul); color: #000000;
+  padding: 0.05rem 0.3rem; border-radius: 4px; margin-left: 0.3rem;
+  font-weight: 700;
 }
 
-/* ---------- Contenedor ---------- */
-.envoltura { max-width: 1100px; margin: 0 auto; padding: 1.1rem .9rem 4rem .9rem; }
-.angosto { max-width: 780px; }
 
-/* ---------- Tarjetas ---------- */
+/* ------------------------------------------------------------------ */
+/* Contenedores                                                         */
+/* ------------------------------------------------------------------ */
+.envoltura { max-width: 1100px; margin: 0 auto; padding: 1rem 0.8rem 2.5rem; }
+.angosto { max-width: 40rem; }
+
+h1, h2, h3, h4 { color: var(--azul); line-height: 1.25; margin: 0 0 0.4rem; }
+:root[data-tema="oscuro"] h1, :root[data-tema="oscuro"] h2,
+:root[data-tema="oscuro"] h3, :root[data-tema="oscuro"] h4 { color: var(--tinta); }
+h1 { font-size: 1.6rem; margin-bottom: 0.6rem; }
+h2 { font-size: 1.25rem; margin-top: 1.2rem; }
+h3 { font-size: 1.05rem; margin-top: 0.9rem; }
+p { margin: 0.6rem 0; }
+a { color: var(--azul); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 2px; }
+:root[data-tema="oscuro"] a { color: var(--tinta); }
+
 .tarjeta {
-  background: var(--papel); border: 1px solid var(--linea);
-  border-radius: var(--radio); padding: 1rem 1.1rem;
-  box-shadow: var(--sombra); margin-bottom: 1rem;
+  background: var(--papel);
+  border: 2px solid var(--linea);
+  border-radius: var(--radio);
+  padding: 0.9rem 1rem;
+  margin-bottom: 1rem;
 }
 .tarjeta-tit {
-  display: flex; align-items: center; gap: .5rem;
-  margin: -.15rem 0 .7rem 0; padding-bottom: .55rem;
-  border-bottom: 1px solid var(--linea);
+  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+  padding-bottom: 0.5rem; margin-bottom: 0.7rem;
+  border-bottom: 2px solid var(--linea);
 }
 .tarjeta-tit h2, .tarjeta-tit h3 { margin: 0; }
-.tarjeta-tit .sp { flex: 1; }
+.tarjeta-tit .sp { flex: 1 1 auto; }
 
-/* ---------- Portada ---------- */
+
+/* ------------------------------------------------------------------ */
+/* Portada                                                              */
+/* ------------------------------------------------------------------ */
 .portada {
-  background: linear-gradient(140deg, var(--azul) 0%, var(--azul-osc) 100%);
-  color: #fff; border-radius: 14px; padding: 1.8rem 1.4rem;
-  margin-bottom: 1.2rem; position: relative; overflow: hidden;
+  background: var(--azul);
+  color: #ffffff;
+  border: 3px solid var(--azul-osc);
+  border-top: 8px solid var(--oro-brillo);
+  border-radius: 12px;
+  padding: 1.2rem 1.1rem;
+  margin-bottom: 1.2rem;
 }
-.portada::after {
-  content: ''; position: absolute; right: -60px; top: -60px;
-  width: 230px; height: 230px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(201,165,74,.28), transparent 68%);
-}
+:root[data-tema="oscuro"] .portada { background: var(--azul-noche); border-color: var(--linea-fuerte); }
 .portada .kicker {
-  text-transform: uppercase; letter-spacing: .16em;
-  font-size: .66rem; color: var(--oro-claro); font-weight: 700; margin-bottom: .5rem;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  font-size: 0.7rem; font-weight: 700; color: var(--oro-sobre-azul);
+  margin-bottom: 0.4rem;
 }
-.portada h1 { color: #fff; font-size: 2rem; margin-bottom: .3rem; }
-.portada p { color: #cfdce7; max-width: 46ch; margin: .3rem 0 0 0; font-size: .95rem; }
+:root[data-tema="oscuro"] .portada .kicker { color: var(--oro); }
+.portada h1 { color: #ffffff; font-size: 1.7rem; }
+.portada p { color: var(--sobre-azul-2); margin: 0.4rem 0 0; }
 .portada .sello {
-  display: inline-block; margin-top: .9rem; font-size: .72rem;
-  background: rgba(255,255,255,.12); padding: .3rem .7rem; border-radius: 20px;
-  border: 1px solid rgba(224,194,126,.35);
+  display: inline-block; margin-top: 0.8rem;
+  font-size: 0.78rem; font-weight: 700;
+  background: #ffffff; color: var(--azul-osc);
+  padding: 0.3rem 0.7rem; border-radius: 20px;
 }
+:root[data-tema="oscuro"] .portada .sello { color: #000000; }
 
-/* ---------- Rejilla de modulos ---------- */
-.rejilla { display: grid; gap: .8rem; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+
+/* ------------------------------------------------------------------ */
+/* Rejilla de modulos                                                   */
+/* ------------------------------------------------------------------ */
+/* Se quita la vineta visual, pero el role="list" del marcado conserva
+   la semantica de lista, que en VoiceOver se perderia solo con CSS. */
+.rejilla {
+  display: grid; gap: 0.8rem;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  list-style: none; padding-left: 0; margin: 0.6rem 0;
+}
+.metricas, .lista-comidas { list-style: none; padding-left: 0; }
 .modulo {
-  background: var(--papel); border: 1px solid var(--linea); border-radius: var(--radio);
-  padding: 1rem; text-decoration: none; color: var(--tinta);
-  box-shadow: var(--sombra); display: block; transition: transform .12s, box-shadow .12s;
-  border-top: 3px solid var(--oro);
+  display: block;
+  background: var(--papel);
+  border: 2px solid var(--linea-fuerte);
+  border-top: 6px solid var(--oro-brillo);
+  border-radius: var(--radio);
+  padding: 0.9rem;
+  text-decoration: none;
+  color: var(--tinta);
+  min-height: var(--toque);
 }
-.modulo:hover { transform: translateY(-2px); box-shadow: var(--sombra-alta); }
-.modulo .ico { font-size: 1.6rem; line-height: 1; margin-bottom: .5rem; display: block; }
-.modulo strong { display: block; color: var(--azul); font-size: 1.02rem; margin-bottom: .2rem; }
-.modulo span.d { font-size: .84rem; color: var(--gris); display: block; }
+.modulo:hover { border-color: var(--azul); background: var(--info-fondo); }
+.modulo .ico { font-size: 1.7rem; line-height: 1; display: block; margin-bottom: 0.4rem; }
+.modulo strong {
+  display: block; color: var(--azul); font-size: 1.05rem; margin-bottom: 0.2rem;
+  text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px;
+}
+:root[data-tema="oscuro"] .modulo strong { color: var(--tinta); }
+.modulo .d { display: block; color: var(--gris); font-size: 0.85rem; max-width: 60ch; }
+/* Tarjeta informativa que NO es un enlace: sin subrayado ni cursor. */
+.tarjeta-info { cursor: default; }
+.tarjeta-info strong { text-decoration: none; }
 
-/* ---------- Botones ---------- */
+
+/* ------------------------------------------------------------------ */
+/* Botones. Todos cumplen el minimo tactil de 48 pixeles.               */
+/* ------------------------------------------------------------------ */
 .btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
-  background: var(--azul); color: #fff; border: 1px solid var(--azul);
-  padding: .55rem 1rem; border-radius: 8px; font-size: .92rem; font-weight: 600;
-  cursor: pointer; text-decoration: none; font-family: var(--tipo);
-  transition: filter .12s;
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+  min-height: var(--toque);
+  padding: 0.5rem 1.1rem;
+  background: var(--azul);
+  color: #ffffff;
+  border: 3px solid var(--azul);
+  border-radius: 8px;
+  font-family: var(--tipo);
+  font-size: 0.92rem; font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  text-align: center;
 }
-.btn:hover { filter: brightness(1.12); }
-.btn:active { filter: brightness(.92); }
-.btn:disabled { opacity: .5; cursor: not-allowed; }
-.btn.sec { background: var(--papel); color: var(--azul); border-color: var(--linea); }
-.btn.oro { background: var(--oro); border-color: var(--oro); color: var(--azul-osc); }
-.btn.verde { background: var(--verde); border-color: var(--verde); }
-.btn.rojo { background: var(--rojo); border-color: var(--rojo); }
-.btn.chico { padding: .32rem .6rem; font-size: .8rem; }
-.btn.grande { padding: .85rem 1.4rem; font-size: 1.05rem; width: 100%; }
-.btn.bloque { width: 100%; }
-.fila-btn { display: flex; gap: .5rem; flex-wrap: wrap; }
+:root[data-tema="oscuro"] .btn { background: var(--tinta); color: #000000; border-color: var(--tinta); }
+.btn:hover { text-decoration: underline; text-decoration-thickness: 2px; }
+.btn:disabled { opacity: 1; background: var(--papel); color: var(--gris); border-color: var(--linea-fuerte); cursor: not-allowed; }
+.btn.sec { background: var(--papel); color: var(--azul); border-color: var(--azul); }
+:root[data-tema="oscuro"] .btn.sec { background: transparent; color: var(--tinta); border-color: var(--tinta); }
+.btn.verde { background: var(--verde); border-color: var(--verde); color: #ffffff; }
+:root[data-tema="oscuro"] .btn.verde { color: #000000; }
+.btn.rojo { background: var(--rojo); border-color: var(--rojo); color: #ffffff; }
+:root[data-tema="oscuro"] .btn.rojo { color: #000000; }
+.btn.oro { background: var(--oro); border-color: var(--oro); color: #ffffff; }
+:root[data-tema="oscuro"] .btn.oro { color: #000000; }
+.btn.chico { font-size: 0.8rem; padding: 0.3rem 0.7rem; }   /* conserva 48px de alto */
+.btn.grande, .btn.bloque { width: 100%; }
+.fila-btn { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0.6rem 0; }
 
-/* ---------- Formularios ---------- */
-label.campo { display: block; margin-bottom: .7rem; }
-label.campo > span {
-  display: block; font-size: .78rem; font-weight: 600; color: var(--gris);
-  text-transform: uppercase; letter-spacing: .05em; margin-bottom: .25rem;
+
+/* ------------------------------------------------------------------ */
+/* Formularios                                                          */
+/* ------------------------------------------------------------------ */
+label.campo { display: block; margin-bottom: 0.9rem; max-width: 40rem; }
+label.campo > span, .etiqueta-campo {
+  display: block;
+  font-size: 0.82rem; font-weight: 700;
+  color: var(--tinta);
+  margin-bottom: 0.25rem;
 }
+.ayuda-campo { font-size: 0.8rem; color: var(--gris); margin: 0 0 0.3rem; }
+
 input[type=text], input[type=email], input[type=password], input[type=date],
 input[type=number], input[type=search], select, textarea {
-  width: 100%; padding: .55rem .7rem; font-size: 1rem; font-family: var(--tipo);
-  border: 1px solid var(--linea); border-radius: 8px; background: var(--papel);
+  width: 100%;
+  min-height: var(--toque);
+  padding: 0.5rem 0.6rem;
+  font-family: var(--tipo);
+  font-size: 1rem;
   color: var(--tinta);
+  background: var(--papel);
+  border: 3px solid var(--linea-fuerte);
+  border-radius: 8px;
 }
-input:focus, select:focus, textarea:focus {
-  outline: 2px solid var(--azul-claro); outline-offset: 1px; border-color: var(--azul-claro);
-}
-textarea { min-height: 110px; resize: vertical; font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; font-size: .88rem; }
-.fila-campos { display: grid; gap: .6rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+input::placeholder, textarea::placeholder { color: var(--gris); opacity: 1; }
+textarea { min-height: 8rem; resize: vertical; line-height: 1.6; }
+.fila-campos { display: grid; gap: 0.6rem; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
+fieldset { border: 2px solid var(--linea-fuerte); border-radius: var(--radio); padding: 0.8rem; margin: 0 0 1rem; }
+legend { font-weight: 700; padding: 0 0.4rem; color: var(--azul); }
+:root[data-tema="oscuro"] legend { color: var(--tinta); }
 
-/* ---------- Tablas ---------- */
-.tabla-env { overflow-x: auto; border: 1px solid var(--linea); border-radius: var(--radio); background: var(--papel); }
-table.datos { width: 100%; border-collapse: collapse; font-size: .88rem; }
+
+/* ------------------------------------------------------------------ */
+/* Tablas                                                               */
+/* ------------------------------------------------------------------ */
+.tabla-env { overflow-x: auto; border: 2px solid var(--linea-fuerte); border-radius: var(--radio); background: var(--papel); }
+table.datos { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+table.datos caption { text-align: left; padding: 0.5rem 0.7rem; font-weight: 700; color: var(--gris); }
 table.datos th {
-  background: var(--azul); color: #fff; text-align: left; font-weight: 600;
-  padding: .55rem .7rem; white-space: nowrap; position: sticky; top: 0;
+  background: var(--azul); color: #ffffff;
+  text-align: left; font-weight: 700;
+  padding: 0.5rem 0.7rem;
 }
-table.datos td { padding: .5rem .7rem; border-top: 1px solid var(--linea); vertical-align: middle; }
-table.datos tbody tr:nth-child(even) { background: #faf9f6; }
-table.datos tbody tr:hover { background: #f0f4f8; }
-table.datos td.num { text-align: right; font-variant-numeric: tabular-nums; }
+:root[data-tema="oscuro"] table.datos th { background: #000000; }
+table.datos td { padding: 0.5rem 0.7rem; border-top: 2px solid var(--linea); vertical-align: middle; }
+table.datos td.num { text-align: right; }
+table.datos tbody tr:nth-child(even) td { background: var(--papel-hueso); }
 
-/* ---------- Insignias ---------- */
+
+/* ------------------------------------------------------------------ */
+/* Insignias de estado. Color MAS texto MAS simbolo, nunca color solo.  */
+/* ------------------------------------------------------------------ */
 .chip {
-  display: inline-block; font-size: .72rem; font-weight: 600;
-  padding: .18rem .5rem; border-radius: 20px; white-space: nowrap;
+  display: inline-block;
+  font-size: 0.78rem; font-weight: 700;
+  padding: 0.15rem 0.55rem;
+  border-radius: 20px;
+  border: 2px solid;
 }
-.chip.si  { background: var(--verde-suave); color: var(--verde); border: 1px solid #bfe0cb; }
-.chip.no  { background: #f1eee9; color: var(--gris); border: 1px solid var(--linea); }
-.chip.ojo { background: var(--ambar-suave); color: var(--ambar); border: 1px solid #ecd9a5; }
-.chip.err { background: var(--rojo-suave); color: var(--rojo); border: 1px solid #e8c3c0; }
-.chip.rol { background: #e9eff5; color: var(--azul); border: 1px solid #cfdde8; }
+.chip.si  { background: var(--verde-fondo); color: var(--verde); border-color: var(--verde); }
+.chip.no  { background: var(--papel-hueso); color: var(--gris);  border-color: var(--linea-fuerte); }
+.chip.ojo { background: var(--ambar-fondo); color: var(--ambar); border-color: var(--ambar); }
+.chip.err { background: var(--rojo-fondo);  color: var(--rojo);  border-color: var(--rojo); }
+.chip.rol { background: var(--info-fondo);  color: var(--azul);  border-color: var(--azul); }
+:root[data-tema="oscuro"] .chip.rol { color: var(--tinta); border-color: var(--tinta); }
 
-/* ---------- Avisos ---------- */
-.aviso { border-left: 4px solid; border-radius: 6px; padding: .7rem .9rem; margin: .8rem 0; font-size: .92rem; }
-.aviso.info { background: #eef3f8; border-color: var(--azul-claro); }
-.aviso.ok   { background: var(--verde-suave); border-color: var(--verde); }
-.aviso.warn { background: var(--ambar-suave); border-color: var(--oro); }
-.aviso.err  { background: var(--rojo-suave); border-color: var(--rojo); }
-.aviso b { display: block; margin-bottom: .15rem; }
 
-/* ---------- Metricas ---------- */
-.metricas { display: grid; gap: .7rem; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); margin-bottom: 1rem; }
+/* ------------------------------------------------------------------ */
+/* Avisos                                                               */
+/* ------------------------------------------------------------------ */
+.aviso {
+  border: 2px solid;
+  border-left-width: 8px;
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  margin: 0.8rem 0;
+  max-width: 70ch;
+}
+.aviso b { display: block; margin-bottom: 0.2rem; font-size: 1.02rem; }
+.aviso.info { background: var(--info-fondo);  border-color: var(--azul); color: var(--tinta); }
+.aviso.ok   { background: var(--verde-fondo); border-color: var(--verde); color: var(--tinta); }
+.aviso.warn { background: var(--ambar-fondo); border-color: var(--ambar); color: var(--tinta); }
+.aviso.err  { background: var(--rojo-fondo);  border-color: var(--rojo);  color: var(--tinta); }
+
+
+/* ------------------------------------------------------------------ */
+/* Metricas y progreso                                                  */
+/* ------------------------------------------------------------------ */
+.metricas { display: grid; gap: 0.7rem; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); margin-bottom: 1rem; }
 .metrica {
-  background: var(--papel); border: 1px solid var(--linea); border-radius: var(--radio);
-  padding: .8rem .9rem; box-shadow: var(--sombra); border-left: 4px solid var(--azul);
+  background: var(--papel);
+  border: 2px solid var(--linea-fuerte);
+  border-left: 8px solid var(--azul);
+  border-radius: var(--radio);
+  padding: 0.7rem 0.8rem;
 }
-.metrica .n { font-size: 1.9rem; font-weight: 700; color: var(--azul); line-height: 1; font-variant-numeric: tabular-nums; }
-.metrica .e { font-size: .74rem; text-transform: uppercase; letter-spacing: .07em; color: var(--gris); margin-top: .25rem; }
 .metrica.verde { border-left-color: var(--verde); }
+.metrica.oro   { border-left-color: var(--oro); }
+.metrica .n { font-size: 1.9rem; font-weight: 700; color: var(--azul); line-height: 1.1; }
+:root[data-tema="oscuro"] .metrica .n { color: var(--tinta); }
 .metrica.verde .n { color: var(--verde); }
-.metrica.oro { border-left-color: var(--oro); }
-.metrica.oro .n { color: var(--ambar); }
+.metrica.oro .n { color: var(--oro); }
+.metrica .e { font-size: 0.8rem; color: var(--gris); }
 
-/* ---------- Barra de progreso ---------- */
-.progreso { height: 9px; background: #e8e3d9; border-radius: 20px; overflow: hidden; margin-top: .5rem; }
-.progreso > i { display: block; height: 100%; background: linear-gradient(90deg, var(--verde), #4a9c68); border-radius: 20px; transition: width .35s; }
+.progreso { height: 1rem; background: var(--papel-hueso); border: 2px solid var(--linea-fuerte); border-radius: 20px; overflow: hidden; margin-top: 0.4rem; }
+.progreso > i { display: block; height: 100%; background: var(--verde); }
 
-/* ---------- Credencial ---------- */
+
+/* ------------------------------------------------------------------ */
+/* Credencial                                                           */
+/* ------------------------------------------------------------------ */
 .credencial {
-  background: linear-gradient(150deg, var(--azul) 0%, var(--azul-osc) 100%);
-  color: #fff; border-radius: 14px; padding: 1.3rem; box-shadow: var(--sombra-alta);
-  position: relative; overflow: hidden; margin-bottom: 1rem;
+  background: var(--azul);
+  color: #ffffff;
+  border: 3px solid var(--azul-osc);
+  border-top: 8px solid var(--oro-brillo);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
 }
-.credencial::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
-  background: linear-gradient(90deg, var(--oro), var(--oro-claro), var(--oro));
-}
+:root[data-tema="oscuro"] .credencial { background: var(--azul-noche); border-color: var(--linea-fuerte); }
+.credencial h2 { color: #ffffff; font-size: 1.4rem; margin: 0 0 0.4rem; }
 .credencial .cred-cod {
-  font-family: ui-monospace, Consolas, monospace; font-size: .8rem;
-  color: var(--oro-claro); letter-spacing: .12em; margin-bottom: .3rem;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.9rem; font-weight: 700;
+  color: var(--oro-sobre-azul);
+  letter-spacing: 0.1em;
 }
-.credencial h2 { color: #fff; font-size: 1.5rem; margin: 0 0 .5rem 0; }
-.credencial .cred-datos { display: grid; gap: .6rem; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); margin-top: .9rem; }
-.credencial .cred-dato { display: block; min-width: 0; }
+:root[data-tema="oscuro"] .credencial .cred-cod { color: var(--oro); }
+.credencial .cred-datos { display: grid; gap: 0.7rem; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); margin-top: 0.9rem; }
+.credencial .cred-dato { display: block; }
 .credencial .cred-dato .k {
   display: block;
-  font-size: .62rem; text-transform: uppercase; letter-spacing: .1em; color: #9db4c6;
-  line-height: 1.3; margin-bottom: .12rem;
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--sobre-azul-2);
+  margin-bottom: 0.1rem;
 }
-.credencial .cred-dato .v { display: block; font-size: .96rem; font-weight: 600; line-height: 1.3; }
+.credencial .cred-dato .v { display: block; font-size: 1rem; font-weight: 700; }
+.credencial .chip-cred {
+  display: inline-block; font-size: 0.78rem; font-weight: 700;
+  background: #ffffff; color: var(--azul-osc);
+  padding: 0.15rem 0.6rem; border-radius: 20px;
+}
+:root[data-tema="oscuro"] .credencial .chip-cred { color: #000000; }
 
-/* ---------- Lista de comidas ---------- */
+
+/* ------------------------------------------------------------------ */
+/* Lista de comidas                                                     */
+/* ------------------------------------------------------------------ */
+.lista-comidas { list-style: none; margin: 0; padding: 0; }
 .comida-fila {
-  display: flex; align-items: center; gap: .7rem;
-  padding: .7rem .3rem; border-bottom: 1px solid var(--linea);
+  display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap;
+  padding: 0.6rem 0.2rem;
+  border-bottom: 2px solid var(--linea);
 }
 .comida-fila:last-child { border-bottom: 0; }
-.comida-fila .info { flex: 1; min-width: 0; }
-.comida-fila .info b { display: block; font-size: .95rem; }
-.comida-fila .info small { color: var(--gris); font-size: .78rem; }
-.comida-fila .marca-est {
-  width: 30px; height: 30px; border-radius: 50%; flex: none;
-  display: grid; place-items: center; font-size: .95rem; font-weight: 700;
+.comida-fila .info { flex: 1 1 12rem; min-width: 0; }
+.comida-fila .info b { display: block; font-size: 1rem; }
+.comida-fila .info small { display: block; color: var(--gris); font-size: 0.8rem; }
+.marca-est {
+  width: 2.2rem; height: 2.2rem; flex: none;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 1.1rem; font-weight: 700;
+  border: 3px solid;
 }
-.marca-est.si { background: var(--verde-suave); color: var(--verde); border: 2px solid var(--verde); }
-.marca-est.no { background: #f1eee9; color: var(--gris-claro); border: 2px solid var(--linea); }
+.marca-est.si { background: var(--verde-fondo); color: var(--verde); border-color: var(--verde); }
+.marca-est.no { background: var(--papel-hueso); color: var(--gris);  border-color: var(--linea-fuerte); }
 
-/* ---------- Escaner ---------- */
-#lector { width: 100%; border-radius: var(--radio); overflow: hidden; background: #000; }
+
+/* ------------------------------------------------------------------ */
+/* Escaner y codigos QR                                                 */
+/* ------------------------------------------------------------------ */
+#lector { width: 100%; border: 3px solid var(--linea-fuerte); border-radius: var(--radio); overflow: hidden; background: #000000; }
 #lector video { width: 100% !important; display: block; }
-.escaner-caja { position: relative; }
-.resultado-scan { margin-top: 1rem; }
 
-/* ---------- QR ---------- */
-.qr-hoja { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+.qr-hoja { display: grid; gap: 0.6rem; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); }
 .qr-tarjeta {
-  border: 1px dashed var(--gris-claro); border-radius: 8px; padding: 9px;
-  text-align: center; background: #fff; break-inside: avoid; page-break-inside: avoid;
+  border: 2px dashed var(--linea-fuerte);
+  border-radius: 8px; padding: 0.5rem; text-align: center;
+  background: #ffffff; color: #000000;
+  break-inside: avoid; page-break-inside: avoid;
 }
 .qr-tarjeta svg { width: 100%; height: auto; display: block; }
-.qr-tarjeta .qr-nom { font-size: .74rem; font-weight: 700; color: var(--azul); margin-top: 5px; line-height: 1.2; }
-.qr-tarjeta .qr-cod { font-family: ui-monospace, Consolas, monospace; font-size: .66rem; color: var(--gris); }
-.qr-tarjeta .qr-meta { font-size: .62rem; color: var(--gris-claro); line-height: 1.25; }
+.qr-tarjeta .qr-nom { font-size: 0.8rem; font-weight: 700; margin-top: 0.3rem; line-height: 1.25; }
+.qr-tarjeta .qr-cod { font-family: ui-monospace, Consolas, monospace; font-size: 0.72rem; }
+.qr-tarjeta .qr-meta { font-size: 0.68rem; line-height: 1.3; }
 
-/* ---------- Acordeon ---------- */
-.acordeon { border: 1px solid var(--linea); border-radius: var(--radio); overflow: hidden; background: var(--papel); margin-bottom: .6rem; }
+
+/* ------------------------------------------------------------------ */
+/* Acordeon                                                             */
+/* ------------------------------------------------------------------ */
+.acordeon {
+  border: 2px solid var(--linea-fuerte);
+  border-radius: var(--radio);
+  background: var(--papel);
+  margin-bottom: 0.6rem;
+}
 .acordeon > summary {
-  padding: .75rem .9rem; cursor: pointer; font-weight: 600; color: var(--azul);
-  list-style: none; display: flex; align-items: center; gap: .5rem; font-size: .97rem;
+  padding: 0.6rem 0.8rem;
+  min-height: var(--toque);
+  display: flex; align-items: center; gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 700; font-size: 1rem;
+  color: var(--azul);
+  list-style: none;
 }
+:root[data-tema="oscuro"] .acordeon > summary { color: var(--tinta); }
 .acordeon > summary::-webkit-details-marker { display: none; }
-.acordeon > summary::before { content: '+'; color: var(--oro); font-weight: 800; font-size: 1.1rem; width: 14px; }
-.acordeon[open] > summary::before { content: '\2013'; }
-.acordeon[open] > summary { border-bottom: 1px solid var(--linea); background: #fbfaf7; }
-.acordeon .cuerpo { padding: .8rem .9rem; font-size: .93rem; }
-
-/* ---------- Aviso flotante ---------- */
-#tostada {
-  position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(120%);
-  background: var(--azul-osc); color: #fff; padding: .7rem 1.1rem; border-radius: 10px;
-  box-shadow: var(--sombra-alta); z-index: 200; font-size: .92rem; font-weight: 500;
-  max-width: 90vw; text-align: center; transition: transform .25s; pointer-events: none;
+/* El signo es decorativo: el estado real lo anuncia el propio details. */
+.acordeon > summary::before {
+  content: '+'; font-size: 1.3rem; font-weight: 700; width: 1rem; flex: none;
 }
-#tostada.ver { transform: translateX(-50%) translateY(0); }
-#tostada.ok { background: var(--verde); }
-#tostada.err { background: var(--rojo); }
+.acordeon[open] > summary::before { content: '\2212'; }
+.acordeon[open] > summary { border-bottom: 2px solid var(--linea-fuerte); }
+.acordeon .cuerpo { padding: 0.8rem; }
 
-/* ---------- Utilidades ---------- */
-.silencio { color: var(--gris); font-size: .88rem; }
+
+/* ------------------------------------------------------------------ */
+/* Glosario como lista de definiciones                                  */
+/* Es la estructura correcta: el lector de pantalla anuncia "termino" y  */
+/* "definicion", y permite saltar de uno a otro.                        */
+/* ------------------------------------------------------------------ */
+.glosario { margin: 0.5rem 0; }
+.glosario .termino {
+  border: 2px solid var(--linea);
+  border-left: 8px solid var(--azul);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 0.6rem;
+  background: var(--papel);
+}
+:root[data-tema="oscuro"] .glosario .termino { border-left-color: var(--tinta); }
+.glosario dt { font-weight: 700; font-size: 1rem; color: var(--azul); margin: 0; }
+:root[data-tema="oscuro"] .glosario dt { color: var(--tinta); }
+.glosario dt .ingles { font-weight: 400; font-size: 0.85rem; color: var(--gris); }
+.glosario dd { margin: 0.2rem 0 0; max-width: 70ch; }
+
+/* Lista numerada del flujo de una sesion */
+.lista-flujo { padding-left: 1.6rem; }
+.lista-flujo li { margin: 0.5rem 0; }
+
+/* Resaltado del bloque que la voz esta leyendo en este momento.
+   Se marca con fondo Y con borde, nunca solo con color. */
+.voz-leyendo {
+  background: var(--ambar-fondo) !important;
+  outline: 3px solid var(--ambar);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Region de anuncios (lectores de pantalla)                            */
+/* Visible ademas para todo el mundo: si algo pasa, se lee y se ve.     */
+/* ------------------------------------------------------------------ */
+#region-anuncios {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 0.8rem;
+}
+#region-anuncios:empty { display: none; }
+.anuncio {
+  background: var(--info-fondo);
+  border: 2px solid var(--azul);
+  border-left: 8px solid var(--azul);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  margin: 0.6rem 0;
+  font-weight: 700;
+}
+.anuncio.ok  { background: var(--verde-fondo); border-color: var(--verde); }
+.anuncio.err { background: var(--rojo-fondo);  border-color: var(--rojo); }
+
+
+/* ------------------------------------------------------------------ */
+/* Instalacion como aplicacion (PWA)                                    */
+/* ------------------------------------------------------------------ */
+.instalar-pwa {
+  max-width: 1100px; margin: 1rem auto; padding: 1rem 0.9rem;
+  background: var(--papel);
+  border: 3px solid var(--azul);
+  border-radius: var(--radio);
+}
+:root[data-tema="oscuro"] .instalar-pwa { border-color: var(--tinta); }
+.instalar-pwa h2 { margin-top: 0; }
+.instalar-pwa ol { padding-left: 1.4rem; }
+.instalar-pwa li { margin: 0.4rem 0; }
+
+
+/* ------------------------------------------------------------------ */
+/* Pie de pagina                                                        */
+/* ------------------------------------------------------------------ */
+.pie {
+  max-width: 1100px; margin: 0 auto;
+  padding: 1.2rem 0.8rem 2.5rem;
+  color: var(--gris);
+  font-size: 0.85rem;
+  border-top: 2px solid var(--linea);
+}
+.pie p { max-width: none; }
+/* Los enlaces del pie tambien deben ser comodos de tocar. */
+.pie a {
+  display: inline-block;
+  min-height: var(--toque);
+  padding: 0.6rem 0.2rem;
+  line-height: 1.5;
+}
+#btn-volver-arriba {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: var(--toque);
+  margin-top: 0.8rem; padding: 0.5rem 1.1rem;
+  background: var(--papel); color: var(--azul);
+  border: 3px solid var(--azul); border-radius: 8px;
+  font-family: var(--tipo); font-size: 0.9rem; font-weight: 700;
+  cursor: pointer;
+}
+:root[data-tema="oscuro"] #btn-volver-arriba { color: var(--tinta); border-color: var(--tinta); background: transparent; }
+
+
+/* ------------------------------------------------------------------ */
+/* Estados varios                                                       */
+/* ------------------------------------------------------------------ */
+.silencio { color: var(--gris); font-size: 0.88rem; }
 .centro { text-align: center; }
 .mono { font-family: ui-monospace, Consolas, monospace; }
-.vacio { text-align: center; padding: 2.2rem 1rem; color: var(--gris); }
-.vacio .ico { font-size: 2.4rem; display: block; margin-bottom: .5rem; opacity: .5; }
-.cargando { text-align: center; padding: 2rem; color: var(--gris); }
+.vacio { padding: 1.8rem 1rem; text-align: center; color: var(--gris); border: 2px dashed var(--linea-fuerte); border-radius: var(--radio); }
+.vacio .ico { font-size: 2rem; display: block; margin-bottom: 0.4rem; }
+.cargando { padding: 1.8rem 1rem; text-align: center; font-weight: 700; color: var(--gris); }
 .oculto { display: none !important; }
-.sep { height: 1px; background: var(--linea); margin: 1rem 0; border: 0; }
-.pie { text-align: center; color: var(--gris-claro); font-size: .78rem; padding: 1.5rem 1rem; }
+.sep { border: 0; border-top: 2px solid var(--linea); margin: 1.2rem 0; }
 
-/* ---------- Impresion ---------- */
+
+/* ------------------------------------------------------------------ */
+/* Perfil de ceguera: se simplifica lo puramente visual                 */
+/* ------------------------------------------------------------------ */
+:root[data-perfil="ceguera"] .modulo .ico,
+:root[data-perfil="ceguera"] .vacio .ico { display: none; }
+:root[data-perfil="ceguera"] .portada { border-top-width: 4px; }
+
+/* Perfil neurodivergente: mas aire entre bloques, menos densidad */
+:root[data-perfil="neurodivergente"] .tarjeta { padding: 1.1rem 1.1rem; margin-bottom: 1.4rem; }
+:root[data-perfil="neurodivergente"] .rejilla { gap: 1.1rem; }
+:root[data-perfil="neurodivergente"] .comida-fila { padding: 0.9rem 0.2rem; }
+
+
+/* ------------------------------------------------------------------ */
+/* Impresion                                                            */
+/* ------------------------------------------------------------------ */
 @media print {
-  .barra, .nav, .pie, .no-imprimir, #tostada { display: none !important; }
-  body { background: #fff; }
+  .barra, .nav, .barra-a11y, .pie, .no-imprimir,
+  .instalar-pwa, #region-anuncios, .saltar { display: none !important; }
+  html { font-size: 11pt; background: #ffffff; }
+  body { background: #ffffff; color: #000000; }
   .envoltura { padding: 0; max-width: none; }
-  .tarjeta { border: 0; box-shadow: none; padding: 0; }
-  .qr-hoja { grid-template-columns: repeat(4, 1fr); gap: 6px; }
-  .qr-tarjeta { border: 1px dashed #999; }
-  @page { size: A4; margin: 8mm; }
+  .tarjeta { border: 0; padding: 0; }
+  .qr-hoja { grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
+  @page { size: A4; margin: 10mm; }
 }
 
-/* ---------- Pantallas chicas ---------- */
-@media (max-width: 620px) {
+
+/* ------------------------------------------------------------------ */
+/* Pantallas chicas                                                     */
+/* ------------------------------------------------------------------ */
+@media (max-width: 40rem) {
+  .envoltura { padding: 0.8rem 0.6rem 2.5rem; }
   h1 { font-size: 1.4rem; }
-  .portada { padding: 1.3rem 1.1rem; }
-  .portada h1 { font-size: 1.55rem; }
-  .marca-sub { display: none; }
-  .sesion-chip { max-width: 96px; }
-  .envoltura { padding: .8rem .7rem 4rem .7rem; }
-  .metrica .n { font-size: 1.55rem; }
+  .portada h1 { font-size: 1.5rem; }
+  .rejilla { grid-template-columns: 1fr; }
+  .barra-a11y { justify-content: stretch; }
+  .barra-a11y button, .barra-a11y .enlace-barra { flex: 1 1 8rem; }
+}
+
+/* Respeto explicito a la preferencia del sistema, por si acaso. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
 }

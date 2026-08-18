@@ -3,50 +3,95 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>InterMUN UAGRM</title>
-<meta name="description" content="Portal oficial de InterMUN, el Modelo de Naciones Unidas de la Carrera de Relaciones Internacionales de la UAGRM. Reglas, guia del delegado y control de acreditacion.">
+<title>InterMUN UAGRM | Modelo de Naciones Unidas</title>
+<meta name="description" content="Portal accesible de InterMUN, el Modelo de Naciones Unidas de la Carrera de Relaciones Internacionales de la UAGRM. Reglas de procedimiento, guia del delegado y credencial digital.">
 <meta name="theme-color" content="#1c3f5f">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="css/estilos.css">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231c3f5f'/><text y='68' x='50' font-size='52' text-anchor='middle' fill='%23c9a54a' font-family='sans-serif' font-weight='bold'>IM</text></svg>">
+<link rel="apple-touch-icon" href="img/icono-192.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231c3f5f'/><text y='68' x='50' font-size='48' text-anchor='middle' fill='%23eed9a8' font-family='sans-serif' font-weight='bold'>IM</text></svg>">
+
+<script>
+/* Las preferencias de accesibilidad se aplican ANTES del primer pintado,
+   para que la persona nunca vea un destello con el tamano o el contraste
+   equivocado. */
+(function () {
+  try {
+    var p = JSON.parse(localStorage.getItem('intermun_accesibilidad') || '{}');
+    var h = document.documentElement;
+    if (p.escala) h.style.setProperty('--escala-texto', p.escala);
+    h.setAttribute('data-tema', p.tema || 'claro');
+    h.setAttribute('data-espaciado', p.espaciado ? 'amplio' : 'normal');
+    h.setAttribute('data-perfil', p.perfil || 'ninguno');
+  } catch (e) {}
+}());
+</script>
 </head>
+
 <body>
+
+<!-- Enlaces de salto: primeros del documento, invisibles hasta recibir foco -->
+<a class="saltar" href="#contenido">Saltar al contenido principal</a>
+<a class="saltar" href="#navegacion">Saltar a la navegacion</a>
+<a class="saltar" href="#barra-accesibilidad">Saltar a las herramientas de accesibilidad</a>
+
+<!-- Herramientas de accesibilidad: lo primero que encuentra el lector.
+     Es un landmark propio para poder saltar directo a el navegando por
+     regiones, sin recorrer toda la pagina. -->
+<section id="barra-accesibilidad" aria-label="Herramientas de accesibilidad"></section>
 
 <header class="barra">
   <div class="barra-inner">
     <a class="marca" href="#/">
-      <span class="marca-escudo">IM</span>
-      <span class="marca-txt">
+      <span class="marca-escudo" aria-hidden="true">IM</span>
+      <span>
         <span class="marca-nom" id="marcaNombre">InterMUN</span>
-        <span class="marca-sub" id="marcaSub">UAGRM</span>
+        <span class="marca-sub">Modelo de Naciones Unidas, UAGRM</span>
       </span>
     </a>
     <span class="barra-sp"></span>
     <span class="sesion-chip oculto" id="chipSesion"></span>
-    <button class="btn-menu" id="btnSalir" title="Cerrar sesion" style="display:none">&#9096;</button>
+    <button type="button" class="btn-salir" id="btnSalir" hidden>Cerrar sesion</button>
   </div>
-  <nav class="nav">
+
+  <nav class="nav" aria-label="Navegacion principal">
     <div class="nav-inner" id="navegacion"></div>
   </nav>
 </header>
 
-<main class="envoltura" id="contenido">
-  <div class="cargando">Cargando el sistema...</div>
+<!-- Regiones de anuncio para lectores de pantalla.
+     Si algo cambia y no se anuncia aqui, para una persona ciega no paso. -->
+<p id="anuncio-vivo" class="solo-lector" role="status" aria-live="polite" aria-atomic="true"></p>
+<p id="anuncio-alerta" class="solo-lector" role="alert" aria-live="assertive" aria-atomic="true"></p>
+
+<main class="envoltura" id="contenido" tabindex="-1">
+  <h1>Cargando InterMUN</h1>
+  <p>Un momento, por favor.</p>
 </main>
+
+<section class="instalar-pwa" id="seccion-instalar"></section>
 
 <footer class="pie" id="pie"></footer>
 
-<div id="tostada"></div>
+<!-- Aviso visual breve. Su version hablada va por la region de anuncios,
+     asi que se oculta al lector de pantalla para no repetir el mensaje. -->
+<div id="tostada" class="oculto" aria-hidden="true"></div>
 
-<!-- Librerias locales (no dependen de internet una vez cargado el sitio) -->
+<!-- Librerias servidas desde el propio sitio -->
 <script src="js/vendor/supabase.min.js"></script>
 <script src="js/vendor/qrcode-generator.js"></script>
 
-<!-- Configuracion y datos -->
+<!-- Configuracion y contenido -->
 <script src="js/config.js"></script>
 <script src="js/contenido.js"></script>
 
-<!-- Nucleo -->
+<!-- Accesibilidad -->
+<script src="js/middleware.js"></script>
+<script src="js/a11y.js"></script>
+<script src="js/voz.js"></script>
+<script src="js/instalar.js"></script>
+
+<!-- Nucleo de la aplicacion -->
 <script src="js/ui.js"></script>
 <script src="js/db.js"></script>
 <script src="js/vistas-publicas.js"></script>

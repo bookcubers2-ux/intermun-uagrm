@@ -1,26 +1,55 @@
 {
-  "name": "InterMUN UAGRM",
+  "name": "InterMUN UAGRM, Modelo de Naciones Unidas",
   "short_name": "InterMUN",
-  "description": "Portal y sistema de acreditacion de InterMUN, el Modelo de Naciones Unidas de la Carrera de Relaciones Internacionales de la UAGRM.",
+  "description": "Portal accesible de InterMUN, el Modelo de Naciones Unidas de la Carrera de Relaciones Internacionales de la UAGRM. Reglas de procedimiento, guia del delegado, glosario y credencial digital.",
+  "id": "/intermun-uagrm/",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#f7f5f0",
+  "orientation": "any",
+  "background_color": "#ffffff",
   "theme_color": "#1c3f5f",
   "lang": "es",
+  "dir": "ltr",
+  "categories": ["education", "utilities"],
   "icons": [
     {
       "src": "img/icono-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "img/icono-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "img/icono-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Mi credencial",
+      "short_name": "Credencial",
+      "description": "Ver mis datos y el estado de mis refrigerios",
+      "url": "./#/buscar"
+    },
+    {
+      "name": "Reglas de procedimiento",
+      "short_name": "Reglas",
+      "description": "Glosario y flujo de una sesion de comite",
+      "url": "./#/reglas"
+    },
+    {
+      "name": "Mi perfil de accesibilidad",
+      "short_name": "Accesibilidad",
+      "description": "Ajustar letra, contraste y lectura en voz alta",
+      "url": "./#/accesibilidad"
     }
   ]
 }

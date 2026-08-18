@@ -1,14 +1,41 @@
-/* ==============================================================
-   InterMUN UAGRM - Modulo de control (staff)
-   ============================================================== */
+/* ====================================================================
+   InterMUN UAGRM | Modulo de control (staff)
+   Mismo estandar de accesibilidad que el portal publico: etiquetas
+   reales en cada campo, tablas con encabezados asociados, resultados
+   anunciados en vivo y ningun estado comunicado solo con color.
+   ==================================================================== */
 
 window.ADMIN = (function () {
+  'use strict';
 
-  var escanerActivo = null;     // instancia del lector de QR
+  var escanerActivo = null;
 
-  /* ============================================================
+
+  /* ---------- Lista de modulos del panel ---------- */
+  function listaModulos(items) {
+    var html = '<ul class="rejilla" role="list">';
+    items.forEach(function (m) {
+      html += '<li><a class="modulo" href="' + m.href + '">' +
+                UI.icono(m.ico) +
+                '<strong>' + UI.esc(m.t) + '</strong>' +
+                '<span class="d">' + UI.esc(m.d) + '</span>' +
+              '</a></li>';
+    });
+    return html + '</ul>';
+  }
+
+  function campo(id, etiqueta, ayuda, tipo) {
+    var idAyuda = id + '-ayuda';
+    return '<label class="campo" for="' + id + '"><span>' + UI.esc(etiqueta) + '</span>' +
+             '<input type="' + (tipo || 'text') + '" id="' + id + '"' +
+               (ayuda ? ' aria-describedby="' + idAyuda + '"' : '') + '></label>' +
+           (ayuda ? '<p class="ayuda-campo" id="' + idAyuda + '">' + UI.esc(ayuda) + '</p>' : '');
+  }
+
+
+  /* ================================================================
      INICIO DE SESION
-     ============================================================ */
+     ================================================================ */
   function login(motivo) {
     if (!DB.hayConexion()) { sinConfigurar(); return; }
 
@@ -16,31 +43,39 @@ window.ADMIN = (function () {
       '<h1>Acceso del staff</h1>' +
       (motivo ? UI.aviso('info', null, motivo) : '') +
       '<div class="tarjeta angosto">' +
-        '<label class="campo"><span>Correo</span>' +
-          '<input type="email" id="correo" autocomplete="username" placeholder="tu.correo@ejemplo.com"></label>' +
-        '<label class="campo"><span>Contrasena</span>' +
+        '<label class="campo" for="correo"><span>Correo</span>' +
+          '<input type="email" id="correo" autocomplete="username" ' +
+            'aria-describedby="ayuda-correo"></label>' +
+        '<p class="ayuda-campo" id="ayuda-correo">El correo con el que el Secretariado creo tu cuenta.</p>' +
+        '<label class="campo" for="clave"><span>Contrasena</span>' +
           '<input type="password" id="clave" autocomplete="current-password"></label>' +
-        '<button class="btn bloque" id="btnEntrar">Iniciar sesion</button>' +
-        '<p class="silencio" style="margin-top:.8rem">Las cuentas del staff las crea el Secretariado desde el panel de Supabase. ' +
-        'Si no tienes una, pidesela a quien administra el sistema.</p>' +
-      '</div>'
+        '<button type="button" class="btn bloque" id="btnEntrar">Iniciar sesion</button>' +
+      '</div>' +
+      '<p>Las cuentas del staff las crea el Secretariado. Si no tienes una, pidesela a quien administra el sistema.</p>'
     );
 
     function entrar() {
       var c = UI.q('#correo').value.trim();
       var k = UI.q('#clave').value;
-      if (!c || !k) { UI.tostada('Completa correo y contrasena', 'err'); return; }
+      if (!c || !k) {
+        UI.tostada('Completa el correo y la contrasena para continuar.', 'err');
+        UI.q(c ? '#clave' : '#correo').focus();
+        return;
+      }
       var b = UI.q('#btnEntrar');
-      b.disabled = true; b.textContent = 'Verificando...';
+      b.disabled = true;
+      b.textContent = 'Verificando, un momento';
       DB.sesion.entrar(c, k)
         .then(function (u) {
           APP.fijarUsuario(u);
-          UI.tostada('Bienvenido', 'ok');
+          UI.tostada('Sesion iniciada como ' + u.email + '.', 'ok');
           location.hash = '#/staff';
         })
         .catch(function (e) {
           UI.tostada(UI.explicarError(e), 'err');
-          b.disabled = false; b.textContent = 'Iniciar sesion';
+          b.disabled = false;
+          b.textContent = 'Iniciar sesion';
+          UI.q('#clave').focus();
         });
     }
 
@@ -49,9 +84,9 @@ window.ADMIN = (function () {
   }
 
 
-  /* ============================================================
-     PANEL PRINCIPAL DEL STAFF
-     ============================================================ */
+  /* ================================================================
+     PANEL DEL STAFF
+     ================================================================ */
   function panel() {
     if (!DB.hayConexion()) { sinConfigurar(); return; }
     if (!APP.usuarioActual()) { login(); return; }
@@ -60,40 +95,39 @@ window.ADMIN = (function () {
 
     UI.pintar(
       '<h1>Control de InterMUN</h1>' +
-      '<p class="silencio">Sesion iniciada como ' + UI.esc(APP.usuarioActual().email) +
-      (est ? ' &middot; estacion: <b>' + UI.esc(est) + '</b>' : '') + '</p>' +
-      '<div class="rejilla">' +
-        mod('#/escanear',  '&#128247;', 'Escanear credencial', 'Modo rapido para la fila de refrigerios: escanea y marca al instante.') +
-        mod('#/tablero',   '&#128202;', 'Tablero en vivo',     'Cuantos recibieron cada comida, en tiempo real, y exportar a Excel.') +
-        mod('#/delegados', '&#128100;', 'Delegados',           'Cargar la lista, editar datos y dar de baja credenciales.') +
-        mod('#/comidas',   '&#127869;', 'Comidas',             'Definir los refrigerios y almuerzos de cada dia.') +
-        mod('#/qr',        '&#128290;', 'Generar los QR',      'Crear e imprimir los codigos que van al reverso de cada credencial.') +
-        mod('#/ajustes',   '&#9881;',   'Ajustes',             'Elegir tu estacion de entrega y revisar el estado del sistema.') +
-      '</div>'
+      '<p>Sesion iniciada como <strong>' + UI.esc(APP.usuarioActual().email) + '</strong>.' +
+        (est ? ' Estacion de entrega: <strong>' + UI.esc(est) + '</strong>.' : '') + '</p>' +
+      listaModulos([
+        { href: '#/escanear',  ico: '&#128247;', t: 'Escanear credencial',
+          d: 'Modo rapido para la fila de refrigerios: escanea y marca al instante.' },
+        { href: '#/tablero',   ico: '&#128202;', t: 'Tablero en vivo',
+          d: 'Cuantos recibieron cada comida, en tiempo real, y descarga para Excel.' },
+        { href: '#/delegados', ico: '&#128100;', t: 'Delegados',
+          d: 'Cargar la lista, editar datos y dar de baja credenciales.' },
+        { href: '#/comidas',   ico: '&#127869;', t: 'Comidas',
+          d: 'Definir los refrigerios y almuerzos de cada dia.' },
+        { href: '#/qr',        ico: '&#128290;', t: 'Generar los codigos QR',
+          d: 'Crear e imprimir los codigos del reverso de cada credencial.' },
+        { href: '#/ajustes',   ico: '&#9881;',   t: 'Ajustes y estado',
+          d: 'Elegir tu estacion de entrega y revisar el estado del sistema.' }
+      ])
     );
   }
 
-  function mod(href, ico, t, d) {
-    return '<a class="modulo" href="' + href + '">' +
-             '<span class="ico">' + ico + '</span><strong>' + UI.esc(t) + '</strong>' +
-             '<span class="d">' + UI.esc(d) + '</span></a>';
-  }
 
-
-  /* ============================================================
+  /* ================================================================
      ESCANER
-     ============================================================ */
+     ================================================================ */
   function escanear() {
     detenerEscaner();
-
-    UI.cargando('Preparando el escaner...');
+    UI.cargando('Preparando el escaner');
 
     DB.comidas.activas().then(function (comidas) {
       if (!comidas.length) {
-        UI.pintar('<h1>Escanear</h1>' +
-          UI.aviso('warn', 'No hay comidas cargadas',
+        UI.pintar('<h1>Escanear credencial</h1>' +
+          UI.aviso('warn', 'Todavia no hay comidas cargadas',
             'Primero define los refrigerios y almuerzos del evento para poder marcarlos.') +
-          '<a class="btn" href="#/comidas">Ir a Comidas</a>');
+          '<p><a class="btn" href="#/comidas">Ir a definir las comidas</a></p>');
         return;
       }
 
@@ -103,39 +137,58 @@ window.ADMIN = (function () {
 
       var opciones = comidas.map(function (c) {
         return '<option value="' + c.id + '"' + (c.id === elegida.id ? ' selected' : '') + '>' +
-               'Dia ' + c.dia + ' &middot; ' + UI.esc(c.nombre) + '</option>';
+               'Dia ' + c.dia + ', ' + UI.esc(c.nombre) + '</option>';
       }).join('');
 
       UI.pintar(
         '<h1>Escanear credencial</h1>' +
-        '<div class="tarjeta">' +
-          '<label class="campo"><span>Comida que estas entregando ahora</span>' +
-            '<select id="selComida">' + opciones + '</select></label>' +
+
+        '<section class="tarjeta" aria-labelledby="t-que-comida">' +
+          '<h2 id="t-que-comida">Que estas entregando</h2>' +
+          '<label class="campo" for="selComida"><span>Comida que se entrega ahora</span>' +
+            '<select id="selComida" aria-describedby="ayuda-comida">' + opciones + '</select></label>' +
+          '<p class="ayuda-campo" id="ayuda-comida">Todo lo que escanees se registrara como esta comida ' +
+            'hasta que la cambies aqui.</p>' +
+        '</section>' +
+
+        '<section class="tarjeta" aria-labelledby="t-camara">' +
+          '<h2 id="t-camara">Con la camara</h2>' +
           '<div class="fila-btn">' +
-            '<button class="btn verde" id="btnCam">Encender camara</button>' +
-            '<button class="btn sec" id="btnApagar" disabled>Apagar</button>' +
+            '<button type="button" class="btn verde" id="btnCam">Encender la camara</button>' +
+            '<button type="button" class="btn sec" id="btnApagar" disabled>Apagar la camara</button>' +
           '</div>' +
-          '<div class="escaner-caja" style="margin-top:.8rem"><div id="lector"></div></div>' +
-        '</div>' +
+          '<div id="lector"></div>' +
+        '</section>' +
 
-        '<div class="tarjeta">' +
-          '<div class="tarjeta-tit"><h3>O busca a mano</h3></div>' +
-          '<label class="campo"><span>Codigo de credencial</span>' +
-            '<input type="text" id="codManual" placeholder="' + UI.esc(window.CONFIG.PREFIJO_CODIGO) + '-0001" autocomplete="off" autocapitalize="characters"></label>' +
-          '<button class="btn bloque" id="btnManual">Registrar entrega</button>' +
-        '</div>' +
+        '<section class="tarjeta" aria-labelledby="t-mano">' +
+          '<h2 id="t-mano">O escribiendo el codigo</h2>' +
+          '<p>Sirve si la camara falla o el codigo QR esta danado.</p>' +
+          '<label class="campo" for="codManual"><span>Codigo de credencial</span>' +
+            '<input type="text" id="codManual" autocomplete="off" autocapitalize="characters" ' +
+              'placeholder="' + UI.esc(window.CONFIG.PREFIJO_CODIGO) + '-0001"></label>' +
+          '<button type="button" class="btn bloque" id="btnManual">Registrar la entrega</button>' +
+        '</section>' +
 
-        '<div id="resultado" class="resultado-scan"></div>' +
-        '<div class="tarjeta"><div class="tarjeta-tit"><h3>Entregas de esta sesion</h3>' +
-          '<span class="sp"></span><span class="chip si" id="contador">0</span></div>' +
-          '<div id="historial">' + UI.vacio('&#128220;', 'Todavia no registraste ninguna entrega.') + '</div>' +
-        '</div>'
+        '<section aria-labelledby="t-resultado">' +
+          '<h2 id="t-resultado">Resultado</h2>' +
+          '<div id="resultado" role="status" aria-live="assertive" aria-atomic="true">' +
+            '<p class="silencio">Aqui aparece que paso con cada credencial que escanees.</p>' +
+          '</div>' +
+        '</section>' +
+
+        '<section aria-labelledby="t-historial">' +
+          '<h2 id="t-historial">Entregas de esta sesion</h2>' +
+          '<p id="contador" role="status" aria-live="polite">Todavia no registraste ninguna entrega.</p>' +
+          '<div id="historial"></div>' +
+        '</section>'
       );
 
       var historial = [];
 
       UI.q('#selComida').addEventListener('change', function () {
         try { localStorage.setItem('intermun_comida_activa', this.value); } catch (e) {}
+        var txt = this.options[this.selectedIndex].textContent;
+        if (window.A11Y) window.A11Y.anunciar('Ahora se registrara: ' + txt + '.');
       });
 
       UI.q('#btnCam').addEventListener('click', encenderCamara);
@@ -143,22 +196,28 @@ window.ADMIN = (function () {
         detenerEscaner();
         UI.q('#btnCam').disabled = false;
         UI.q('#btnApagar').disabled = true;
+        if (window.A11Y) window.A11Y.anunciar('Camara apagada.');
       });
 
       UI.q('#btnManual').addEventListener('click', function () {
         var v = UI.q('#codManual').value.trim().toUpperCase();
-        if (!v) { UI.tostada('Escribe un codigo', 'err'); return; }
+        if (!v) {
+          UI.tostada('Escribe un codigo de credencial.', 'err');
+          UI.q('#codManual').focus();
+          return;
+        }
         procesar(v);
         UI.q('#codManual').value = '';
+        UI.q('#codManual').focus();
       });
       UI.q('#codManual').addEventListener('keydown', function (ev) {
         if (ev.key === 'Enter') UI.q('#btnManual').click();
       });
 
 
-      /* ---------- Camara ---------- */
       function encenderCamara() {
         UI.q('#btnCam').disabled = true;
+        if (window.A11Y) window.A11Y.anunciar('Encendiendo la camara.');
         cargarLibreriaEscaner().then(function () {
           try {
             escanerActivo = new Html5Qrcode('lector', { verbose: false });
@@ -169,45 +228,46 @@ window.ADMIN = (function () {
               function () {}
             ).then(function () {
               UI.q('#btnApagar').disabled = false;
-              UI.tostada('Camara lista. Apunta al QR de la credencial.', 'ok');
+              UI.tostada('Camara lista. Apunta al codigo QR de la credencial.', 'ok');
             }).catch(function (e) {
               UI.q('#btnCam').disabled = false;
-              UI.tostada('No se pudo abrir la camara: ' + (e.message || e), 'err');
+              UI.tostada('No se pudo abrir la camara. ' + (e.message || '') +
+                ' Puedes escribir el codigo a mano mas abajo.', 'err');
             });
           } catch (e) {
             UI.q('#btnCam').disabled = false;
-            UI.tostada('Este navegador no permite usar la camara aqui.', 'err');
+            UI.tostada('Este navegador no permite usar la camara aqui. Escribe el codigo a mano.', 'err');
           }
         }).catch(function () {
           UI.q('#btnCam').disabled = false;
-          UI.tostada('No se pudo cargar el escaner.', 'err');
+          UI.tostada('No se pudo cargar el escaner. Escribe el codigo a mano.', 'err');
         });
       }
 
 
-      /* ---------- Procesar un codigo leido ---------- */
       var ultimo = '', ultimoMomento = 0;
 
       function procesar(texto) {
         var codigo = extraerCodigo(texto);
         var ahora = Date.now();
-        /* Evita registrar mil veces el mismo QR mientras sigue frente a la camara */
         if (codigo === ultimo && ahora - ultimoMomento < 2500) return;
         ultimo = codigo; ultimoMomento = ahora;
 
         var comidaId = UI.q('#selComida').value;
-        var comida   = comidas.filter(function (c) { return c.id === comidaId; })[0];
-        var u        = APP.usuarioActual();
+        var comida = comidas.filter(function (c) { return c.id === comidaId; })[0];
+        var u = APP.usuarioActual();
 
         DB.delegados.porCodigo(codigo).then(function (d) {
           if (!d) {
             pitar(false);
-            mostrar('err', 'Credencial desconocida', 'El codigo ' + codigo + ' no esta en la lista de acreditados.');
+            mostrar('err', 'Credencial desconocida',
+              'El codigo ' + codigo + ' no esta en la lista de acreditados.');
             return;
           }
           if (!d.activo) {
             pitar(false);
-            mostrar('err', 'Credencial dada de baja', UI.esc(d.nombre) + ' tiene la credencial desactivada.');
+            mostrar('err', 'Credencial dada de baja',
+              d.nombre + ' tiene la credencial desactivada. No corresponde entregar.');
             return;
           }
           return DB.entregas.marcar(d.id, comidaId, u ? u.email : null, VISTAS.estacionGuardada())
@@ -215,38 +275,39 @@ window.ADMIN = (function () {
               if (r.duplicado) {
                 pitar(false);
                 mostrar('warn', 'Ya habia recibido esta comida',
-                  UI.esc(d.nombre) + ' ya tiene registrado el ' + UI.esc(comida.nombre) + ' del dia ' + comida.dia + '.', d);
+                  d.nombre + ' ya tiene registrado el ' + comida.nombre + ' del dia ' + comida.dia + '.', d);
               } else {
                 pitar(true);
                 mostrar('ok', 'Entrega registrada',
-                  UI.esc(d.nombre) + ' &middot; ' + UI.esc(comida.nombre) + ' dia ' + comida.dia, d);
+                  d.nombre + '. ' + comida.nombre + ' del dia ' + comida.dia + '.', d);
                 historial.unshift({ nombre: d.nombre, codigo: d.codigo, hora: new Date().toISOString() });
                 pintarHistorial();
               }
             });
         }).catch(function (e) {
           pitar(false);
-          mostrar('err', 'Error', UI.explicarError(e));
+          mostrar('err', 'No se pudo registrar', UI.explicarError(e));
         });
       }
 
       function mostrar(tipo, titulo, texto, d) {
-        var extra = '';
-        if (d) {
-          extra = '<div class="fila-btn" style="margin-top:.5rem">' +
-                    '<a class="btn sec chico" href="#/c/' + encodeURIComponent(d.codigo) + '">Ver credencial completa</a>' +
-                  '</div>';
-        }
+        var extra = d
+          ? '<p><a class="btn sec chico" href="#/c/' + encodeURIComponent(d.codigo) + '">' +
+            'Ver la credencial completa de ' + UI.esc(d.nombre) + '</a></p>'
+          : '';
         UI.q('#resultado').innerHTML =
-          '<div class="aviso ' + tipo + '"><b>' + titulo + '</b>' + texto + extra + '</div>';
+          '<div class="aviso ' + tipo + '"><b>' + UI.esc(titulo) + '</b>' + UI.esc(texto) + extra + '</div>';
       }
 
       function pintarHistorial() {
-        UI.q('#contador').textContent = historial.length;
-        if (!historial.length) return;
+        UI.q('#contador').textContent = historial.length === 1
+          ? 'Registraste 1 entrega en esta sesion.'
+          : 'Registraste ' + historial.length + ' entregas en esta sesion.';
+
         UI.q('#historial').innerHTML =
-          '<div class="tabla-env"><table class="datos"><thead><tr>' +
-          '<th>Hora</th><th>Codigo</th><th>Nombre</th></tr></thead><tbody>' +
+          '<div class="tabla-env"><table class="datos">' +
+          '<caption class="solo-lector">Entregas registradas en esta sesion, de la mas reciente a la mas antigua</caption>' +
+          '<thead><tr><th scope="col">Hora</th><th scope="col">Codigo</th><th scope="col">Nombre</th></tr></thead><tbody>' +
           historial.slice(0, 40).map(function (h) {
             return '<tr><td class="mono">' + UI.hora(h.hora) + '</td>' +
                    '<td class="mono">' + UI.esc(h.codigo) + '</td>' +
@@ -254,12 +315,11 @@ window.ADMIN = (function () {
           }).join('') + '</tbody></table></div>';
       }
     }).catch(function (e) {
-      UI.pintar('<div class="tarjeta">' + UI.aviso('err', 'Error', UI.explicarError(e)) + '</div>');
+      UI.pintar('<h1>Escanear credencial</h1>' + UI.aviso('err', 'No se pudo preparar el escaner', UI.explicarError(e)));
     });
   }
 
 
-  /* Del texto del QR saca el codigo de credencial */
   function extraerCodigo(texto) {
     var t = String(texto || '').trim();
     var m = /#\/c\/([^/?&#\s]+)/.exec(t);
@@ -269,8 +329,8 @@ window.ADMIN = (function () {
     return t.toUpperCase();
   }
 
-
-  /* Sonido corto de confirmacion (importante en una fila ruidosa) */
+  /* Confirmacion sonora y por vibracion: en una fila ruidosa, mirar la
+     pantalla en cada persona es inviable. Grave significa revisar. */
   function pitar(exito) {
     try {
       var ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -281,13 +341,11 @@ window.ADMIN = (function () {
       g.gain.setValueAtTime(0.001, ctx.currentTime);
       g.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + 0.01);
       g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (exito ? 0.16 : 0.36));
-      o.start();
-      o.stop(ctx.currentTime + (exito ? 0.18 : 0.4));
+      o.start(); o.stop(ctx.currentTime + (exito ? 0.18 : 0.4));
       setTimeout(function () { try { ctx.close(); } catch (e) {} }, 700);
     } catch (e) {}
     if (navigator.vibrate) navigator.vibrate(exito ? 60 : [60, 60, 60]);
   }
-
 
   function cargarLibreriaEscaner() {
     if (window.Html5Qrcode) return Promise.resolve();
@@ -306,11 +364,11 @@ window.ADMIN = (function () {
   }
 
 
-  /* ============================================================
+  /* ================================================================
      TABLERO EN VIVO
-     ============================================================ */
+     ================================================================ */
   function tablero() {
-    UI.cargando('Cargando el tablero...');
+    UI.cargando('Cargando el tablero');
 
     var delegados = [], comidas = [], entregas = [];
 
@@ -323,7 +381,7 @@ window.ADMIN = (function () {
       pintar();
       APP.abrirCanalVivo(function () { traer().then(pintar); });
     }).catch(function (e) {
-      UI.pintar('<div class="tarjeta">' + UI.aviso('err', 'Error', UI.explicarError(e)) + '</div>');
+      UI.pintar('<h1>Tablero en vivo</h1>' + UI.aviso('err', 'No se pudo cargar el tablero', UI.explicarError(e)));
     });
 
     function pintar() {
@@ -332,13 +390,12 @@ window.ADMIN = (function () {
       entregas.forEach(function (e) { porComida[e.comida_id] = (porComida[e.comida_id] || 0) + 1; });
 
       var html = '<h1>Tablero en vivo</h1>' +
-                 '<p class="silencio">Se actualiza solo cuando cualquier estacion registra una entrega.</p>';
-
-      html += '<div class="metricas">' +
-                met(activos.length, 'Acreditados activos', '') +
-                met(comidas.length, 'Comidas programadas', 'oro') +
-                met(entregas.length, 'Entregas registradas', 'verde') +
-              '</div>';
+        '<p>Se actualiza solo cuando cualquier estacion registra una entrega.</p>' +
+        '<ul class="metricas" role="list">' +
+          met(activos.length, 'Acreditados activos', '') +
+          met(comidas.length, 'Comidas programadas', 'oro') +
+          met(entregas.length, 'Entregas registradas', 'verde') +
+        '</ul>';
 
       if (!comidas.length) {
         html += UI.vacio('&#127869;', 'Todavia no hay comidas cargadas.');
@@ -346,34 +403,32 @@ window.ADMIN = (function () {
         return;
       }
 
-      html += '<div class="tarjeta"><div class="tarjeta-tit"><h2>Avance por comida</h2></div>';
+      html += '<section aria-labelledby="t-avance"><h2 id="t-avance">Avance por comida</h2>';
       comidas.forEach(function (c) {
         var n = porComida[c.id] || 0;
         var pct = activos.length ? Math.round(n * 100 / activos.length) : 0;
-        html += '<div style="margin-bottom:.85rem">' +
-                  '<div style="display:flex;align-items:baseline;gap:.5rem">' +
-                    '<b>Dia ' + c.dia + ' &middot; ' + UI.esc(c.nombre) + '</b>' +
-                    '<span class="sp" style="flex:1"></span>' +
-                    '<span class="mono">' + n + ' / ' + activos.length + '</span>' +
-                    '<span class="chip ' + (pct >= 90 ? 'si' : pct > 0 ? 'ojo' : 'no') + '">' + pct + '%</span>' +
-                  '</div>' +
-                  '<div class="progreso"><i style="width:' + pct + '%"></i></div>' +
+        html += '<div class="avance-comida">' +
+                  '<p><strong>Dia ' + c.dia + ', ' + UI.esc(c.nombre) + '.</strong> ' +
+                    n + ' de ' + activos.length + ' personas, ' + pct + ' por ciento.</p>' +
+                  '<div class="progreso" role="img" aria-label="' + pct + ' por ciento completado">' +
+                    '<i style="width:' + pct + '%"></i></div>' +
                 '</div>';
       });
-      html += '</div>';
+      html += '</section>';
 
-      /* Quien falta por la comida seleccionada */
-      html += '<div class="tarjeta">' +
-                '<div class="tarjeta-tit"><h2>Quien falta</h2><span class="sp"></span>' +
-                  '<select id="selFalta" style="max-width:230px">' +
+      html += '<section aria-labelledby="t-falta">' +
+                '<h2 id="t-falta">Quien falta</h2>' +
+                '<label class="campo" for="selFalta"><span>Elige la comida</span>' +
+                  '<select id="selFalta">' +
                     comidas.map(function (c) {
-                      return '<option value="' + c.id + '">Dia ' + c.dia + ' &middot; ' + UI.esc(c.nombre) + '</option>';
+                      return '<option value="' + c.id + '">Dia ' + c.dia + ', ' + UI.esc(c.nombre) + '</option>';
                     }).join('') +
-                  '</select>' +
-                '</div><div id="listaFalta"></div></div>';
+                  '</select></label>' +
+                '<div id="listaFalta" role="region" aria-live="polite"></div>' +
+              '</section>';
 
       html += '<div class="fila-btn no-imprimir">' +
-                '<button class="btn" id="btnCSV">Exportar todo a Excel (CSV)</button>' +
+                '<button type="button" class="btn" id="btnCSV">Descargar todo para Excel</button>' +
                 '<a class="btn sec" href="#/escanear">Ir a escanear</a>' +
               '</div>';
 
@@ -385,22 +440,25 @@ window.ADMIN = (function () {
 
       function pintarFaltantes() {
         var cid = sel.value;
-        var yaRecibio = {};
-        entregas.forEach(function (e) { if (e.comida_id === cid) yaRecibio[e.delegado_id] = true; });
-        var faltan = activos.filter(function (d) { return !yaRecibio[d.id]; });
+        var ya = {};
+        entregas.forEach(function (e) { if (e.comida_id === cid) ya[e.delegado_id] = true; });
+        var faltan = activos.filter(function (d) { return !ya[d.id]; });
 
         if (!faltan.length) {
-          UI.q('#listaFalta').innerHTML = UI.aviso('ok', 'Nadie falta', 'Todos los acreditados activos recibieron esta comida.');
+          UI.q('#listaFalta').innerHTML =
+            UI.aviso('ok', 'No falta nadie', 'Todos los acreditados activos recibieron esta comida.');
           return;
         }
         UI.q('#listaFalta').innerHTML =
-          '<p class="silencio">' + faltan.length + ' persona(s) todavia no reciben esta comida.</p>' +
-          '<div class="tabla-env"><table class="datos"><thead><tr>' +
-          '<th>Codigo</th><th>Nombre</th><th>Comite</th><th>Institucion</th></tr></thead><tbody>' +
+          '<p>' + faltan.length + (faltan.length === 1 ? ' persona todavia no la recibe.' : ' personas todavia no la reciben.') + '</p>' +
+          '<div class="tabla-env"><table class="datos">' +
+          '<caption class="solo-lector">Personas que todavia no reciben la comida seleccionada</caption>' +
+          '<thead><tr><th scope="col">Codigo</th><th scope="col">Nombre</th>' +
+          '<th scope="col">Comite</th><th scope="col">Institucion</th></tr></thead><tbody>' +
           faltan.map(function (d) {
             return '<tr><td class="mono"><a href="#/c/' + encodeURIComponent(d.codigo) + '">' + UI.esc(d.codigo) + '</a></td>' +
-                   '<td>' + UI.esc(d.nombre) + '</td><td>' + UI.esc(d.comite || '') + '</td>' +
-                   '<td>' + UI.esc(d.institucion || '') + '</td></tr>';
+                   '<td>' + UI.esc(d.nombre) + '</td><td>' + UI.esc(d.comite || 'sin comite') + '</td>' +
+                   '<td>' + UI.esc(d.institucion || 'sin institucion') + '</td></tr>';
           }).join('') + '</tbody></table></div>';
       }
 
@@ -420,63 +478,63 @@ window.ADMIN = (function () {
           var total = 0;
           comidas.forEach(function (c) {
             var e = mapa[d.id] && mapa[d.id][c.id];
-            if (e) { total++; f.push(UI.fechaHora(e.entregado_en)); }
-            else f.push('');
+            if (e) { total++; f.push(UI.fechaHora(e.entregado_en)); } else f.push('');
           });
           f.push(total);
           return f;
         });
 
-        var fecha = new Date().toISOString().slice(0, 10);
-        UI.descargar('intermun-control-comidas-' + fecha + '.csv', UI.aCSV(enc, filas));
-        UI.tostada('Archivo descargado', 'ok');
+        UI.descargar('intermun-control-comidas-' + new Date().toISOString().slice(0, 10) + '.csv',
+                     UI.aCSV(enc, filas));
+        UI.tostada('Archivo descargado.', 'ok');
       });
     }
 
     function met(n, etiqueta, clase) {
-      return '<div class="metrica ' + (clase || '') + '"><div class="n">' + n + '</div>' +
-             '<div class="e">' + UI.esc(etiqueta) + '</div></div>';
+      return '<li class="metrica ' + (clase || '') + '">' +
+               '<span class="n">' + n + '</span> ' +
+               '<span class="e">' + UI.esc(etiqueta) + '</span></li>';
     }
   }
 
 
-  /* ============================================================
+  /* ================================================================
      DELEGADOS
-     ============================================================ */
+     ================================================================ */
   function delegados() {
-    UI.cargando('Cargando delegados...');
+    UI.cargando('Cargando delegados');
 
     DB.delegados.listar().then(function (lista) {
       var html = '<h1>Delegados</h1>' +
-                 '<p class="silencio">' + lista.length + ' persona(s) acreditada(s).</p>';
+        '<p>' + (lista.length === 1 ? 'Hay 1 persona acreditada.' : 'Hay ' + lista.length + ' personas acreditadas.') + '</p>';
 
-      /* Alta individual */
       html += '<details class="acordeon"><summary>Agregar una persona</summary><div class="cuerpo">' +
                 '<div class="fila-campos">' +
-                  campo('nvCodigo', 'Codigo', 'se genera solo si lo dejas vacio') +
-                  campo('nvNombre', 'Nombre completo', '') +
+                  campo('nvCodigo', 'Codigo', 'Si lo dejas vacio, se genera solo.') +
+                  campo('nvNombre', 'Nombre completo', 'Es el unico dato obligatorio.') +
                   campo('nvPais', 'Pais que representa', '') +
                   campo('nvComite', 'Comite', '') +
                   campo('nvInst', 'Institucion', '') +
                 '</div>' +
-                '<label class="campo"><span>Rol</span><select id="nvRol">' +
+                '<label class="campo" for="nvRol"><span>Rol</span><select id="nvRol">' +
                   ['delegado', 'chair', 'secretariado', 'prensa', 'observador', 'staff']
                     .map(function (r) { return '<option>' + r + '</option>'; }).join('') +
                 '</select></label>' +
-                '<button class="btn" id="btnAgregar">Agregar</button>' +
+                '<button type="button" class="btn" id="btnAgregar">Agregar persona</button>' +
               '</div></details>';
 
-      /* Carga masiva */
       html += '<details class="acordeon"><summary>Cargar la lista completa de una vez</summary><div class="cuerpo">' +
-                '<p class="silencio">Pega aqui la lista, una persona por linea, separando los datos con punto y coma. ' +
-                'Puedes copiarla directo de Excel (usa el orden de columnas de abajo).</p>' +
-                '<p class="mono" style="font-size:.8rem;background:#f4f2ed;padding:.5rem;border-radius:6px">' +
-                  'nombre ; pais ; comite ; institucion ; rol' +
-                '</p>' +
-                '<textarea id="masivo" placeholder="Ana Rodriguez ; Bolivia ; Consejo de Seguridad ; UAGRM ; delegado&#10;Luis Mendez ; Francia ; SOCHUM ; UPDS ; delegado"></textarea>' +
-                '<div class="fila-btn" style="margin-top:.5rem">' +
-                  '<button class="btn" id="btnMasivo">Cargar lista</button>' +
-                  '<button class="btn sec" id="btnPlantilla">Descargar plantilla</button>' +
+                '<p>Pega la lista con una persona por linea, separando los datos con punto y coma. ' +
+                  'Puedes copiarla directo de Excel si ordenas las columnas en este orden:</p>' +
+                '<p class="mono"><strong>nombre ; pais ; comite ; institucion ; rol</strong></p>' +
+                '<label class="campo" for="masivo"><span>Lista de personas</span>' +
+                  '<textarea id="masivo" aria-describedby="ayuda-masivo" ' +
+                    'placeholder="Ana Rodriguez ; Bolivia ; Consejo de Seguridad ; UAGRM ; delegado"></textarea></label>' +
+                '<p class="ayuda-campo" id="ayuda-masivo">Los codigos de credencial se generan solos, ' +
+                  'en orden, empezando por el siguiente libre.</p>' +
+                '<div class="fila-btn">' +
+                  '<button type="button" class="btn" id="btnMasivo">Cargar la lista</button>' +
+                  '<button type="button" class="btn sec" id="btnPlantilla">Descargar una plantilla</button>' +
                 '</div>' +
               '</div></details>';
 
@@ -487,10 +545,16 @@ window.ADMIN = (function () {
         return;
       }
 
-      html += '<div class="tarjeta"><div class="tarjeta-tit"><h2>Lista</h2><span class="sp"></span>' +
-                '<input type="search" id="filtroDel" placeholder="Buscar..." style="max-width:190px"></div>' +
-              '<div class="tabla-env"><table class="datos" id="tablaDel"><thead><tr>' +
-              '<th>Codigo</th><th>Nombre</th><th>Pais</th><th>Comite</th><th>Institucion</th><th>Rol</th><th>Estado</th><th></th>' +
+      html += '<section aria-labelledby="t-lista"><h2 id="t-lista">Lista de acreditados</h2>' +
+              '<label class="campo" for="filtroDel"><span>Buscar</span>' +
+                '<input type="search" id="filtroDel" autocomplete="off"></label>' +
+              '<p class="solo-lector" role="status" aria-live="polite" id="conteoDel"></p>' +
+              '<div class="tabla-env"><table class="datos" id="tablaDel">' +
+              '<caption class="solo-lector">Personas acreditadas en InterMUN</caption>' +
+              '<thead><tr>' +
+                '<th scope="col">Codigo</th><th scope="col">Nombre</th><th scope="col">Pais</th>' +
+                '<th scope="col">Comite</th><th scope="col">Institucion</th><th scope="col">Rol</th>' +
+                '<th scope="col">Estado</th><th scope="col">Acciones</th>' +
               '</tr></thead><tbody>';
 
       lista.forEach(function (d) {
@@ -500,43 +564,54 @@ window.ADMIN = (function () {
           '<td>' + UI.esc(d.pais || '') + '</td>' +
           '<td>' + UI.esc(d.comite || '') + '</td>' +
           '<td>' + UI.esc(d.institucion || '') + '</td>' +
-          '<td><span class="chip rol">' + UI.esc(d.rol || '') + '</span></td>' +
-          '<td><span class="chip ' + (d.activo ? 'si' : 'err') + '">' + (d.activo ? 'activa' : 'de baja') + '</span></td>' +
-          '<td style="white-space:nowrap">' +
-            '<button class="btn sec chico" data-baja="' + d.id + '" data-est="' + (d.activo ? '1' : '0') + '">' +
-              (d.activo ? 'Dar de baja' : 'Reactivar') + '</button> ' +
-            '<button class="btn rojo chico" data-borrar="' + d.id + '" data-nom="' + UI.esc(d.nombre) + '">Borrar</button>' +
+          '<td>' + UI.esc(d.rol || '') + '</td>' +
+          '<td><span class="chip ' + (d.activo ? 'si' : 'err') + '">' + (d.activo ? 'Activa' : 'De baja') + '</span></td>' +
+          '<td>' +
+            '<button type="button" class="btn sec chico" data-baja="' + d.id + '" data-est="' + (d.activo ? '1' : '0') + '">' +
+              (d.activo ? 'Dar de baja' : 'Reactivar') +
+              '<span class="solo-lector"> la credencial de ' + UI.esc(d.nombre) + '</span></button> ' +
+            '<button type="button" class="btn rojo chico" data-borrar="' + d.id + '" data-nom="' + UI.esc(d.nombre) + '">' +
+              'Borrar<span class="solo-lector"> a ' + UI.esc(d.nombre) + '</span></button>' +
           '</td></tr>';
       });
 
-      html += '</tbody></table></div></div>';
-
-      html += '<div class="fila-btn"><button class="btn sec" id="btnExpDel">Exportar lista a CSV</button></div>';
+      html += '</tbody></table></div></section>' +
+              '<div class="fila-btn"><button type="button" class="btn sec" id="btnExpDel">' +
+              'Descargar la lista para Excel</button></div>';
 
       UI.pintar(html);
       enlazarAltas();
 
+      var conteo = UI.q('#conteoDel');
       UI.q('#filtroDel').addEventListener('input', function () {
         var t = this.value.toLowerCase();
+        var n = 0;
         UI.qq('#tablaDel tbody tr').forEach(function (tr) {
-          tr.style.display = tr.textContent.toLowerCase().indexOf(t) >= 0 ? '' : 'none';
+          var ok = tr.textContent.toLowerCase().indexOf(t) >= 0;
+          tr.style.display = ok ? '' : 'none';
+          if (ok) n++;
         });
+        conteo.textContent = n + (n === 1 ? ' persona encontrada.' : ' personas encontradas.');
       });
 
       UI.qq('[data-baja]').forEach(function (b) {
         b.addEventListener('click', function () {
           var activar = b.dataset.est === '0';
           DB.delegados.actualizar(b.dataset.baja, { activo: activar })
-            .then(function () { UI.tostada(activar ? 'Credencial reactivada' : 'Credencial dada de baja', 'ok'); delegados(); })
+            .then(function () {
+              UI.tostada(activar ? 'Credencial reactivada.' : 'Credencial dada de baja.', 'ok');
+              delegados();
+            })
             .catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); });
         });
       });
 
       UI.qq('[data-borrar]').forEach(function (b) {
         b.addEventListener('click', function () {
-          if (!UI.confirmar('Borrar definitivamente a ' + b.dataset.nom + '? Se pierde tambien su registro de comidas.')) return;
+          if (!UI.confirmar('Vas a borrar definitivamente a ' + b.dataset.nom +
+                            ', junto con su registro de comidas. Esta accion no se puede deshacer. Confirmas?')) return;
           DB.delegados.borrar(b.dataset.borrar)
-            .then(function () { UI.tostada('Eliminado', 'ok'); delegados(); })
+            .then(function () { UI.tostada('Persona eliminada.', 'ok'); delegados(); })
             .catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); });
         });
       });
@@ -547,32 +622,35 @@ window.ADMIN = (function () {
         });
         UI.descargar('intermun-delegados.csv',
           UI.aCSV(['Codigo', 'Nombre', 'Pais', 'Comite', 'Institucion', 'Rol', 'Activo'], filas));
+        UI.tostada('Lista descargada.', 'ok');
       });
     }).catch(function (e) {
-      UI.pintar('<div class="tarjeta">' + UI.aviso('err', 'Error', UI.explicarError(e)) + '</div>');
+      UI.pintar('<h1>Delegados</h1>' + UI.aviso('err', 'No se pudo cargar la lista', UI.explicarError(e)));
     });
 
 
     function enlazarAltas() {
       UI.q('#btnAgregar').addEventListener('click', function () {
         var nombre = UI.q('#nvNombre').value.trim();
-        if (!nombre) { UI.tostada('El nombre es obligatorio', 'err'); return; }
+        if (!nombre) {
+          UI.tostada('El nombre es obligatorio.', 'err');
+          UI.q('#nvNombre').focus();
+          return;
+        }
         var cod = UI.q('#nvCodigo').value.trim().toUpperCase();
-
-        var paso = cod ? Promise.resolve(cod) : DB.delegados.siguienteCodigo();
-        paso.then(function (codigo) {
-          return DB.delegados.crear({
-            codigo: codigo,
-            nombre: nombre,
-            pais: UI.q('#nvPais').value.trim() || null,
-            comite: UI.q('#nvComite').value.trim() || null,
-            institucion: UI.q('#nvInst').value.trim() || null,
-            rol: UI.q('#nvRol').value
-          });
-        }).then(function () {
-          UI.tostada('Agregado', 'ok');
-          delegados();
-        }).catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); });
+        (cod ? Promise.resolve(cod) : DB.delegados.siguienteCodigo())
+          .then(function (codigo) {
+            return DB.delegados.crear({
+              codigo: codigo,
+              nombre: nombre,
+              pais: UI.q('#nvPais').value.trim() || null,
+              comite: UI.q('#nvComite').value.trim() || null,
+              institucion: UI.q('#nvInst').value.trim() || null,
+              rol: UI.q('#nvRol').value
+            });
+          })
+          .then(function () { UI.tostada('Persona agregada.', 'ok'); delegados(); })
+          .catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); });
       });
 
       UI.q('#btnPlantilla').addEventListener('click', function () {
@@ -580,15 +658,19 @@ window.ADMIN = (function () {
           UI.aCSV(['nombre', 'pais', 'comite', 'institucion', 'rol'],
                   [['Ana Rodriguez', 'Bolivia', 'Consejo de Seguridad', 'UAGRM', 'delegado'],
                    ['Luis Mendez', 'Francia', 'SOCHUM', 'UPDS', 'delegado']]));
+        UI.tostada('Plantilla descargada.', 'ok');
       });
 
       UI.q('#btnMasivo').addEventListener('click', function () {
         var texto = UI.q('#masivo').value.trim();
-        if (!texto) { UI.tostada('Pega la lista primero', 'err'); return; }
-
+        if (!texto) {
+          UI.tostada('Pega primero la lista de personas.', 'err');
+          UI.q('#masivo').focus();
+          return;
+        }
         var lineas = texto.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
         var b = UI.q('#btnMasivo');
-        b.disabled = true; b.textContent = 'Cargando...';
+        b.disabled = true; b.textContent = 'Cargando, un momento';
 
         DB.delegados.siguienteCodigo().then(function (primer) {
           var m = /(\d+)\s*$/.exec(primer);
@@ -597,75 +679,76 @@ window.ADMIN = (function () {
 
           var nuevos = lineas.map(function (l, i) {
             var p = l.split(';').map(function (x) { return x.trim(); });
-            /* Si la primera linea parece encabezado, se ignora */
-            if (i === 0 && /^nombre$/i.test(p[0])) return null;
+            if (i === 0 && /^nombre$/i.test(p[0])) return null;   /* encabezado de Excel */
             return {
-              codigo:      pref + '-' + String(n++).padStart(4, '0'),
-              nombre:      p[0] || 'Sin nombre',
-              pais:        p[1] || null,
-              comite:      p[2] || null,
+              codigo: pref + '-' + String(n++).padStart(4, '0'),
+              nombre: p[0] || 'Sin nombre',
+              pais: p[1] || null,
+              comite: p[2] || null,
               institucion: p[3] || null,
-              rol:         p[4] || 'delegado'
+              rol: p[4] || 'delegado'
             };
           }).filter(Boolean);
 
-          if (!nuevos.length) throw new Error('No se encontro ninguna fila valida.');
+          if (!nuevos.length) throw new Error('No se encontro ninguna fila valida en lo que pegaste.');
           return DB.delegados.crearVarios(nuevos).then(function () { return nuevos.length; });
         }).then(function (n) {
-          UI.tostada(n + ' persona(s) cargada(s)', 'ok');
+          UI.tostada(n + (n === 1 ? ' persona cargada.' : ' personas cargadas.'), 'ok');
           delegados();
         }).catch(function (e) {
           UI.tostada(UI.explicarError(e), 'err');
-          b.disabled = false; b.textContent = 'Cargar lista';
+          b.disabled = false; b.textContent = 'Cargar la lista';
         });
       });
     }
   }
 
-  function campo(id, etiqueta, ayuda) {
-    return '<label class="campo"><span>' + UI.esc(etiqueta) + '</span>' +
-           '<input type="text" id="' + id + '" placeholder="' + UI.esc(ayuda) + '"></label>';
-  }
 
-
-  /* ============================================================
+  /* ================================================================
      COMIDAS
-     ============================================================ */
+     ================================================================ */
   function comidas() {
-    UI.cargando('Cargando comidas...');
+    UI.cargando('Cargando las comidas');
 
     DB.comidas.listar().then(function (lista) {
       var html = '<h1>Comidas del evento</h1>' +
-                 '<p class="silencio">Define aqui cada refrigerio y almuerzo. Es lo que el staff podra marcar al escanear.</p>';
+        '<p>Define aqui cada refrigerio y almuerzo. Es lo que el staff podra marcar al escanear.</p>';
 
       html += '<details class="acordeon"><summary>Agregar una comida</summary><div class="cuerpo">' +
                 '<div class="fila-campos">' +
-                  campo('cmNombre', 'Nombre', 'Almuerzo') +
-                  '<label class="campo"><span>Dia</span><input type="number" id="cmDia" value="1" min="1" max="10"></label>' +
-                  '<label class="campo"><span>Tipo</span><select id="cmTipo">' +
-                    ['almuerzo', 'refrigerio', 'cena', 'coffee'].map(function (t) { return '<option>' + t + '</option>'; }).join('') +
+                  campo('cmNombre', 'Nombre', 'Por ejemplo: Almuerzo, o Refrigerio de la manana.') +
+                  '<label class="campo" for="cmDia"><span>Dia</span>' +
+                    '<input type="number" id="cmDia" value="1" min="1" max="10"></label>' +
+                  '<label class="campo" for="cmTipo"><span>Tipo</span><select id="cmTipo">' +
+                    ['almuerzo', 'refrigerio', 'cena', 'coffee'].map(function (t) {
+                      return '<option>' + t + '</option>'; }).join('') +
                   '</select></label>' +
-                  '<label class="campo"><span>Fecha (opcional)</span><input type="date" id="cmFecha"></label>' +
+                  '<label class="campo" for="cmFecha"><span>Fecha, opcional</span>' +
+                    '<input type="date" id="cmFecha"></label>' +
                 '</div>' +
-                '<button class="btn" id="btnAddComida">Agregar</button>' +
+                '<button type="button" class="btn" id="btnAddComida">Agregar comida</button>' +
               '</div></details>';
 
       if (!lista.length) {
-        html += UI.vacio('&#127869;', 'No hay comidas cargadas todavia.');
+        html += UI.vacio('&#127869;', 'Todavia no hay comidas cargadas.');
       } else {
-        html += '<div class="tabla-env"><table class="datos"><thead><tr>' +
-                '<th>Dia</th><th>Nombre</th><th>Tipo</th><th>Fecha</th><th>Estado</th><th></th></tr></thead><tbody>';
+        html += '<div class="tabla-env"><table class="datos">' +
+                '<caption class="solo-lector">Comidas programadas del evento</caption>' +
+                '<thead><tr><th scope="col">Dia</th><th scope="col">Nombre</th><th scope="col">Tipo</th>' +
+                '<th scope="col">Fecha</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead><tbody>';
         lista.forEach(function (c) {
           html += '<tr>' +
             '<td class="num">' + c.dia + '</td>' +
-            '<td><b>' + UI.esc(c.nombre) + '</b><br><small class="mono silencio">' + UI.esc(c.clave) + '</small></td>' +
+            '<td><strong>' + UI.esc(c.nombre) + '</strong></td>' +
             '<td>' + UI.esc(c.tipo) + '</td>' +
-            '<td>' + UI.esc(c.fecha || '') + '</td>' +
-            '<td><span class="chip ' + (c.activa ? 'si' : 'no') + '">' + (c.activa ? 'activa' : 'oculta') + '</span></td>' +
-            '<td style="white-space:nowrap">' +
-              '<button class="btn sec chico" data-tog="' + c.id + '" data-a="' + (c.activa ? '1' : '0') + '">' +
-                (c.activa ? 'Ocultar' : 'Activar') + '</button> ' +
-              '<button class="btn rojo chico" data-delc="' + c.id + '" data-n="' + UI.esc(c.nombre) + '">Borrar</button>' +
+            '<td>' + UI.esc(c.fecha || 'sin fecha') + '</td>' +
+            '<td><span class="chip ' + (c.activa ? 'si' : 'no') + '">' + (c.activa ? 'Activa' : 'Oculta') + '</span></td>' +
+            '<td>' +
+              '<button type="button" class="btn sec chico" data-tog="' + c.id + '" data-a="' + (c.activa ? '1' : '0') + '">' +
+                (c.activa ? 'Ocultar' : 'Activar') +
+                '<span class="solo-lector"> ' + UI.esc(c.nombre) + ' del dia ' + c.dia + '</span></button> ' +
+              '<button type="button" class="btn rojo chico" data-delc="' + c.id + '" data-n="' + UI.esc(c.nombre) + '">' +
+                'Borrar<span class="solo-lector"> ' + UI.esc(c.nombre) + ' del dia ' + c.dia + '</span></button>' +
             '</td></tr>';
         });
         html += '</tbody></table></div>';
@@ -675,73 +758,79 @@ window.ADMIN = (function () {
 
       UI.q('#btnAddComida').addEventListener('click', function () {
         var nombre = UI.q('#cmNombre').value.trim();
-        var dia    = parseInt(UI.q('#cmDia').value, 10) || 1;
-        var tipo   = UI.q('#cmTipo').value;
-        var fecha  = UI.q('#cmFecha').value || null;
-        if (!nombre) { UI.tostada('Ponle un nombre', 'err'); return; }
-
+        var dia = parseInt(UI.q('#cmDia').value, 10) || 1;
+        if (!nombre) {
+          UI.tostada('Ponle un nombre a la comida.', 'err');
+          UI.q('#cmNombre').focus();
+          return;
+        }
         var clave = 'd' + dia + '-' + nombre.toLowerCase()
           .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-          .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 28) + '-' + Date.now().toString().slice(-4);
+          .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 28) +
+          '-' + Date.now().toString().slice(-4);
 
         DB.comidas.crear({
-          clave: clave, nombre: nombre, dia: dia, tipo: tipo, fecha: fecha,
+          clave: clave, nombre: nombre, dia: dia,
+          tipo: UI.q('#cmTipo').value,
+          fecha: UI.q('#cmFecha').value || null,
           orden: (lista.length ? Math.max.apply(null, lista.map(function (x) { return x.orden || 0; })) : 0) + 1
-        }).then(function () { UI.tostada('Comida agregada', 'ok'); comidas(); })
+        }).then(function () { UI.tostada('Comida agregada.', 'ok'); comidas(); })
           .catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); });
       });
 
       UI.qq('[data-tog]').forEach(function (b) {
         b.addEventListener('click', function () {
           DB.comidas.actualizar(b.dataset.tog, { activa: b.dataset.a === '0' })
-            .then(function () { comidas(); })
+            .then(function () { UI.tostada('Comida actualizada.', 'ok'); comidas(); })
             .catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); });
         });
       });
 
       UI.qq('[data-delc]').forEach(function (b) {
         b.addEventListener('click', function () {
-          if (!UI.confirmar('Borrar "' + b.dataset.n + '"? Se pierden los registros de entrega de esa comida.')) return;
+          if (!UI.confirmar('Vas a borrar "' + b.dataset.n + '" y todos sus registros de entrega. ' +
+                            'Esta accion no se puede deshacer. Confirmas?')) return;
           DB.comidas.borrar(b.dataset.delc)
-            .then(function () { UI.tostada('Borrada', 'ok'); comidas(); })
+            .then(function () { UI.tostada('Comida borrada.', 'ok'); comidas(); })
             .catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); });
         });
       });
     }).catch(function (e) {
-      UI.pintar('<div class="tarjeta">' + UI.aviso('err', 'Error', UI.explicarError(e)) + '</div>');
+      UI.pintar('<h1>Comidas del evento</h1>' + UI.aviso('err', 'No se pudieron cargar', UI.explicarError(e)));
     });
   }
 
 
-  /* ============================================================
-     GENERADOR DE QR
-     ============================================================ */
+  /* ================================================================
+     GENERADOR DE CODIGOS QR
+     ================================================================ */
   function qr() {
-    UI.cargando('Cargando delegados...');
+    UI.cargando('Cargando delegados');
 
     DB.delegados.listar().then(function (lista) {
-      var base = urlBase();
-
       var html = '<h1>Generar los codigos QR</h1>' +
-        '<div class="tarjeta no-imprimir">' +
-          '<label class="campo"><span>Direccion publica del sitio</span>' +
-            '<input type="text" id="urlBase" value="' + UI.esc(base) + '"></label>' +
-          '<p class="silencio">Cada QR abre la credencial de esa persona. Verifica que esta direccion sea la definitiva ' +
-          '(la de GitHub Pages), no la de tu computadora, antes de imprimir.</p>' +
+        '<section class="tarjeta no-imprimir" aria-labelledby="t-conf-qr">' +
+          '<h2 id="t-conf-qr">Configuracion</h2>' +
+          '<label class="campo" for="urlBase"><span>Direccion publica del sitio</span>' +
+            '<input type="text" id="urlBase" value="' + UI.esc(urlBase()) + '" ' +
+              'aria-describedby="ayuda-url"></label>' +
+          '<p class="ayuda-campo" id="ayuda-url">Cada codigo QR abre la credencial de esa persona. ' +
+            'Verifica que esta sea la direccion definitiva antes de imprimir: un codigo QR no se puede ' +
+            'corregir despues de impreso.</p>' +
           '<div class="fila-campos">' +
-            '<label class="campo"><span>Tamano del QR</span><select id="qrTam">' +
-              '<option value="3">Chico</option><option value="4" selected>Mediano</option><option value="6">Grande</option>' +
-            '</select></label>' +
-            '<label class="campo"><span>Mostrar</span><select id="qrDatos">' +
+            '<label class="campo" for="qrTam"><span>Tamano del codigo</span><select id="qrTam">' +
+              '<option value="3">Chico</option><option value="4" selected>Mediano</option>' +
+              '<option value="6">Grande</option></select></label>' +
+            '<label class="campo" for="qrDatos"><span>Datos impresos</span><select id="qrDatos">' +
               '<option value="full" selected>Nombre, codigo y comite</option>' +
-              '<option value="min">Solo el codigo</option>' +
-            '</select></label>' +
+              '<option value="min">Solo el codigo</option></select></label>' +
           '</div>' +
           '<div class="fila-btn">' +
-            '<button class="btn" id="btnGen">Generar</button>' +
-            '<button class="btn oro" id="btnImp">Imprimir</button>' +
+            '<button type="button" class="btn" id="btnGen">Generar los codigos</button>' +
+            '<button type="button" class="btn oro" id="btnImp">Imprimir</button>' +
           '</div>' +
-        '</div>';
+          '<p role="status" aria-live="polite" id="estadoQR"></p>' +
+        '</section>';
 
       if (!lista.length) {
         html += UI.vacio('&#128290;', 'Primero carga la lista de delegados.');
@@ -749,7 +838,8 @@ window.ADMIN = (function () {
         return;
       }
 
-      html += '<div class="tarjeta"><div id="hojaQR" class="qr-hoja"></div></div>';
+      html += '<section aria-labelledby="t-hoja"><h2 id="t-hoja" class="no-imprimir">Hoja para imprimir</h2>' +
+              '<div id="hojaQR" class="qr-hoja"></div></section>';
       UI.pintar(html);
 
       UI.q('#btnGen').addEventListener('click', generar);
@@ -757,74 +847,81 @@ window.ADMIN = (function () {
       generar();
 
       function generar() {
-        var b   = UI.q('#urlBase').value.trim().replace(/#.*$/, '').replace(/\/$/, '');
+        var b = UI.q('#urlBase').value.trim().replace(/#.*$/, '').replace(/\/$/, '');
         var tam = parseInt(UI.q('#qrTam').value, 10);
-        var modo= UI.q('#qrDatos').value;
+        var modo = UI.q('#qrDatos').value;
         var cont = UI.q('#hojaQR');
         cont.innerHTML = '';
 
         lista.forEach(function (d) {
           var url = b + '/#/c/' + encodeURIComponent(d.codigo);
           var g;
-          try {
-            g = qrcode(0, 'M');
-            g.addData(url);
-            g.make();
-          } catch (e) { return; }
+          try { g = qrcode(0, 'M'); g.addData(url); g.make(); } catch (e) { return; }
 
           var caja = document.createElement('div');
           caja.className = 'qr-tarjeta';
+          /* El SVG es una imagen con significado: se le da nombre para
+             quien revise la hoja con lector de pantalla. */
           caja.innerHTML =
-            g.createSvgTag({ cellSize: tam, margin: 1, scalable: true }) +
+            '<div role="img" aria-label="Codigo QR de ' + UI.esc(d.nombre) + ', credencial ' + UI.esc(d.codigo) + '">' +
+              g.createSvgTag({ cellSize: tam, margin: 1, scalable: true }) +
+            '</div>' +
             (modo === 'full'
-              ? '<div class="qr-nom">' + UI.esc(d.nombre) + '</div>' +
-                '<div class="qr-cod">' + UI.esc(d.codigo) + '</div>' +
-                '<div class="qr-meta">' + UI.esc([d.pais, d.comite].filter(Boolean).join(' &middot; ')) + '</div>'
-              : '<div class="qr-cod" style="margin-top:5px">' + UI.esc(d.codigo) + '</div>');
+              ? '<p class="qr-nom">' + UI.esc(d.nombre) + '</p>' +
+                '<p class="qr-cod">' + UI.esc(d.codigo) + '</p>' +
+                '<p class="qr-meta">' + UI.esc([d.pais, d.comite].filter(Boolean).join(', ')) + '</p>'
+              : '<p class="qr-cod">' + UI.esc(d.codigo) + '</p>');
           cont.appendChild(caja);
         });
 
-        UI.tostada(lista.length + ' codigo(s) generado(s)', 'ok');
+        UI.q('#estadoQR').textContent = lista.length === 1
+          ? 'Se genero 1 codigo QR.'
+          : 'Se generaron ' + lista.length + ' codigos QR.';
       }
     }).catch(function (e) {
-      UI.pintar('<div class="tarjeta">' + UI.aviso('err', 'Error', UI.explicarError(e)) + '</div>');
+      UI.pintar('<h1>Generar los codigos QR</h1>' + UI.aviso('err', 'No se pudo cargar', UI.explicarError(e)));
     });
   }
 
   function urlBase() {
-    var guardada = null;
-    try { guardada = localStorage.getItem('intermun_url'); } catch (e) {}
-    if (guardada) return guardada;
+    var g = null;
+    try { g = localStorage.getItem('intermun_url'); } catch (e) {}
+    if (g) return g;
     return location.origin + location.pathname.replace(/index\.html$/, '').replace(/\/$/, '');
   }
 
 
-  /* ============================================================
-     AJUSTES / ESTADO
-     ============================================================ */
+  /* ================================================================
+     AJUSTES Y ESTADO
+     ================================================================ */
   function ajustes() {
     var est = VISTAS.estacionGuardada();
     var u = APP.usuarioActual();
 
-    var html = '<h1>Ajustes y estado</h1>';
+    UI.pintar(
+      '<h1>Ajustes y estado</h1>' +
 
-    html += '<div class="tarjeta"><div class="tarjeta-tit"><h2>Este dispositivo</h2></div>' +
-              '<label class="campo"><span>Estacion de entrega</span><select id="selEst">' +
-                '<option value="">Sin especificar</option>' +
-                window.CONFIG.ESTACIONES.map(function (e) {
-                  return '<option value="' + UI.esc(e) + '"' + (e === est ? ' selected' : '') + '>' + UI.esc(e) + '</option>';
-                }).join('') +
-              '</select></label>' +
-              '<p class="silencio">Queda guardado en este celular. Sirve para saber despues por que puerta paso cada delegado.</p>' +
-              '<label class="campo"><span>Direccion publica del sitio (para los QR)</span>' +
-                '<input type="text" id="urlPub" value="' + UI.esc(urlBase()) + '"></label>' +
-              '<button class="btn" id="btnGuardarAj">Guardar</button>' +
-            '</div>';
+      '<section class="tarjeta" aria-labelledby="t-dispositivo">' +
+        '<h2 id="t-dispositivo">Este dispositivo</h2>' +
+        '<label class="campo" for="selEst"><span>Estacion de entrega</span>' +
+          '<select id="selEst" aria-describedby="ayuda-est">' +
+            '<option value="">Sin especificar</option>' +
+            window.CONFIG.ESTACIONES.map(function (e) {
+              return '<option value="' + UI.esc(e) + '"' + (e === est ? ' selected' : '') + '>' + UI.esc(e) + '</option>';
+            }).join('') +
+          '</select></label>' +
+        '<p class="ayuda-campo" id="ayuda-est">Queda guardada en este telefono. Sirve para saber despues ' +
+          'por que puerta paso cada delegado.</p>' +
+        '<label class="campo" for="urlPub"><span>Direccion publica del sitio</span>' +
+          '<input type="text" id="urlPub" value="' + UI.esc(urlBase()) + '"></label>' +
+        '<button type="button" class="btn" id="btnGuardarAj">Guardar</button>' +
+      '</section>' +
 
-    html += '<div class="tarjeta"><div class="tarjeta-tit"><h2>Estado del sistema</h2></div><div id="estado">' +
-              '<p class="silencio">Comprobando...</p></div></div>';
-
-    UI.pintar(html);
+      '<section aria-labelledby="t-estado">' +
+        '<h2 id="t-estado">Estado del sistema</h2>' +
+        '<div id="estado" role="status" aria-live="polite"><p>Comprobando el estado, un momento.</p></div>' +
+      '</section>'
+    );
 
     UI.q('#btnGuardarAj').addEventListener('click', function () {
       try {
@@ -836,34 +933,42 @@ window.ADMIN = (function () {
         if (u2) localStorage.setItem('intermun_url', u2);
         else localStorage.removeItem('intermun_url');
 
-        UI.tostada('Guardado', 'ok');
-      } catch (e) { UI.tostada('No se pudo guardar en este navegador', 'err'); }
+        UI.tostada('Ajustes guardados en este dispositivo.', 'ok');
+      } catch (e) {
+        UI.tostada('Este navegador no permite guardar ajustes.', 'err');
+      }
     });
 
     var filas = [
-      ['Configuracion de conexion', window.CONFIG.estaConfigurado() ? ['si', 'Lista'] : ['err', 'Falta editar js/config.js']],
-      ['Sesion de staff', u ? ['si', u.email] : ['no', 'Sin sesion iniciada']]
+      ['Configuracion de conexion', window.CONFIG.estaConfigurado()
+        ? ['si', 'Lista'] : ['err', 'Falta editar el archivo de configuracion']],
+      ['Sesion de staff', u ? ['si', u.email] : ['no', 'Sin sesion iniciada']],
+      ['Lectura en voz alta', window.VOZ ? ['si', 'Disponible'] : ['no', 'No disponible en este navegador']],
+      ['Instalada como aplicacion', (window.INSTALAR && window.INSTALAR.yaInstalada())
+        ? ['si', 'Si'] : ['no', 'Todavia no']]
     ];
 
     DB.probar().then(function (r) {
       filas.push(['Base de datos', r.ok ? ['si', 'Respondiendo'] : ['err', r.motivo]]);
-      return window.CONFIG.estaConfigurado() && r.ok
+      return (window.CONFIG.estaConfigurado() && r.ok)
         ? Promise.all([DB.delegados.listar(), DB.comidas.listar(), DB.entregas.listar()])
         : null;
     }).then(function (d) {
       if (d) {
-        filas.push(['Delegados cargados', ['si', d[0].length + '']]);
-        filas.push(['Comidas cargadas', ['si', d[1].length + '']]);
-        filas.push(['Entregas registradas', ['si', d[2].length + '']]);
+        filas.push(['Delegados cargados', ['si', String(d[0].length)]]);
+        filas.push(['Comidas cargadas', ['si', String(d[1].length)]]);
+        filas.push(['Entregas registradas', ['si', String(d[2].length)]]);
       }
       UI.q('#estado').innerHTML =
-        '<div class="tabla-env"><table class="datos"><tbody>' +
+        '<div class="tabla-env"><table class="datos">' +
+        '<caption class="solo-lector">Estado de cada parte del sistema</caption>' +
+        '<thead><tr><th scope="col">Componente</th><th scope="col">Estado</th></tr></thead><tbody>' +
         filas.map(function (f) {
-          return '<tr><td><b>' + UI.esc(f[0]) + '</b></td>' +
+          return '<tr><th scope="row">' + UI.esc(f[0]) + '</th>' +
                  '<td><span class="chip ' + f[1][0] + '">' + UI.esc(f[1][1]) + '</span></td></tr>';
         }).join('') + '</tbody></table></div>';
     }).catch(function (e) {
-      UI.q('#estado').innerHTML = UI.aviso('err', 'Error', UI.explicarError(e));
+      UI.q('#estado').innerHTML = UI.aviso('err', 'No se pudo comprobar', UI.explicarError(e));
     });
   }
 
@@ -873,18 +978,16 @@ window.ADMIN = (function () {
     UI.pintar(
       '<h1>Falta conectar el sistema</h1>' +
       UI.aviso('warn', 'Todavia no esta configurado',
-        'El portal funciona, pero las credenciales y el control de comidas necesitan la conexion a la base de datos.') +
-      '<div class="tarjeta">' +
-        '<h3>Que hay que hacer</h3>' +
-        '<ol>' +
-          '<li>Crear un proyecto gratuito en supabase.com</li>' +
-          '<li>Ejecutar el archivo <span class="mono">INSTALACION-SUPABASE.sql</span> en su editor SQL</li>' +
-          '<li>Copiar la URL y la clave anon del proyecto dentro de <span class="mono">js/config.js</span></li>' +
-          '<li>Crear los usuarios del staff en Authentication</li>' +
-        '</ol>' +
-        '<p class="silencio">Los pasos completos estan en el archivo GUIA-DE-INSTALACION.md que viene con el sistema.</p>' +
-        '<a class="btn sec" href="#/">Volver al portal</a>' +
-      '</div>'
+        'El portal funciona, pero las credenciales y el control de comidas necesitan la conexion con la base de datos.') +
+      '<h2>Que hay que hacer</h2>' +
+      '<ol>' +
+        '<li>Crear un proyecto gratuito en supabase punto com.</li>' +
+        '<li>Ejecutar el archivo de instalacion en su editor de consultas.</li>' +
+        '<li>Copiar la direccion y la clave publica del proyecto en el archivo de configuracion.</li>' +
+        '<li>Crear los usuarios del staff.</li>' +
+      '</ol>' +
+      '<p>Los pasos completos estan en la guia de instalacion que acompana al sistema.</p>' +
+      '<p><a class="btn sec" href="#/">Volver al portal</a></p>'
     );
   }
 

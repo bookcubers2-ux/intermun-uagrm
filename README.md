@@ -16,6 +16,26 @@ El mismo código QR sirve para las dos cosas: si lo abre un delegado ve su estad
 
 ---
 
+## Accesibilidad
+
+La aplicación está construida para personas ciegas, con baja visión y neurodivergentes, y esa prioridad manda sobre cualquier decisión estética.
+
+- **Contraste nivel AAA** en toda la interfaz: cada par de color fue medido y ninguno baja de 7 a 1.
+- **Tipografía Atkinson Hyperlegible**, diseñada por el Braille Institute, servida desde el propio sitio.
+- **Cero movimiento**: sin animaciones, carruseles ni ventanas emergentes.
+- **Perfiles sensoriales** que se aplican con un toque, y barra de herramientas en todas las páginas para ajustar letra, espaciado y contraste.
+- **Lectura en voz alta** con la voz del dispositivo, sin enviar el texto a ningún servidor.
+- **Gestión del foco** al cambiar de vista, con anuncio en región `aria-live`.
+- **Objetivos táctiles de 48 píxeles** en todo elemento interactivo.
+
+Verificado con axe-core (0 violaciones en 10 rutas) y 20 pruebas de comportamiento. Las decisiones, las mediciones y las limitaciones conocidas están en [ACCESIBILIDAD.md](ACCESIBILIDAD.md).
+
+## Instalable en el teléfono
+
+Se instala como aplicación desde el navegador, sin tienda de aplicaciones. Una vez instalada, las reglas, el glosario y la guía del delegado funcionan sin conexión.
+
+---
+
 ## Cómo está hecho
 
 Sitio estático sin proceso de compilación: HTML, CSS y JavaScript puro, servido desde GitHub Pages. Las librerías están incluidas en el repositorio en lugar de traerse de un CDN externo, para que el sistema no dependa de servicios de terceros el día del evento.
