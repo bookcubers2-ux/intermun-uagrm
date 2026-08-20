@@ -8,10 +8,13 @@
   "display": "standalone",
   "orientation": "any",
   "background_color": "#ffffff",
-  "theme_color": "#1c3f5f",
+  "theme_color": "#040635",
   "lang": "es",
   "dir": "ltr",
-  "categories": ["education", "utilities"],
+  "categories": [
+    "education",
+    "utilities"
+  ],
   "icons": [
     {
       "src": "img/icono-192.png",
@@ -26,7 +29,7 @@
       "purpose": "any"
     },
     {
-      "src": "img/icono-512.png",
+      "src": "img/icono-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

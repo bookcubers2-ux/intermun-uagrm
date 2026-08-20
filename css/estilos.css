@@ -1,22 +1,36 @@
 /* ====================================================================
-   InterMUN UAGRM | Hoja de estilos accesible
+   InterMUN UAGRM | Hoja de estilos
    --------------------------------------------------------------------
-   Construida siguiendo, en este orden de prioridad:
-     1. Personas sin vision (lector de pantalla y linea braille)
-     2. Personas neurodivergentes (carga cognitiva minima, cero movimiento)
-     3. Personas con baja vision (contraste alto, letra grande, espaciado)
+   IDENTIDAD VISUAL OFICIAL
+   Azul de marca #0d00a4, rojo de marca #f80000, gris azulado #7f87ad
+   y blanco, tomados del manual "Elementos de Marketing, Intermun".
 
-   Cumple WCAG 2.2 nivel AAA en contraste: todos los pares de color
-   fueron medidos y superan 7:1. Ningun estado se comunica solo con
-   color: siempre lleva ademas texto, borde o simbolo.
+   Los degradados oficiales aportan los tonos oscuros que si pueden
+   llevar texto: azul noche #040635 y vino #790000.
+
+   ACCESIBILIDAD, que manda sobre la estetica
+   El rojo de marca #f80000 mide 4.21 a 1 sobre blanco y el gris
+   azulado #7f87ad mide 3.52 a 1: ninguno de los dos alcanza el nivel
+   AAA, asi que se usan SOLO como elementos decorativos (filetes,
+   bordes, el trazo curvo del logo). Cuando el rojo tiene que llevar
+   texto, se usa el vino #790000 del propio degradado oficial, que da
+   11.58 a 1. Todos los pares de esta hoja fueron medidos y ninguno
+   baja de 7 a 1.
    ==================================================================== */
 
 /* ------------------------------------------------------------------ */
-/* Tipografia Atkinson Hyperlegible                                     */
-/* Disenada por el Braille Institute para baja vision: distingue        */
-/* caracteres que suelen confundirse (I, l, 1 y tambien O, 0).          */
-/* Se sirve desde el propio sitio, sin depender de ningun tercero.      */
+/* Tipografias                                                          */
+/* Archivo Black es la version libre de Arial Black, la tipografia de   */
+/* titulos del manual de marca. Atkinson Hyperlegible, del Braille      */
+/* Institute, se conserva para todo el texto de lectura.                */
+/* Monotype Corsiva NO se usa aqui: el manual la reserva para redes     */
+/* sociales, y una cursiva es de las peores opciones para baja vision.  */
 /* ------------------------------------------------------------------ */
+@font-face {
+  font-family: 'Archivo Black';
+  font-style: normal; font-weight: 400; font-display: swap;
+  src: url('../fuentes/archivo-black.woff2') format('woff2');
+}
 @font-face {
   font-family: 'Atkinson Hyperlegible';
   font-style: normal; font-weight: 400; font-display: swap;
@@ -46,72 +60,71 @@
 
 
 /* ------------------------------------------------------------------ */
-/* Tokens de color. Todos los pares miden 7:1 o mas.                    */
+/* Tokens                                                               */
 /* ------------------------------------------------------------------ */
 :root {
-  /* Par principal */
-  --tinta:        #16202a;   /* 16.5:1 sobre blanco */
+  /* Base */
+  --tinta:        #000315;   /* 20.5:1 sobre blanco */
   --papel:        #ffffff;
-  --papel-hueso:  #f6f4f0;   /* fondo suave de la pagina */
+  --papel-hueso:  #f4f5fa;   /* blanco con un velo del azul de marca */
 
-  /* Identidad institucional */
-  --azul:         #1c3f5f;   /* 10.9:1 sobre blanco */
-  --azul-osc:     #132d44;   /* 14.1:1 sobre blanco */
-  --azul-noche:   #0d2237;   /* fondo del tema oscuro */
-  --oro:          #6b5310;   /* 7.3:1 sobre blanco, para TEXTO */
-  --oro-brillo:   #c9a54a;   /* solo decorativo: filetes y bordes, nunca texto */
-  --oro-sobre-azul:#eed9a8;  /* 7.9:1 sobre azul */
+  /* Identidad */
+  --azul:         #0d00a4;   /* AZUL DE MARCA, 13.5:1 */
+  --azul-osc:     #061385;   /* 14.6:1 */
+  --azul-noche:   #040635;   /* 19.4:1, superficies oscuras */
+  --rojo-marca:   #f80000;   /* ROJO DE MARCA, solo decorativo */
+  --rojo:         #790000;   /* vino del degradado oficial, para texto */
+  --gris-marca:   #7f87ad;   /* gris azulado, solo decorativo */
 
   /* Texto secundario */
-  --gris:         #4f5a63;   /* 7.1:1 sobre blanco */
-  --sobre-azul-2: #d6e3ee;   /* 8.4:1 sobre azul */
+  --gris:         #474e6b;   /* 8.2:1 */
+  --sobre-azul-2: #d9dffb;   /* sobre superficies azules */
 
-  /* Estados. Nunca se usan solos: siempre con texto o simbolo. */
-  --verde:        #1c5c34;   /* 8.0:1 */
-  --verde-fondo:  #e6f4ec;
-  --rojo:         #8f2018;   /* 8.8:1 */
-  --rojo-fondo:   #fceceb;
-  --ambar:        #6b5310;   /* 7.3:1 */
-  --ambar-fondo:  #fbf3e0;
-  --info-fondo:   #e9f0f6;
+  /* Estados */
+  --verde:        #0f5c2e;   /* 8.1:1 */
+  --verde-fondo:  #e4f3ea;
+  --rojo-fondo:   #fdeceb;
+  --ambar:        #5f4a08;   /* 8.5:1 */
+  --ambar-fondo:  #fbf2dc;
+  --info-fondo:   #e9ebfb;
 
-  --linea:        #c9c2b6;
-  --linea-fuerte: #6f6a61;
+  --linea:        #c3c8de;
+  --linea-fuerte: #5f668a;
 
-  /* Texto: la persona puede cambiar estos tres desde la barra */
+  /* Ajustables por la persona */
   --escala-texto:    1;
   --espacio-lineas:  1.7;
   --espacio-letras:  0.01em;
   --espacio-palabras:0.05em;
 
   --radio: 10px;
-  --toque: 48px;            /* objetivo tactil minimo comodo */
-  --tipo: 'Atkinson Hyperlegible', Verdana, 'Segoe UI', Tahoma, Arial, sans-serif;
+  --toque: 48px;
+  --tipo:  'Atkinson Hyperlegible', Verdana, 'Segoe UI', Tahoma, Arial, sans-serif;
+  --tipo-titulo: 'Archivo Black', 'Arial Black', 'Segoe UI', Impact, sans-serif;
 }
 
-/* Tema oscuro de alto contraste. No es un filtro invertido: es un
-   segundo juego de tokens medido aparte. */
+/* Tema oscuro: el azul de la marca llevado a su extremo profundo. */
 :root[data-tema="oscuro"] {
   --tinta:        #ffffff;
-  --papel:        #0d2237;
-  --papel-hueso:  #081a2b;
+  --papel:        #040635;
+  --papel-hueso:  #000315;
   --azul:         #ffffff;
   --azul-osc:     #ffffff;
-  --gris:         #c3d3e0;   /* 10.5:1 sobre el fondo oscuro */
-  --oro:          #e8cd8e;   /* 10.4:1 */
-  --oro-brillo:   #e8cd8e;
-  --verde:        #8fd6a8;   /* 9.5:1 */
-  --verde-fondo:  #12331f;
-  --rojo:         #f2a9a2;   /* 8.4:1 */
-  --rojo-fondo:   #3a1512;
-  --ambar:        #e8cd8e;
-  --ambar-fondo:  #33280a;
-  --info-fondo:   #12293d;
-  --linea:        #4a6076;
-  --linea-fuerte: #93a9bd;
+  --rojo:         #ff9d95;   /* 10.3:1 */
+  --rojo-marca:   #ff5b52;
+  --gris:         #b9c4e0;   /* 11.8:1 */
+  --gris-marca:   #8fa6ff;
+  --verde:        #7fd4a0;   /* 11.6:1 */
+  --verde-fondo:  #08301a;
+  --rojo-fondo:   #350c09;
+  --ambar:        #f0d489;
+  --ambar-fondo:  #2e2408;
+  --info-fondo:   #0b1150;
+  --linea:        #3d4682;
+  --linea-fuerte: #98a5cf;
+  --sobre-azul-2: #d9dffb;
 }
 
-/* Espaciado amplio (WCAG 1.4.12). Ayuda a dislexia y baja vision. */
 :root[data-espaciado="amplio"] {
   --espacio-lineas:  2;
   --espacio-letras:  0.08em;
@@ -120,20 +133,20 @@
 
 
 /* ------------------------------------------------------------------ */
-/* CERO MOVIMIENTO. Regla absoluta de toda la aplicacion.               */
-/* Sirve a neurodivergencia, verigo, epilepsia fotosensible y a         */
-/* cualquiera que se maree con interfaces que se mueven solas.          */
+/* Cero movimiento, regla absoluta                                      */
 /* ------------------------------------------------------------------ */
 *, *::before, *::after {
   animation: none !important;
   transition: none !important;
   scroll-behavior: auto !important;
 }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
 
 * { box-sizing: border-box; }
 
 html {
-  /* Base 20 pixeles, no 16. Escalable desde la barra hasta 44. */
   font-size: calc(20px * var(--escala-texto));
   background: var(--papel-hueso);
 }
@@ -149,216 +162,161 @@ body {
   -webkit-text-size-adjust: 100%;
 }
 
-/* Ancho de lectura comodo: entre 45 y 75 caracteres por linea. */
 p, li, dd { max-width: 70ch; }
 
 
 /* ------------------------------------------------------------------ */
 /* Utilidades de accesibilidad                                          */
 /* ------------------------------------------------------------------ */
-
-/* Visible solo para lectores de pantalla. */
 .solo-lector {
   position: absolute !important;
-  width: 1px; height: 1px;
-  padding: 0; margin: -1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-  border: 0;
+  width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
 
-/* Enlaces de salto: primer elemento del DOM, invisibles hasta el foco. */
 .saltar {
-  position: absolute;
-  left: -9999px; top: 0;
-  z-index: 200;
-  background: var(--tinta);
-  color: var(--papel);
-  padding: 0.7rem 1.1rem;
-  font-weight: 700;
-  text-decoration: underline;
-  border: 3px solid var(--papel);
+  position: absolute; left: -9999px; top: 0; z-index: 200;
+  background: var(--tinta); color: var(--papel);
+  padding: 0.7rem 1.1rem; font-weight: 700;
+  text-decoration: underline; border: 3px solid var(--papel);
 }
-.saltar:focus {
-  left: 0.5rem;
-  top: 0.5rem;
-}
+.saltar:focus { left: 0.5rem; top: 0.5rem; }
 
-/* Foco visible, grueso y con separacion. Nunca se elimina. */
-:focus-visible {
-  outline: 4px solid currentColor;
-  outline-offset: 3px;
-  border-radius: 2px;
-}
-/* Respaldo para navegadores sin :focus-visible */
+:focus-visible { outline: 4px solid currentColor; outline-offset: 3px; border-radius: 2px; }
 a:focus, button:focus, input:focus, select:focus, textarea:focus, [tabindex]:focus {
-  outline: 4px solid currentColor;
-  outline-offset: 3px;
+  outline: 4px solid currentColor; outline-offset: 3px;
 }
 a:focus:not(:focus-visible), button:focus:not(:focus-visible),
 input:focus:not(:focus-visible), select:focus:not(:focus-visible),
-textarea:focus:not(:focus-visible), [tabindex]:focus:not(:focus-visible) {
-  outline: none;
-}
-/* El h1 recibe foco al cambiar de vista: no debe verse como un error. */
+textarea:focus:not(:focus-visible), [tabindex]:focus:not(:focus-visible) { outline: none; }
 main h1:focus { outline-offset: 6px; }
 
 
 /* ------------------------------------------------------------------ */
-/* Barra de accesibilidad: primera herramienta de la pagina             */
+/* Barra de accesibilidad                                               */
 /* ------------------------------------------------------------------ */
 .barra-a11y {
   background: var(--azul-noche);
-  border-bottom: 3px solid var(--oro-brillo);
+  border-bottom: 4px solid var(--rojo-marca);
   padding: 0.4rem 0.5rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  justify-content: center;
-  align-items: center;
+  display: flex; flex-wrap: wrap; gap: 0.35rem;
+  justify-content: center; align-items: center;
 }
 :root[data-tema="oscuro"] .barra-a11y { background: #000000; }
 
-.barra-a11y button,
-.barra-a11y .enlace-barra {
-  min-height: var(--toque);
-  min-width: var(--toque);
+.barra-a11y button, .barra-a11y .enlace-barra {
+  min-height: var(--toque); min-width: var(--toque);
   padding: 0.3rem 0.7rem;
-  font-family: var(--tipo);
-  font-size: 0.8rem;
-  font-weight: 700;
-  background: var(--papel);
-  color: var(--azul-noche);
-  border: 2px solid var(--papel);
-  border-radius: 6px;
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
+  font-family: var(--tipo); font-size: 0.8rem; font-weight: 700;
+  background: #ffffff; color: var(--azul-noche);
+  border: 2px solid #ffffff; border-radius: 6px;
+  cursor: pointer; text-decoration: none;
+  display: inline-flex; align-items: center; justify-content: center; text-align: center;
 }
 :root[data-tema="oscuro"] .barra-a11y button,
-:root[data-tema="oscuro"] .barra-a11y .enlace-barra {
-  background: #ffffff; color: #000000; border-color: #ffffff;
-}
-/* Estado activo: NO se comunica solo con color, tambien con subrayado
-   grueso y con aria-pressed que el lector de pantalla anuncia. */
+:root[data-tema="oscuro"] .barra-a11y .enlace-barra { color: #000000; }
+/* Estado activo: color MAS subrayado grueso MAS aria-pressed. */
 .barra-a11y button[aria-pressed="true"] {
-  background: var(--oro-sobre-azul);
+  background: var(--sobre-azul-2);
   color: #000000;
-  border-color: #ffffff;
-  text-decoration: underline;
-  text-decoration-thickness: 3px;
-  text-underline-offset: 3px;
+  border-color: var(--rojo-marca);
+  text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 3px;
 }
 
 
 /* ------------------------------------------------------------------ */
-/* Encabezado del sitio                                                 */
+/* Cabecera con el logotipo oficial                                     */
 /* ------------------------------------------------------------------ */
 .barra {
-  background: var(--azul);
-  color: #ffffff;
-  border-bottom: 3px solid var(--oro-brillo);
-}
-:root[data-tema="oscuro"] .barra {
   background: var(--azul-noche);
-  border-bottom-color: var(--oro);
+  color: #ffffff;
+  border-bottom: 4px solid var(--rojo-marca);
 }
 .barra-inner {
   max-width: 1100px; margin: 0 auto;
   padding: 0.5rem 0.8rem;
-  display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+  display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap;
 }
 .marca {
-  display: flex; align-items: center; gap: 0.5rem;
+  display: flex; align-items: center; gap: 0.6rem;
   text-decoration: none; color: #ffffff;
-  min-height: var(--toque);
-  padding: 0.15rem 0.2rem;
+  min-height: var(--toque); padding: 0.15rem 0.2rem;
 }
 .marca:hover .marca-nom { text-decoration: underline; }
-.marca-escudo {
-  width: 44px; height: 44px; flex: none;
-  border-radius: 8px;
-  background: var(--oro-sobre-azul);
-  color: #000000;
-  display: grid; place-items: center;
-  font-weight: 700; font-size: 0.85rem;
-  border: 2px solid #ffffff;
-}
-.marca-nom { font-weight: 700; font-size: 1.05rem; line-height: 1.2; }
-.marca-sub {
+/* El logotipo va sobre un disco blanco: asi conserva sus colores
+   originales y no se pierde el globo azul contra el fondo oscuro. */
+.marca-logo {
+  width: 54px; height: 54px; flex: none;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 3px solid var(--rojo-marca);
+  padding: 3px;
+  object-fit: contain;
   display: block;
-  font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.12em;
-  color: var(--oro-sobre-azul);
 }
-:root[data-tema="oscuro"] .marca-sub { color: var(--oro); }
+.marca-nom {
+  font-family: var(--tipo-titulo);
+  font-size: 1.15rem; line-height: 1.15;
+  letter-spacing: 0.02em;
+}
+.marca-sub {
+  display: block; font-size: 0.66rem;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--sobre-azul-2);
+}
 .barra-sp { flex: 1 1 auto; }
 
 .sesion-chip {
-  font-size: 0.75rem;
-  background: #ffffff;
-  color: var(--azul-osc);
-  padding: 0.25rem 0.6rem;
-  border-radius: 20px;
-  border: 2px solid #ffffff;
-  max-width: 100%;
-  overflow-wrap: anywhere;
+  font-size: 0.75rem; background: #ffffff; color: var(--azul-noche);
+  padding: 0.25rem 0.6rem; border-radius: 20px; border: 2px solid #ffffff;
+  max-width: 100%; overflow-wrap: anywhere;
 }
-:root[data-tema="oscuro"] .sesion-chip { color: #000000; }
-
 .btn-salir {
   min-height: var(--toque); min-width: var(--toque);
-  background: #ffffff; color: var(--azul-osc);
+  background: #ffffff; color: var(--rojo);
   border: 2px solid #ffffff; border-radius: 8px;
   font-family: var(--tipo); font-size: 0.78rem; font-weight: 700;
   cursor: pointer; padding: 0.2rem 0.7rem;
 }
-:root[data-tema="oscuro"] .btn-salir { color: #000000; }
 
 
 /* ------------------------------------------------------------------ */
-/* Navegacion principal                                                 */
+/* Navegacion                                                           */
 /* ------------------------------------------------------------------ */
-.nav { background: var(--azul-osc); border-bottom: 1px solid var(--linea); }
+.nav { background: var(--azul); border-bottom: 1px solid var(--linea); }
 :root[data-tema="oscuro"] .nav { background: #000000; }
 .nav-inner {
   max-width: 1100px; margin: 0 auto;
   display: flex; flex-wrap: wrap; gap: 0.2rem; padding: 0.3rem 0.5rem;
 }
 .nav a {
-  color: #ffffff;
-  text-decoration: none;
-  padding: 0.4rem 0.7rem;
-  min-height: var(--toque);
+  color: #ffffff; text-decoration: none;
+  padding: 0.4rem 0.7rem; min-height: var(--toque);
   display: inline-flex; align-items: center;
   font-size: 0.82rem; font-weight: 700;
-  border: 2px solid transparent;
-  border-radius: 6px;
+  border: 2px solid transparent; border-radius: 6px;
 }
 .nav a:hover { text-decoration: underline; text-decoration-thickness: 2px; }
-/* Pagina actual: color MAS subrayado grueso MAS aria-current. */
 .nav a[aria-current="page"] {
-  background: #ffffff;
-  color: var(--azul-osc);
-  border-color: var(--oro-brillo);
-  text-decoration: underline;
-  text-decoration-thickness: 3px;
-  text-underline-offset: 3px;
+  background: #ffffff; color: var(--azul);
+  border-color: var(--rojo-marca);
+  text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 3px;
 }
 :root[data-tema="oscuro"] .nav a[aria-current="page"] { color: #000000; }
+/* La insignia lleva texto, asi que NO puede usar el rojo de marca
+   (#f80000 con blanco encima da 4.21 a 1). Se usa el vino del
+   degradado oficial, que da 11.58 a 1. */
 .nav .marca-staff {
   font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em;
-  background: var(--oro-sobre-azul); color: #000000;
-  padding: 0.05rem 0.3rem; border-radius: 4px; margin-left: 0.3rem;
-  font-weight: 700;
+  background: #790000; color: #ffffff;
+  border: 1px solid #ffffff;
+  padding: 0.05rem 0.32rem; border-radius: 4px; margin-left: 0.3rem; font-weight: 700;
 }
+:root[data-tema="oscuro"] .nav .marca-staff { background: #790000; color: #ffffff; }
 
 
 /* ------------------------------------------------------------------ */
-/* Contenedores                                                         */
+/* Contenedores y titulos                                               */
 /* ------------------------------------------------------------------ */
 .envoltura { max-width: 1100px; margin: 0 auto; padding: 1rem 0.8rem 2.5rem; }
 .angosto { max-width: 40rem; }
@@ -366,7 +324,15 @@ main h1:focus { outline-offset: 6px; }
 h1, h2, h3, h4 { color: var(--azul); line-height: 1.25; margin: 0 0 0.4rem; }
 :root[data-tema="oscuro"] h1, :root[data-tema="oscuro"] h2,
 :root[data-tema="oscuro"] h3, :root[data-tema="oscuro"] h4 { color: var(--tinta); }
-h1 { font-size: 1.6rem; margin-bottom: 0.6rem; }
+h1 {
+  font-family: var(--tipo-titulo);
+  font-size: 1.55rem; margin-bottom: 0.7rem;
+  letter-spacing: 0.01em; line-height: 1.2;
+  /* Filete rojo bajo el titulo, guino al trazo curvo del logotipo. */
+  border-bottom: 4px solid var(--rojo-marca);
+  padding-bottom: 0.4rem;
+  display: block;
+}
 h2 { font-size: 1.25rem; margin-top: 1.2rem; }
 h3 { font-size: 1.05rem; margin-top: 0.9rem; }
 p { margin: 0.6rem 0; }
@@ -377,8 +343,7 @@ a { color: var(--azul); text-decoration: underline; text-decoration-thickness: 2
   background: var(--papel);
   border: 2px solid var(--linea);
   border-radius: var(--radio);
-  padding: 0.9rem 1rem;
-  margin-bottom: 1rem;
+  padding: 0.9rem 1rem; margin-bottom: 1rem;
 }
 .tarjeta-tit {
   display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
@@ -390,31 +355,40 @@ a { color: var(--azul); text-decoration: underline; text-decoration-thickness: 2
 
 
 /* ------------------------------------------------------------------ */
-/* Portada                                                              */
+/* Portada, con el logotipo grande                                      */
 /* ------------------------------------------------------------------ */
 .portada {
-  background: var(--azul);
+  background: var(--azul-noche);
   color: #ffffff;
   border: 3px solid var(--azul-osc);
-  border-top: 8px solid var(--oro-brillo);
+  border-top: 8px solid var(--rojo-marca);
   border-radius: 12px;
-  padding: 1.2rem 1.1rem;
+  padding: 1.3rem 1.1rem;
   margin-bottom: 1.2rem;
+  text-align: center;
 }
-:root[data-tema="oscuro"] .portada { background: var(--azul-noche); border-color: var(--linea-fuerte); }
+:root[data-tema="oscuro"] .portada { border-color: var(--linea-fuerte); }
+.portada-logo {
+  width: 150px; height: auto; display: block; margin: 0 auto 0.7rem;
+  background: #ffffff; border-radius: 50%;
+  border: 4px solid var(--rojo-marca);
+  padding: 8px;
+}
 .portada .kicker {
   text-transform: uppercase; letter-spacing: 0.12em;
-  font-size: 0.7rem; font-weight: 700; color: var(--oro-sobre-azul);
-  margin-bottom: 0.4rem;
+  font-size: 0.7rem; font-weight: 700; color: var(--sobre-azul-2);
+  margin-bottom: 0.3rem;
 }
-:root[data-tema="oscuro"] .portada .kicker { color: var(--oro); }
-.portada h1 { color: #ffffff; font-size: 1.7rem; }
-.portada p { color: var(--sobre-azul-2); margin: 0.4rem 0 0; }
+.portada h1 {
+  color: #ffffff; font-size: 1.9rem;
+  border-bottom: 0; padding-bottom: 0; margin-bottom: 0.3rem;
+}
+.portada p { color: var(--sobre-azul-2); margin: 0.4rem auto 0; }
 .portada .sello {
   display: inline-block; margin-top: 0.8rem;
   font-size: 0.78rem; font-weight: 700;
-  background: #ffffff; color: var(--azul-osc);
-  padding: 0.3rem 0.7rem; border-radius: 20px;
+  background: #ffffff; color: var(--azul);
+  padding: 0.3rem 0.8rem; border-radius: 20px;
 }
 :root[data-tema="oscuro"] .portada .sello { color: #000000; }
 
@@ -422,26 +396,24 @@ a { color: var(--azul); text-decoration: underline; text-decoration-thickness: 2
 /* ------------------------------------------------------------------ */
 /* Rejilla de modulos                                                   */
 /* ------------------------------------------------------------------ */
-/* Se quita la vineta visual, pero el role="list" del marcado conserva
-   la semantica de lista, que en VoiceOver se perderia solo con CSS. */
 .rejilla {
   display: grid; gap: 0.8rem;
   grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
   list-style: none; padding-left: 0; margin: 0.6rem 0;
 }
 .metricas, .lista-comidas { list-style: none; padding-left: 0; }
+
 .modulo {
   display: block;
   background: var(--papel);
   border: 2px solid var(--linea-fuerte);
-  border-top: 6px solid var(--oro-brillo);
+  border-top: 6px solid var(--rojo-marca);
   border-radius: var(--radio);
   padding: 0.9rem;
-  text-decoration: none;
-  color: var(--tinta);
+  text-decoration: none; color: var(--tinta);
   min-height: var(--toque);
 }
-.modulo:hover { border-color: var(--azul); background: var(--info-fondo); }
+.modulo:hover { border-color: var(--azul); border-top-color: var(--rojo-marca); background: var(--info-fondo); }
 .modulo .ico { font-size: 1.7rem; line-height: 1; display: block; margin-bottom: 0.4rem; }
 .modulo strong {
   display: block; color: var(--azul); font-size: 1.05rem; margin-bottom: 0.2rem;
@@ -449,40 +421,39 @@ a { color: var(--azul); text-decoration: underline; text-decoration-thickness: 2
 }
 :root[data-tema="oscuro"] .modulo strong { color: var(--tinta); }
 .modulo .d { display: block; color: var(--gris); font-size: 0.85rem; max-width: 60ch; }
-/* Tarjeta informativa que NO es un enlace: sin subrayado ni cursor. */
 .tarjeta-info { cursor: default; }
 .tarjeta-info strong { text-decoration: none; }
 
 
 /* ------------------------------------------------------------------ */
-/* Botones. Todos cumplen el minimo tactil de 48 pixeles.               */
+/* Botones                                                              */
 /* ------------------------------------------------------------------ */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
   min-height: var(--toque);
   padding: 0.5rem 1.1rem;
-  background: var(--azul);
-  color: #ffffff;
-  border: 3px solid var(--azul);
-  border-radius: 8px;
-  font-family: var(--tipo);
-  font-size: 0.92rem; font-weight: 700;
-  text-decoration: none;
-  cursor: pointer;
-  text-align: center;
+  background: var(--azul); color: #ffffff;
+  border: 3px solid var(--azul); border-radius: 8px;
+  font-family: var(--tipo); font-size: 0.92rem; font-weight: 700;
+  text-decoration: none; cursor: pointer; text-align: center;
 }
 :root[data-tema="oscuro"] .btn { background: var(--tinta); color: #000000; border-color: var(--tinta); }
 .btn:hover { text-decoration: underline; text-decoration-thickness: 2px; }
-.btn:disabled { opacity: 1; background: var(--papel); color: var(--gris); border-color: var(--linea-fuerte); cursor: not-allowed; }
+.btn:disabled {
+  opacity: 1; background: var(--papel); color: var(--gris);
+  border-color: var(--linea-fuerte); cursor: not-allowed;
+}
 .btn.sec { background: var(--papel); color: var(--azul); border-color: var(--azul); }
 :root[data-tema="oscuro"] .btn.sec { background: transparent; color: var(--tinta); border-color: var(--tinta); }
 .btn.verde { background: var(--verde); border-color: var(--verde); color: #ffffff; }
 :root[data-tema="oscuro"] .btn.verde { color: #000000; }
+/* El rojo de los botones es el vino del degradado oficial: el rojo
+   #f80000 no alcanza contraste suficiente para llevar texto blanco. */
 .btn.rojo { background: var(--rojo); border-color: var(--rojo); color: #ffffff; }
 :root[data-tema="oscuro"] .btn.rojo { color: #000000; }
-.btn.oro { background: var(--oro); border-color: var(--oro); color: #ffffff; }
+.btn.oro { background: var(--rojo); border-color: var(--rojo); color: #ffffff; }
 :root[data-tema="oscuro"] .btn.oro { color: #000000; }
-.btn.chico { font-size: 0.8rem; padding: 0.3rem 0.7rem; }   /* conserva 48px de alto */
+.btn.chico { font-size: 0.8rem; padding: 0.3rem 0.7rem; }
 .btn.grande, .btn.bloque { width: 100%; }
 .fila-btn { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0.6rem 0; }
 
@@ -492,25 +463,20 @@ a { color: var(--azul); text-decoration: underline; text-decoration-thickness: 2
 /* ------------------------------------------------------------------ */
 label.campo { display: block; margin-bottom: 0.9rem; max-width: 40rem; }
 label.campo > span, .etiqueta-campo {
-  display: block;
-  font-size: 0.82rem; font-weight: 700;
-  color: var(--tinta);
-  margin-bottom: 0.25rem;
+  display: block; font-size: 0.82rem; font-weight: 700;
+  color: var(--tinta); margin-bottom: 0.25rem;
 }
 .ayuda-campo { font-size: 0.8rem; color: var(--gris); margin: 0 0 0.3rem; }
 
 input[type=text], input[type=email], input[type=password], input[type=date],
 input[type=number], input[type=search], select, textarea {
-  width: 100%;
-  min-height: var(--toque);
+  width: 100%; min-height: var(--toque);
   padding: 0.5rem 0.6rem;
-  font-family: var(--tipo);
-  font-size: 1rem;
-  color: var(--tinta);
-  background: var(--papel);
-  border: 3px solid var(--linea-fuerte);
-  border-radius: 8px;
+  font-family: var(--tipo); font-size: 1rem;
+  color: var(--tinta); background: var(--papel);
+  border: 3px solid var(--linea-fuerte); border-radius: 8px;
 }
+input:focus, select:focus, textarea:focus { border-color: var(--azul); }
 input::placeholder, textarea::placeholder { color: var(--gris); opacity: 1; }
 textarea { min-height: 8rem; resize: vertical; line-height: 1.6; }
 .fila-campos { display: grid; gap: 0.6rem; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
@@ -527,24 +493,21 @@ table.datos { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
 table.datos caption { text-align: left; padding: 0.5rem 0.7rem; font-weight: 700; color: var(--gris); }
 table.datos th {
   background: var(--azul); color: #ffffff;
-  text-align: left; font-weight: 700;
-  padding: 0.5rem 0.7rem;
+  text-align: left; font-weight: 700; padding: 0.5rem 0.7rem;
 }
 :root[data-tema="oscuro"] table.datos th { background: #000000; }
 table.datos td { padding: 0.5rem 0.7rem; border-top: 2px solid var(--linea); vertical-align: middle; }
 table.datos td.num { text-align: right; }
 table.datos tbody tr:nth-child(even) td { background: var(--papel-hueso); }
+table.datos tbody th[scope="row"] { background: var(--papel); color: var(--tinta); }
 
 
 /* ------------------------------------------------------------------ */
-/* Insignias de estado. Color MAS texto MAS simbolo, nunca color solo.  */
+/* Insignias de estado                                                  */
 /* ------------------------------------------------------------------ */
 .chip {
-  display: inline-block;
-  font-size: 0.78rem; font-weight: 700;
-  padding: 0.15rem 0.55rem;
-  border-radius: 20px;
-  border: 2px solid;
+  display: inline-block; font-size: 0.78rem; font-weight: 700;
+  padding: 0.15rem 0.55rem; border-radius: 20px; border: 2px solid;
 }
 .chip.si  { background: var(--verde-fondo); color: var(--verde); border-color: var(--verde); }
 .chip.no  { background: var(--papel-hueso); color: var(--gris);  border-color: var(--linea-fuerte); }
@@ -558,15 +521,11 @@ table.datos tbody tr:nth-child(even) td { background: var(--papel-hueso); }
 /* Avisos                                                               */
 /* ------------------------------------------------------------------ */
 .aviso {
-  border: 2px solid;
-  border-left-width: 8px;
-  border-radius: 8px;
-  padding: 0.7rem 0.9rem;
-  margin: 0.8rem 0;
-  max-width: 70ch;
+  border: 2px solid; border-left-width: 8px; border-radius: 8px;
+  padding: 0.7rem 0.9rem; margin: 0.8rem 0; max-width: 70ch;
 }
 .aviso b { display: block; margin-bottom: 0.2rem; font-size: 1.02rem; }
-.aviso.info { background: var(--info-fondo);  border-color: var(--azul); color: var(--tinta); }
+.aviso.info { background: var(--info-fondo);  border-color: var(--azul);  color: var(--tinta); }
 .aviso.ok   { background: var(--verde-fondo); border-color: var(--verde); color: var(--tinta); }
 .aviso.warn { background: var(--ambar-fondo); border-color: var(--ambar); color: var(--tinta); }
 .aviso.err  { background: var(--rojo-fondo);  border-color: var(--rojo);  color: var(--tinta); }
@@ -580,18 +539,24 @@ table.datos tbody tr:nth-child(even) td { background: var(--papel-hueso); }
   background: var(--papel);
   border: 2px solid var(--linea-fuerte);
   border-left: 8px solid var(--azul);
-  border-radius: var(--radio);
-  padding: 0.7rem 0.8rem;
+  border-radius: var(--radio); padding: 0.7rem 0.8rem;
 }
 .metrica.verde { border-left-color: var(--verde); }
-.metrica.oro   { border-left-color: var(--oro); }
-.metrica .n { font-size: 1.9rem; font-weight: 700; color: var(--azul); line-height: 1.1; }
+.metrica.oro   { border-left-color: var(--rojo-marca); }
+.metrica .n {
+  font-family: var(--tipo-titulo);
+  font-size: 1.8rem; color: var(--azul); line-height: 1.15; display: block;
+}
 :root[data-tema="oscuro"] .metrica .n { color: var(--tinta); }
 .metrica.verde .n { color: var(--verde); }
-.metrica.oro .n { color: var(--oro); }
+.metrica.oro .n { color: var(--rojo); }
 .metrica .e { font-size: 0.8rem; color: var(--gris); }
 
-.progreso { height: 1rem; background: var(--papel-hueso); border: 2px solid var(--linea-fuerte); border-radius: 20px; overflow: hidden; margin-top: 0.4rem; }
+.progreso {
+  height: 1rem; background: var(--papel-hueso);
+  border: 2px solid var(--linea-fuerte); border-radius: 20px;
+  overflow: hidden; margin-top: 0.4rem;
+}
 .progreso > i { display: block; height: 100%; background: var(--verde); }
 
 
@@ -599,35 +564,28 @@ table.datos tbody tr:nth-child(even) td { background: var(--papel-hueso); }
 /* Credencial                                                           */
 /* ------------------------------------------------------------------ */
 .credencial {
-  background: var(--azul);
-  color: #ffffff;
+  background: var(--azul-noche); color: #ffffff;
   border: 3px solid var(--azul-osc);
-  border-top: 8px solid var(--oro-brillo);
-  border-radius: 12px;
-  padding: 1rem;
-  margin-bottom: 1rem;
+  border-top: 8px solid var(--rojo-marca);
+  border-radius: 12px; padding: 1rem; margin-bottom: 1rem;
 }
-:root[data-tema="oscuro"] .credencial { background: var(--azul-noche); border-color: var(--linea-fuerte); }
-.credencial h2 { color: #ffffff; font-size: 1.4rem; margin: 0 0 0.4rem; }
+:root[data-tema="oscuro"] .credencial { border-color: var(--linea-fuerte); }
+.credencial h2 { color: #ffffff; font-family: var(--tipo-titulo); font-size: 1.3rem; margin: 0 0 0.4rem; }
 .credencial .cred-cod {
   font-family: ui-monospace, Consolas, monospace;
   font-size: 0.9rem; font-weight: 700;
-  color: var(--oro-sobre-azul);
-  letter-spacing: 0.1em;
+  color: var(--sobre-azul-2); letter-spacing: 0.1em;
 }
-:root[data-tema="oscuro"] .credencial .cred-cod { color: var(--oro); }
 .credencial .cred-datos { display: grid; gap: 0.7rem; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); margin-top: 0.9rem; }
 .credencial .cred-dato { display: block; }
 .credencial .cred-dato .k {
-  display: block;
-  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em;
-  color: var(--sobre-azul-2);
-  margin-bottom: 0.1rem;
+  display: block; font-size: 0.72rem; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--sobre-azul-2); margin-bottom: 0.1rem;
 }
 .credencial .cred-dato .v { display: block; font-size: 1rem; font-weight: 700; }
 .credencial .chip-cred {
   display: inline-block; font-size: 0.78rem; font-weight: 700;
-  background: #ffffff; color: var(--azul-osc);
+  background: #ffffff; color: var(--azul);
   padding: 0.15rem 0.6rem; border-radius: 20px;
 }
 :root[data-tema="oscuro"] .credencial .chip-cred { color: #000000; }
@@ -636,22 +594,17 @@ table.datos tbody tr:nth-child(even) td { background: var(--papel-hueso); }
 /* ------------------------------------------------------------------ */
 /* Lista de comidas                                                     */
 /* ------------------------------------------------------------------ */
-.lista-comidas { list-style: none; margin: 0; padding: 0; }
 .comida-fila {
   display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap;
-  padding: 0.6rem 0.2rem;
-  border-bottom: 2px solid var(--linea);
+  padding: 0.6rem 0.2rem; border-bottom: 2px solid var(--linea);
 }
 .comida-fila:last-child { border-bottom: 0; }
 .comida-fila .info { flex: 1 1 12rem; min-width: 0; }
 .comida-fila .info b { display: block; font-size: 1rem; }
 .comida-fila .info small { display: block; color: var(--gris); font-size: 0.8rem; }
 .marca-est {
-  width: 2.2rem; height: 2.2rem; flex: none;
-  border-radius: 50%;
-  display: grid; place-items: center;
-  font-size: 1.1rem; font-weight: 700;
-  border: 3px solid;
+  width: 2.2rem; height: 2.2rem; flex: none; border-radius: 50%;
+  display: grid; place-items: center; font-size: 1.1rem; font-weight: 700; border: 3px solid;
 }
 .marca-est.si { background: var(--verde-fondo); color: var(--verde); border-color: var(--verde); }
 .marca-est.no { background: var(--papel-hueso); color: var(--gris);  border-color: var(--linea-fuerte); }
@@ -665,8 +618,8 @@ table.datos tbody tr:nth-child(even) td { background: var(--papel-hueso); }
 
 .qr-hoja { display: grid; gap: 0.6rem; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); }
 .qr-tarjeta {
-  border: 2px dashed var(--linea-fuerte);
-  border-radius: 8px; padding: 0.5rem; text-align: center;
+  border: 2px dashed var(--linea-fuerte); border-radius: 8px;
+  padding: 0.5rem; text-align: center;
   background: #ffffff; color: #000000;
   break-inside: avoid; page-break-inside: avoid;
 }
@@ -680,25 +633,19 @@ table.datos tbody tr:nth-child(even) td { background: var(--papel-hueso); }
 /* Acordeon                                                             */
 /* ------------------------------------------------------------------ */
 .acordeon {
-  border: 2px solid var(--linea-fuerte);
-  border-radius: var(--radio);
-  background: var(--papel);
-  margin-bottom: 0.6rem;
+  border: 2px solid var(--linea-fuerte); border-radius: var(--radio);
+  background: var(--papel); margin-bottom: 0.6rem;
 }
 .acordeon > summary {
-  padding: 0.6rem 0.8rem;
-  min-height: var(--toque);
+  padding: 0.6rem 0.8rem; min-height: var(--toque);
   display: flex; align-items: center; gap: 0.5rem;
-  cursor: pointer;
-  font-weight: 700; font-size: 1rem;
-  color: var(--azul);
-  list-style: none;
+  cursor: pointer; font-weight: 700; font-size: 1rem;
+  color: var(--azul); list-style: none;
 }
 :root[data-tema="oscuro"] .acordeon > summary { color: var(--tinta); }
 .acordeon > summary::-webkit-details-marker { display: none; }
-/* El signo es decorativo: el estado real lo anuncia el propio details. */
 .acordeon > summary::before {
-  content: '+'; font-size: 1.3rem; font-weight: 700; width: 1rem; flex: none;
+  content: '+'; font-size: 1.3rem; font-weight: 700; width: 1rem; flex: none; color: var(--rojo);
 }
 .acordeon[open] > summary::before { content: '\2212'; }
 .acordeon[open] > summary { border-bottom: 2px solid var(--linea-fuerte); }
@@ -706,17 +653,13 @@ table.datos tbody tr:nth-child(even) td { background: var(--papel-hueso); }
 
 
 /* ------------------------------------------------------------------ */
-/* Glosario como lista de definiciones                                  */
-/* Es la estructura correcta: el lector de pantalla anuncia "termino" y  */
-/* "definicion", y permite saltar de uno a otro.                        */
+/* Glosario                                                             */
 /* ------------------------------------------------------------------ */
 .glosario { margin: 0.5rem 0; }
 .glosario .termino {
   border: 2px solid var(--linea);
   border-left: 8px solid var(--azul);
-  border-radius: 8px;
-  padding: 0.6rem 0.8rem;
-  margin-bottom: 0.6rem;
+  border-radius: 8px; padding: 0.6rem 0.8rem; margin-bottom: 0.6rem;
   background: var(--papel);
 }
 :root[data-tema="oscuro"] .glosario .termino { border-left-color: var(--tinta); }
@@ -725,90 +668,67 @@ table.datos tbody tr:nth-child(even) td { background: var(--papel-hueso); }
 .glosario dt .ingles { font-weight: 400; font-size: 0.85rem; color: var(--gris); }
 .glosario dd { margin: 0.2rem 0 0; max-width: 70ch; }
 
-/* Lista numerada del flujo de una sesion */
 .lista-flujo { padding-left: 1.6rem; }
 .lista-flujo li { margin: 0.5rem 0; }
 
-/* Resaltado del bloque que la voz esta leyendo en este momento.
-   Se marca con fondo Y con borde, nunca solo con color. */
 .voz-leyendo {
   background: var(--ambar-fondo) !important;
-  outline: 3px solid var(--ambar);
-  outline-offset: 2px;
-  border-radius: 4px;
+  outline: 3px solid var(--ambar); outline-offset: 2px; border-radius: 4px;
 }
 
 
 /* ------------------------------------------------------------------ */
-/* Region de anuncios (lectores de pantalla)                            */
-/* Visible ademas para todo el mundo: si algo pasa, se lee y se ve.     */
+/* Anuncios                                                             */
 /* ------------------------------------------------------------------ */
-#region-anuncios {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0 0.8rem;
-}
-#region-anuncios:empty { display: none; }
 .anuncio {
   background: var(--info-fondo);
-  border: 2px solid var(--azul);
-  border-left: 8px solid var(--azul);
-  border-radius: 8px;
-  padding: 0.6rem 0.8rem;
-  margin: 0.6rem 0;
-  font-weight: 700;
+  border: 2px solid var(--azul); border-left: 8px solid var(--azul);
+  border-radius: 8px; padding: 0.6rem 0.8rem; margin: 0.6rem 0; font-weight: 700;
+  color: var(--tinta);
 }
 .anuncio.ok  { background: var(--verde-fondo); border-color: var(--verde); }
 .anuncio.err { background: var(--rojo-fondo);  border-color: var(--rojo); }
 
 
 /* ------------------------------------------------------------------ */
-/* Instalacion como aplicacion (PWA)                                    */
+/* Instalacion como aplicacion                                          */
 /* ------------------------------------------------------------------ */
 .instalar-pwa {
   max-width: 1100px; margin: 1rem auto; padding: 1rem 0.9rem;
   background: var(--papel);
   border: 3px solid var(--azul);
+  border-left: 10px solid var(--rojo-marca);
   border-radius: var(--radio);
 }
-:root[data-tema="oscuro"] .instalar-pwa { border-color: var(--tinta); }
+:root[data-tema="oscuro"] .instalar-pwa { border-color: var(--tinta); border-left-color: var(--rojo-marca); }
 .instalar-pwa h2 { margin-top: 0; }
 .instalar-pwa ol { padding-left: 1.4rem; }
 .instalar-pwa li { margin: 0.4rem 0; }
 
 
 /* ------------------------------------------------------------------ */
-/* Pie de pagina                                                        */
+/* Pie                                                                  */
 /* ------------------------------------------------------------------ */
 .pie {
   max-width: 1100px; margin: 0 auto;
   padding: 1.2rem 0.8rem 2.5rem;
-  color: var(--gris);
-  font-size: 0.85rem;
-  border-top: 2px solid var(--linea);
+  color: var(--gris); font-size: 0.85rem;
+  border-top: 4px solid var(--rojo-marca);
 }
 .pie p { max-width: none; }
-/* Los enlaces del pie tambien deben ser comodos de tocar. */
-.pie a {
-  display: inline-block;
-  min-height: var(--toque);
-  padding: 0.6rem 0.2rem;
-  line-height: 1.5;
-}
+.pie a { display: inline-block; min-height: var(--toque); padding: 0.6rem 0.2rem; line-height: 1.5; }
 #btn-volver-arriba {
   display: inline-flex; align-items: center; justify-content: center;
-  min-height: var(--toque);
-  margin-top: 0.8rem; padding: 0.5rem 1.1rem;
+  min-height: var(--toque); margin-top: 0.8rem; padding: 0.5rem 1.1rem;
   background: var(--papel); color: var(--azul);
   border: 3px solid var(--azul); border-radius: 8px;
-  font-family: var(--tipo); font-size: 0.9rem; font-weight: 700;
-  cursor: pointer;
+  font-family: var(--tipo); font-size: 0.9rem; font-weight: 700; cursor: pointer;
 }
 :root[data-tema="oscuro"] #btn-volver-arriba { color: var(--tinta); border-color: var(--tinta); background: transparent; }
 
 
 /* ------------------------------------------------------------------ */
-/* Estados varios                                                       */
+/* Varios                                                               */
 /* ------------------------------------------------------------------ */
 .silencio { color: var(--gris); font-size: 0.88rem; }
 .centro { text-align: center; }
@@ -821,14 +741,13 @@ table.datos tbody tr:nth-child(even) td { background: var(--papel-hueso); }
 
 
 /* ------------------------------------------------------------------ */
-/* Perfil de ceguera: se simplifica lo puramente visual                 */
+/* Perfiles sensoriales                                                 */
 /* ------------------------------------------------------------------ */
 :root[data-perfil="ceguera"] .modulo .ico,
 :root[data-perfil="ceguera"] .vacio .ico { display: none; }
-:root[data-perfil="ceguera"] .portada { border-top-width: 4px; }
+:root[data-perfil="ceguera"] .portada-logo { width: 90px; }
 
-/* Perfil neurodivergente: mas aire entre bloques, menos densidad */
-:root[data-perfil="neurodivergente"] .tarjeta { padding: 1.1rem 1.1rem; margin-bottom: 1.4rem; }
+:root[data-perfil="neurodivergente"] .tarjeta { padding: 1.1rem; margin-bottom: 1.4rem; }
 :root[data-perfil="neurodivergente"] .rejilla { gap: 1.1rem; }
 :root[data-perfil="neurodivergente"] .comida-fila { padding: 0.9rem 0.2rem; }
 
@@ -843,6 +762,7 @@ table.datos tbody tr:nth-child(even) td { background: var(--papel-hueso); }
   body { background: #ffffff; color: #000000; }
   .envoltura { padding: 0; max-width: none; }
   .tarjeta { border: 0; padding: 0; }
+  h1 { border-bottom: 2px solid #000000; }
   .qr-hoja { grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
   @page { size: A4; margin: 10mm; }
 }
@@ -853,14 +773,12 @@ table.datos tbody tr:nth-child(even) td { background: var(--papel-hueso); }
 /* ------------------------------------------------------------------ */
 @media (max-width: 40rem) {
   .envoltura { padding: 0.8rem 0.6rem 2.5rem; }
-  h1 { font-size: 1.4rem; }
+  h1 { font-size: 1.3rem; }
   .portada h1 { font-size: 1.5rem; }
+  .portada-logo { width: 120px; }
+  .marca-logo { width: 46px; height: 46px; }
+  .marca-nom { font-size: 1rem; }
   .rejilla { grid-template-columns: 1fr; }
   .barra-a11y { justify-content: stretch; }
   .barra-a11y button, .barra-a11y .enlace-barra { flex: 1 1 8rem; }
-}
-
-/* Respeto explicito a la preferencia del sistema, por si acaso. */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
 }

@@ -16,32 +16,35 @@ Todo lo construido para estos tres grupos mejora la aplicación para cualquiera,
 
 ---
 
-## Por qué esta paleta y no la original
+## Por qué esta paleta
 
-La paleta inicial usaba grises suaves sobre fondo hueso. Al medirla, **7 de 13 pares de color no alcanzaban el nivel AAA** de la norma WCAG (7 a 1) y 2 no alcanzaban ni el AA (4.5 a 1): el gris claro daba 3.05 a 1 y el dorado sobre blanco apenas 2.34 a 1.
+La paleta sale del manual de marca oficial de InterMUN: azul `#0d00a4`, rojo `#f80000`, gris azulado `#7f87ad` y blanco, más los dos degradados oficiales.
 
-La paleta nueva conserva el azul institucional #1c3f5f (10.91 a 1 sobre blanco) y reemplaza cada color que no llegaba:
+Al medir cada color contra el requisito de nivel AAA (7 a 1), el resultado fue claro:
 
-| Uso | Color | Contraste |
+| Color de marca | Contraste sobre blanco | Uso permitido |
 |---|---|---|
-| Tinta principal | `#16202a` | 16.5 a 1 |
-| Azul institucional | `#1c3f5f` | 10.9 a 1 |
-| Texto secundario | `#4f5a63` | 7.1 a 1 |
-| Verde de éxito | `#1c5c34` | 8.0 a 1 |
-| Rojo de error | `#8f2018` | 8.8 a 1 |
-| Ámbar de aviso | `#6b5310` | 7.3 a 1 |
+| Azul `#0d00a4` | 13.52 a 1 | **Texto y fondos.** Es el color principal |
+| Rojo `#f80000` | 4.21 a 1 | **Solo decorativo**: filetes, bordes, remates |
+| Gris azulado `#7f87ad` | 3.52 a 1 | **Solo decorativo** |
 
-El dorado brillante `#c9a54a` quedó reservado **solo para filetes y bordes decorativos**, nunca para texto, porque como texto no alcanza el umbral.
+El rojo de marca y el gris azulado no alcanzan el umbral, así que nunca llevan texto encima. Cuando hace falta un rojo que sí pueda llevar texto (botón de borrar, insignia del staff, estados de error), se usa el **vino `#790000`**, que es el extremo oscuro del degradado rojo del propio manual y da 11.58 a 1. No se inventó ningún color: el tono accesible ya estaba en la marca.
+
+Los tonos oscuros del degradado azul aportan las superficies profundas: `#040635` para la cabecera y las tarjetas de credencial (19.40 a 1 con texto blanco), y `#000315` como fondo del tema de alto contraste (20.51 a 1).
 
 **Ningún estado se comunica solo con color.** Un botón activo lleva `aria-pressed="true"`, cambio de relleno *y* subrayado grueso. Una credencial dada de baja dice "De baja" con texto, no solo en rojo.
 
 ---
 
-## Por qué la tipografía Atkinson Hyperlegible
+## Por qué estas tipografías
 
-La diseñó el Braille Institute específicamente para baja visión: diferencia los caracteres que más se confunden (I, l, 1 y también O, 0) dándole a cada uno una forma inconfundible.
+El manual de marca indica **Arial Black** para títulos y **Monotype Corsiva** para redes sociales.
 
-Se sirve **desde el propio sitio**, no desde Google Fonts, por dos razones: no depende de que un servicio de terceros esté disponible el día del evento, y no envía la dirección IP de cada delegado a un tercero.
+Para los títulos se usa **Archivo Black**, la versión libre y de código abierto de Arial Black, servida desde el propio sitio.
+
+**Monotype Corsiva no se usa en la aplicación**, y es una decisión deliberada: una tipografía cursiva es de las peores opciones posibles para baja visión y para dislexia, porque las letras se enlazan y pierden su forma distintiva. El propio manual la reserva para redes sociales, así que no hay conflicto: sigue siendo la tipografía de las piezas gráficas, pero no de una interfaz que tiene que poder leerse con poca visión.
+
+Para todo el texto de lectura se conserva **Atkinson Hyperlegible**, diseñada por el Braille Institute específicamente para baja visión: diferencia los caracteres que más se confunden (I, l, 1 y también O, 0). Se sirve desde el propio sitio, no desde Google Fonts, para no depender de terceros el día del evento y para no enviarles la dirección IP de cada delegado.
 
 La base es de **20 píxeles, no 16**, y se puede escalar hasta 44 desde la barra de herramientas.
 

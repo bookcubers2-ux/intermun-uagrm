@@ -39,6 +39,9 @@ window.VISTAS = (function () {
 
     var html =
       '<div class="portada">' +
+        /* El logotipo es decorativo aqui: el H1 que sigue ya dice el
+           nombre, asi que el alt va vacio para no repetirlo. */
+        '<img class="portada-logo" src="img/logo-480.png" alt="" width="150" height="173">' +
         '<p class="kicker">' + UI.esc(e.carrera) + '</p>' +
         '<h1>' + UI.esc(e.nombre) + '</h1>' +
         '<p>' + UI.esc(e.subtitulo) + ' de la ' + UI.esc(e.institucion) + '. ' +

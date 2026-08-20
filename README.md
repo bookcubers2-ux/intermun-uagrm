@@ -16,6 +16,14 @@ El mismo código QR sirve para las dos cosas: si lo abre un delegado ve su estad
 
 ---
 
+## Identidad visual
+
+Aplica el manual de marca oficial de InterMUN: logotipo del globo con la pieza de ajedrez, azul `#0d00a4`, rojo `#f80000` y gris azulado `#7f87ad`, con Archivo Black (version libre de Arial Black) para los titulos.
+
+El logotipo se reconstruyo a 709 pixeles con transparencia real a partir del PDF oficial, y de ahi salen el icono de la aplicacion y las versiones de cabecera y portada.
+
+Dos colores de la marca no alcanzan el contraste minimo para llevar texto encima, asi que quedan reservados a bordes y filetes; cuando hace falta un rojo con texto se usa el vino `#790000` del degradado oficial. El detalle esta en [ACCESIBILIDAD.md](ACCESIBILIDAD.md).
+
 ## Accesibilidad
 
 La aplicación está construida para personas ciegas, con baja visión y neurodivergentes, y esa prioridad manda sobre cualquier decisión estética.

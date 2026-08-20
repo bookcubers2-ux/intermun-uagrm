@@ -8,7 +8,7 @@
    comidas siempre tiene que trabajar con datos frescos.
    ==================================================================== */
 
-var CACHE = 'intermun-v3-accesible';
+var CACHE = 'intermun-v4-marca';
 
 var ARCHIVOS = [
   './',
@@ -19,8 +19,12 @@ var ARCHIVOS = [
   './fuentes/atkinson-400-ext.woff2',
   './fuentes/atkinson-700.woff2',
   './fuentes/atkinson-700-ext.woff2',
+  './fuentes/archivo-black.woff2',
   './img/icono-192.png',
   './img/icono-512.png',
+  './img/icono-maskable-512.png',
+  './img/logo-240.png',
+  './img/logo-480.png',
   './js/config.js',
   './js/contenido.js',
   './js/middleware.js',
