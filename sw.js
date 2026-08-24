@@ -8,7 +8,7 @@
    comidas siempre tiene que trabajar con datos frescos.
    ==================================================================== */
 
-var CACHE = 'intermun-v5-chat';
+var CACHE = 'intermun-v6-red-primero';
 
 var ARCHIVOS = [
   './',
@@ -77,20 +77,39 @@ self.addEventListener('fetch', function (ev) {
   /* Solo se maneja lo que vive en este mismo dominio. */
   if (url.origin !== location.origin) return;
 
+  /* Estrategia "red primero": con internet, siempre se sirve la version
+     mas nueva del sitio (asi las actualizaciones aparecen a la primera
+     recarga, sin esperar a que el cache se renueve). Sin internet, se
+     sirve lo guardado. Las fuentes e imagenes, que no cambian, van
+     "cache primero" para que la pagina cargue al instante. */
+  var esEstatico = /\.(woff2|png|jpg|jpeg|svg|ico)$/i.test(url.pathname);
+
+  if (esEstatico) {
+    ev.respondWith(
+      caches.match(req).then(function (guardado) {
+        return guardado || fetch(req).then(function (resp) {
+          if (resp && resp.status === 200 && resp.type === 'basic') {
+            var copia = resp.clone();
+            caches.open(CACHE).then(function (c) { c.put(req, copia); });
+          }
+          return resp;
+        });
+      })
+    );
+    return;
+  }
+
   ev.respondWith(
-    caches.match(req).then(function (guardado) {
-      var red = fetch(req).then(function (resp) {
-        if (resp && resp.status === 200 && resp.type === 'basic') {
-          var copia = resp.clone();
-          caches.open(CACHE).then(function (c) { c.put(req, copia); });
-        }
-        return resp;
-      }).catch(function () {
+    fetch(req).then(function (resp) {
+      if (resp && resp.status === 200 && resp.type === 'basic') {
+        var copia = resp.clone();
+        caches.open(CACHE).then(function (c) { c.put(req, copia); });
+      }
+      return resp;
+    }).catch(function () {
+      return caches.match(req).then(function (guardado) {
         return guardado || caches.match('./index.html');
       });
-
-      /* Se devuelve lo guardado al instante y se actualiza por detras. */
-      return guardado || red;
     })
   );
 });
