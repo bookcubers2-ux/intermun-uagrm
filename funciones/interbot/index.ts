@@ -24,6 +24,7 @@
      LIMITE_CODIGO_DIA        preguntas por credencial y día (defecto 40)
      LIMITE_CODIGO_MINUTO     preguntas por credencial y minuto (defecto 5)
      LIMITE_GLOBAL_DIA        preguntas totales por día (defecto 800)
+     TOPE_MODELO_MS           espera máxima por modelo antes de pasar al siguiente (20000)
      ORIGENES_PERMITIDOS      lista separada por comas (defecto: el sitio)
    Supabase inyecta sola SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY.
    ==================================================================== */
@@ -47,6 +48,8 @@ const MODELO = MODELOS[0];
 const LIMITE_CODIGO_DIA = Number(ENTORNO('LIMITE_CODIGO_DIA', '40'));
 const LIMITE_CODIGO_MINUTO = Number(ENTORNO('LIMITE_CODIGO_MINUTO', '5'));
 const LIMITE_GLOBAL_DIA = Number(ENTORNO('LIMITE_GLOBAL_DIA', '800'));
+/* Si un modelo no responde en este tiempo, se pasa al siguiente de la cadena. */
+const TOPE_MODELO_MS = Number(ENTORNO('TOPE_MODELO_MS', '20000'));
 const ORIGENES = ENTORNO('ORIGENES_PERMITIDOS', 'https://bookcubers2-ux.github.io,http://127.0.0.1:8899,http://localhost:8899')
   .split(',').map((s) => s.trim()).filter(Boolean);
 
@@ -239,18 +242,24 @@ async function preguntarGeminiCon(modelo: string, sistema: string, historial: Me
   const generationConfig: Record<string, unknown> = { temperature: 0.4, maxOutputTokens: 1500 };
   if (/gemini-3/.test(modelo)) generationConfig.thinkingConfig = { thinkingLevel: 'low' };
 
-  const r = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': clave },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: sistema }] },
-        contents,
-        generationConfig,
-      }),
-    },
-  );
+  let r: Response;
+  try {
+    r = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': clave },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: sistema }] },
+          contents,
+          generationConfig,
+        }),
+        signal: AbortSignal.timeout(TOPE_MODELO_MS),
+      },
+    );
+  } catch (e) {
+    throw new ErrorReintentable(`${modelo}: sin respuesta en ${TOPE_MODELO_MS} ms (${(e as Error).name})`);
+  }
   const datos = await r.json();
   if (!r.ok) {
     const msg = datos?.error?.message ?? `HTTP ${r.status}`;
@@ -273,11 +282,17 @@ async function preguntarGroqCon(modelo: string, sistema: string, historial: Mens
     ...historial.map((m) => ({ role: m.rol === 'usuario' ? 'user' : 'assistant', content: m.texto })),
   ];
 
-  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${clave}` },
-    body: JSON.stringify({ model: modelo, messages, temperature: 0.4, max_tokens: 1200 }),
-  });
+  let r: Response;
+  try {
+    r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${clave}` },
+      body: JSON.stringify({ model: modelo, messages, temperature: 0.4, max_tokens: 1200 }),
+      signal: AbortSignal.timeout(TOPE_MODELO_MS),
+    });
+  } catch (e) {
+    throw new ErrorReintentable(`${modelo}: sin respuesta en ${TOPE_MODELO_MS} ms (${(e as Error).name})`);
+  }
   const datos = await r.json();
   if (!r.ok) {
     const msg = datos?.error?.message ?? `HTTP ${r.status}`;
