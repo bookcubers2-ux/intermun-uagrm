@@ -981,26 +981,12 @@ window.ADMIN = (function () {
   function salas() {
     UI.cargando('Cargando las salas');
 
-    Promise.all([DB.chat.salas(), DB.delegados.listar()]).then(function (r) {
-      var lista = r[0], delegados = r[1];
-
-      /* Comités que aparecen en la lista de delegados y todavía no tienen sala */
-      var existentes = {};
-      lista.forEach(function (x) { if (x.comite) existentes[x.comite.toLowerCase()] = true; });
-      var comites = {};
-      delegados.forEach(function (d) { if (d.comite && d.comite.trim()) comites[d.comite.trim()] = true; });
-      var faltantes = Object.keys(comites).filter(function (c) { return !existentes[c.toLowerCase()]; }).sort();
+    DB.chat.salas().then(function (lista) {
 
       var html = '<h1>Salas de chat</h1>' +
         '<p>Cada sala es un espacio de conversación con archivos PDF. La sala general es para todas las personas ' +
-        'acreditadas; las demás corresponden a un comité.</p>';
-
-      if (faltantes.length) {
-        html += '<div class="aviso info" role="note"><b>Comités sin sala</b>' +
-          'En la lista de delegados hay ' + faltantes.length + ' comité(s) que todavía no tienen sala: ' +
-          UI.esc(faltantes.join(', ')) + '. ' +
-          '<button type="button" class="btn chico" id="btnSalasComites" style="margin-top:.5rem">Crear una sala por cada uno</button></div>';
-      }
+        'acreditadas; las demás corresponden a los diez foros oficiales de InterMUN. Puedes cerrarlas temporalmente ' +
+        'o crear una adicional si el Secretariado lo decide.</p>';
 
       html += '<details class="acordeon"><summary>Crear una sala</summary><div class="cuerpo">' +
         '<div class="fila-campos">' +
@@ -1055,17 +1041,6 @@ window.ADMIN = (function () {
         crear(nombre, UI.q('#slComite').value.trim(), UI.q('#slDesc').value.trim())
           .then(function () { UI.tostada('Sala creada.', 'ok'); salas(); })
           .catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); });
-      });
-
-      var btnAuto = UI.q('#btnSalasComites');
-      if (btnAuto) btnAuto.addEventListener('click', function () {
-        btnAuto.disabled = true;
-        var cadena = Promise.resolve();
-        faltantes.forEach(function (c) {
-          cadena = cadena.then(function () { return crear(c, c, 'Sala del comité ' + c + '.'); });
-        });
-        cadena.then(function () { UI.tostada(faltantes.length + ' sala(s) creada(s).', 'ok'); salas(); })
-          .catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); btnAuto.disabled = false; });
       });
 
       UI.qq('[data-tog-sala]').forEach(function (b) {

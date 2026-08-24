@@ -201,10 +201,22 @@ $migracion$;
 
 
 -- --------------------------------------------------------------
--- 8. SALA GENERAL (las salas por comité se crean desde el sistema)
+-- 8. SALAS: la general más una por cada foro oficial de InterMUN
+--    (solo los diez foros de la lista oficial; el staff puede abrir
+--    o cerrar cualquiera desde el panel "Salas de chat").
 -- --------------------------------------------------------------
-insert into public.chat_salas (clave, nombre, descripcion, tipo, orden)
-values ('general', 'Sala general', 'Para todas las personas acreditadas en InterMUN.', 'general', 0)
+insert into public.chat_salas (clave, nombre, descripcion, tipo, comite, orden) values
+  ('general',        'Sala general', 'Para todas las personas acreditadas en InterMUN.', 'general', null, 0),
+  ('csi',            'Consejo de Seguridad Internacional (CSI)',                        'Sala del Consejo de Seguridad Internacional.',                        'comite', 'Consejo de Seguridad Internacional (CSI)',                        1),
+  ('disec',          'Comité de Desarme y Seguridad Internacional (DISEC)',              'Sala del Comité de Desarme y Seguridad Internacional.',              'comite', 'Comité de Desarme y Seguridad Internacional (DISEC)',              2),
+  ('ecofin',         'Comité de Asuntos Económicos y Financieros (ECOFIN)',              'Sala del Comité de Asuntos Económicos y Financieros.',              'comite', 'Comité de Asuntos Económicos y Financieros (ECOFIN)',              3),
+  ('sochum',         'Comité de Asuntos Sociales, Humanitarios y Culturales (SOCHUM)',   'Sala del Comité de Asuntos Sociales, Humanitarios y Culturales.',   'comite', 'Comité de Asuntos Sociales, Humanitarios y Culturales (SOCHUM)',   4),
+  ('cnd',            'Comisión de Estupefacientes (CND)',                                'Sala de la Comisión de Estupefacientes.',                            'comite', 'Comisión de Estupefacientes (CND)',                                5),
+  ('csw',            'Comisión de la Condición Jurídica y Social de la Mujer (CSW)',     'Sala de la Comisión de la Condición Jurídica y Social de la Mujer.', 'comite', 'Comisión de la Condición Jurídica y Social de la Mujer (CSW)',     6),
+  ('cstd',           'Comisión de Ciencia y Tecnología para el Desarrollo (CSTD)',       'Sala de la Comisión de Ciencia y Tecnología para el Desarrollo.',   'comite', 'Comisión de Ciencia y Tecnología para el Desarrollo (CSTD)',       7),
+  ('foro-nacional',  'Foro Nacional',                                                    'Sala del Foro Nacional.',                                            'comite', 'Foro Nacional',                                                    8),
+  ('unea',           'Asamblea de las Naciones Unidas sobre el Medio Ambiente (UNEA)',   'Sala de la Asamblea de las Naciones Unidas sobre el Medio Ambiente.','comite', 'Asamblea de las Naciones Unidas sobre el Medio Ambiente (UNEA)',   9),
+  ('foro-municipal', 'Foro Municipal',                                                   'Sala del Foro Municipal.',                                           'comite', 'Foro Municipal',                                                   10)
 on conflict (clave) do nothing;
 
 

@@ -10,7 +10,7 @@ Uso (PowerShell):
 Opcionales:
   $env:GROQ_API_KEY          = "gsk_..."     # proveedor alternativo
   $env:INTERBOT_PROVEEDOR    = "gemini"      # o "groq"
-  $env:INTERBOT_MODELO       = "gemini-2.5-flash"
+  $env:INTERBOT_MODELOS      = "gemini-3.6-flash,gemini-3.5-flash,gemini-3.5-flash-lite"
   $env:PROJECT_REF           = "akdzvhnxkajwbrfyqqmt"
 
 Pasos que ejecuta:
@@ -64,7 +64,7 @@ print('   listo')
 # ---------------------------------------------------------------- 2. Secretos
 print('2. Guardando secretos del proyecto...')
 secretos = []
-for nombre in ('GEMINI_API_KEY', 'GROQ_API_KEY', 'INTERBOT_PROVEEDOR', 'INTERBOT_MODELO',
+for nombre in ('GEMINI_API_KEY', 'GROQ_API_KEY', 'INTERBOT_PROVEEDOR', 'INTERBOT_MODELOS',
                'LIMITE_CODIGO_DIA', 'LIMITE_CODIGO_MINUTO', 'LIMITE_GLOBAL_DIA', 'ORIGENES_PERMITIDOS'):
     v = os.environ.get(nombre)
     if v: secretos.append({'name': nombre, 'value': v})

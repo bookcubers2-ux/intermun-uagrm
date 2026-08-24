@@ -54,7 +54,7 @@ window.CHAT = (function () {
       if (!salas.length) {
         html += UI.vacio('&#128172;', 'Todavía no hay salas abiertas. El Secretariado las habilita desde el panel de control.');
       } else {
-        var propia = salas.filter(function (s) { return s.comite && yo.comite && s.comite.toLowerCase() === yo.comite.toLowerCase(); })[0];
+        var propia = salas.filter(function (s) { return esMiForo(s, yo.comite); })[0];
         html += '<h2>Salas disponibles</h2><ul class="rejilla" role="list">';
         salas.forEach(function (s) {
           var esPropia = propia && propia.id === s.id;
@@ -264,6 +264,24 @@ window.CHAT = (function () {
         UI.q('#chTexto').focus();
       });
     }
+  }
+
+  /* Reconoce la sala del propio comité aunque el nombre registrado en la
+     credencial no coincida letra por letra: compara sin tildes ni
+     mayúsculas, acepta la sigla entre paréntesis (CSI, DISEC...) y que
+     un nombre contenga al otro. */
+  function normalizar(t) {
+    return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+  function esMiForo(sala, comiteDelegado) {
+    if (!sala || !comiteDelegado || sala.tipo === 'general') return false;
+    var a = normalizar(sala.comite || sala.nombre), b = normalizar(comiteDelegado);
+    if (!a || !b) return false;
+    if (a === b || a.indexOf(b) >= 0 || b.indexOf(a) >= 0) return true;
+    var sigla = /\(([^)]+)\)/.exec(sala.comite || sala.nombre);
+    if (sigla && normalizar(sigla[1]) === b) return true;
+    if (sala.clave && normalizar(sala.clave) === b) return true;
+    return false;
   }
 
   function tamano(b) {

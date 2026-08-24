@@ -19,7 +19,8 @@
      GEMINI_API_KEY           clave de Google AI Studio (gratuita)
      GROQ_API_KEY             alternativa opcional
      INTERBOT_PROVEEDOR       'gemini' (defecto) | 'groq'
-     INTERBOT_MODELO          defecto: gemini-2.5-flash | llama-3.3-70b-versatile
+     INTERBOT_MODELOS         cadena separada por comas; defecto:
+                              gemini-3.6-flash,gemini-3.5-flash,gemini-3.5-flash-lite
      LIMITE_CODIGO_DIA        preguntas por credencial y día (defecto 40)
      LIMITE_CODIGO_MINUTO     preguntas por credencial y minuto (defecto 5)
      LIMITE_GLOBAL_DIA        preguntas totales por día (defecto 800)
@@ -32,7 +33,17 @@ const ENTORNO = (n: string, d = ''): string => Deno.env.get(n) ?? d;
 const SUPABASE_URL = ENTORNO('SUPABASE_URL');
 const CLAVE_SERVICIO = ENTORNO('SUPABASE_SERVICE_ROLE_KEY');
 const PROVEEDOR = ENTORNO('INTERBOT_PROVEEDOR', 'gemini').toLowerCase();
-const MODELO = ENTORNO('INTERBOT_MODELO', PROVEEDOR === 'groq' ? 'llama-3.3-70b-versatile' : 'gemini-2.5-flash');
+/* Cadena de modelos: si el primero está saturado (503), limitado (429) o
+   devuelve vacío, se intenta el siguiente. Los modelos 3.x de Gemini
+   "piensan" antes de responder; thinkingLevel "low" acota ese gasto.
+   Probado el 24 de agosto de 2026 con esta cuenta: 3.6-flash y 3.5-flash
+   responden bien; 3.5-flash-lite responde sin gastar tokens de
+   pensamiento; la familia 2.5 ya no está disponible para cuentas nuevas. */
+const MODELOS = ENTORNO('INTERBOT_MODELOS',
+  PROVEEDOR === 'groq' ? 'llama-3.3-70b-versatile,llama-3.1-8b-instant'
+                       : 'gemini-3.6-flash,gemini-3.5-flash,gemini-3.5-flash-lite')
+  .split(',').map((s) => s.trim()).filter(Boolean);
+const MODELO = MODELOS[0];
 const LIMITE_CODIGO_DIA = Number(ENTORNO('LIMITE_CODIGO_DIA', '40'));
 const LIMITE_CODIGO_MINUTO = Number(ENTORNO('LIMITE_CODIGO_MINUTO', '5'));
 const LIMITE_GLOBAL_DIA = Number(ENTORNO('LIMITE_GLOBAL_DIA', '800'));
@@ -130,8 +141,21 @@ Toda la resolución es una sola oración que termina en punto. Cláusulas preamb
 DOCUMENTO DE POSICIÓN
 Una página por tema, unas 300 palabras: postura del país, acciones pasadas relevantes, propuestas de solución coherentes con su política exterior real. Se entrega antes de la conferencia; casi siempre es requisito para optar a premios. Calidad antes que cantidad.
 
-COMITÉS
-Asamblea General y sus comisiones (DISEC desarme, ECOFIN economía, SOCHUM asuntos sociales y humanitarios, SPECPOL política especial), ECOSOC, Consejo de Derechos Humanos, Consejo de Seguridad (15 miembros, veto de los cinco permanentes; el más prestigioso), comités de crisis (se representan personas, hay sala pública y sala de crisis con notas privadas). Para principiantes se recomienda Asamblea General.
+LOS DIEZ FOROS OFICIALES DE INTERMUN
+1. Consejo de Seguridad Internacional (CSI).
+2. Comité de Desarme y Seguridad Internacional (DISEC).
+3. Comité de Asuntos Económicos y Financieros (ECOFIN).
+4. Comité de Asuntos Sociales, Humanitarios y Culturales (SOCHUM).
+5. Comisión de Estupefacientes (CND).
+6. Comisión de la Condición Jurídica y Social de la Mujer (CSW).
+7. Comisión de Ciencia y Tecnología para el Desarrollo (CSTD).
+8. Foro Nacional.
+9. Asamblea de las Naciones Unidas sobre el Medio Ambiente (UNEA).
+10. Foro Municipal.
+Cada foro tiene su propia sala en el chat de la plataforma, además de la sala general. Los temas de agenda de cada foro los fija su Mesa: si te preguntan el tema, remite a la guía de estudio del comité o al chair.
+
+COMITÉS EN GENERAL
+Asamblea General y sus comisiones (DISEC desarme, ECOFIN economía, SOCHUM asuntos sociales y humanitarios), ECOSOC y sus comisiones orgánicas (CND estupefacientes, CSW condición de la mujer, CSTD ciencia y tecnología), UNEA (medio ambiente), Consejo de Seguridad (15 miembros, veto de los cinco permanentes; el más prestigioso), comités de crisis (se representan personas, hay sala pública y sala de crisis con notas privadas). Para principiantes se recomienda Asamblea General. Los foros Nacional y Municipal simulan órganos deliberativos bolivianos: ahí se representa a actores nacionales o municipales, no a Estados, pero el procedimiento parlamentario es el mismo.
 
 COMITÉS DE CRISIS (básico)
 Nota de crisis: comunicación privada al equipo de crisis, siempre dirigida a un personaje con nombre, con recurso, solicitud y razonamiento claros. Directiva: acción de todo el comité, votada por mayoría simple, sin lenguaje florido. Comunicado: mensaje del comité a otro actor. Consejo: escribir mientras escuchas; convertir la información en acción antes de que la sala cambie de tema.
@@ -199,7 +223,10 @@ function limpiar(texto: string): string {
 /* ------------------------------------------------------------------ */
 /* Proveedores                                                          */
 /* ------------------------------------------------------------------ */
-async function preguntarGemini(sistema: string, historial: Mensaje[]): Promise<string> {
+/* Errores por los que vale la pena probar el siguiente modelo de la cadena. */
+class ErrorReintentable extends Error {}
+
+async function preguntarGeminiCon(modelo: string, sistema: string, historial: Mensaje[]): Promise<string> {
   const clave = ENTORNO('GEMINI_API_KEY');
   if (!clave) throw new Error('SIN_CLAVE');
 
@@ -208,31 +235,36 @@ async function preguntarGemini(sistema: string, historial: Mensaje[]): Promise<s
     parts: [{ text: m.texto }],
   }));
 
+  /* Los modelos 3.x aceptan thinkingLevel; los "lite" lo ignoran sin error. */
+  const generationConfig: Record<string, unknown> = { temperature: 0.4, maxOutputTokens: 1500 };
+  if (/gemini-3/.test(modelo)) generationConfig.thinkingConfig = { thinkingLevel: 'low' };
+
   const r = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': clave },
       body: JSON.stringify({
         system_instruction: { parts: [{ text: sistema }] },
         contents,
-        generationConfig: { temperature: 0.4, maxOutputTokens: 900 },
+        generationConfig,
       }),
     },
   );
   const datos = await r.json();
   if (!r.ok) {
     const msg = datos?.error?.message ?? `HTTP ${r.status}`;
-    if (r.status === 429) throw new Error('CUOTA_PROVEEDOR');
+    if (r.status === 429 || r.status === 503 || r.status === 404) throw new ErrorReintentable(`${modelo}: ${r.status} ${msg}`);
     throw new Error('PROVEEDOR: ' + msg);
   }
   if (datos?.promptFeedback?.blockReason) throw new Error('BLOQUEADO');
-  const texto = datos?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? '').join('') ?? '';
-  if (!texto) throw new Error('RESPUESTA_VACIA');
+  const cand = datos?.candidates?.[0];
+  const texto = cand?.content?.parts?.map((p: { text?: string }) => p.text ?? '').join('') ?? '';
+  if (!texto) throw new ErrorReintentable(`${modelo}: respuesta vacía (${cand?.finishReason ?? 'sin motivo'})`);
   return texto;
 }
 
-async function preguntarGroq(sistema: string, historial: Mensaje[]): Promise<string> {
+async function preguntarGroqCon(modelo: string, sistema: string, historial: Mensaje[]): Promise<string> {
   const clave = ENTORNO('GROQ_API_KEY');
   if (!clave) throw new Error('SIN_CLAVE');
 
@@ -244,16 +276,35 @@ async function preguntarGroq(sistema: string, historial: Mensaje[]): Promise<str
   const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${clave}` },
-    body: JSON.stringify({ model: MODELO, messages, temperature: 0.4, max_tokens: 900 }),
+    body: JSON.stringify({ model: modelo, messages, temperature: 0.4, max_tokens: 1200 }),
   });
   const datos = await r.json();
   if (!r.ok) {
-    if (r.status === 429) throw new Error('CUOTA_PROVEEDOR');
-    throw new Error('PROVEEDOR: ' + (datos?.error?.message ?? `HTTP ${r.status}`));
+    const msg = datos?.error?.message ?? `HTTP ${r.status}`;
+    if (r.status === 429 || r.status === 503 || r.status === 404) throw new ErrorReintentable(`${modelo}: ${r.status} ${msg}`);
+    throw new Error('PROVEEDOR: ' + msg);
   }
   const texto = datos?.choices?.[0]?.message?.content ?? '';
-  if (!texto) throw new Error('RESPUESTA_VACIA');
+  if (!texto) throw new ErrorReintentable(`${modelo}: respuesta vacía`);
   return texto;
+}
+
+/* Recorre la cadena de modelos hasta que uno responda. */
+async function preguntar(sistema: string, historial: Mensaje[]): Promise<{ texto: string; modelo: string }> {
+  const fallos: string[] = [];
+  for (const modelo of MODELOS) {
+    try {
+      const texto = PROVEEDOR === 'groq'
+        ? await preguntarGroqCon(modelo, sistema, historial)
+        : await preguntarGeminiCon(modelo, sistema, historial);
+      return { texto, modelo };
+    } catch (e) {
+      if (e instanceof ErrorReintentable) { fallos.push(e.message); continue; }
+      throw e;
+    }
+  }
+  console.error('interbot: todos los modelos fallaron:', fallos.join(' | '));
+  throw new Error('CUOTA_PROVEEDOR');
 }
 
 /* ------------------------------------------------------------------ */
@@ -321,10 +372,8 @@ Deno.serve(async (req: Request) => {
 
   try {
     const sistema = CONOCIMIENTO + contexto;
-    const bruto = PROVEEDOR === 'groq'
-      ? await preguntarGroq(sistema, historial)
-      : await preguntarGemini(sistema, historial);
-    return responder({ respuesta: limpiar(bruto), proveedor: PROVEEDOR, modelo: MODELO }, 200, cors);
+    const r = await preguntar(sistema, historial);
+    return responder({ respuesta: limpiar(r.texto), proveedor: PROVEEDOR, modelo: r.modelo }, 200, cors);
   } catch (e) {
     const msg = (e as Error).message || 'ERROR';
     console.error('interbot:', msg);
