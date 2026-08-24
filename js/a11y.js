@@ -65,10 +65,10 @@ window.A11Y = (function () {
       anunciar('Perfil para lector de pantalla activado. Se simplificaron los adornos visuales.');
     } else if (nombre === 'bajavision') {
       cambiar({ perfil: 'bajavision', escala: 1.5, espaciado: true, tema: 'oscuro' });
-      anunciar('Perfil de baja vision activado. Letra mas grande, espaciado amplio y alto contraste.');
+      anunciar('Perfil de baja visión activado. Letra más grande, espaciado amplio y alto contraste.');
     } else if (nombre === 'neurodivergente') {
       cambiar({ perfil: 'neurodivergente', escala: 1.15, espaciado: true, tema: 'claro' });
-      anunciar('Perfil de lectura tranquila activado. Mas espacio entre los elementos.');
+      anunciar('Perfil de lectura tranquila activado. Más espacio entre los elementos.');
     } else {
       cambiar({ perfil: '', escala: 1, espaciado: false, tema: 'claro' });
       anunciar('Preferencias restablecidas.');
@@ -146,11 +146,11 @@ window.A11Y = (function () {
        asi que aqui no se repite el rol para no anunciarlo dos veces. */
     hueco.innerHTML =
       '<div class="barra-a11y">' +
-        '<button type="button" id="a11y-menos">Letra mas chica</button>' +
-        '<button type="button" id="a11y-mas">Letra mas grande</button>' +
+        '<button type="button" id="a11y-menos">Letra más chica</button>' +
+        '<button type="button" id="a11y-mas">Letra más grande</button>' +
         '<button type="button" id="a11y-espaciado" aria-pressed="false">Espaciado amplio</button>' +
         '<button type="button" id="a11y-tema" aria-pressed="false">Alto contraste</button>' +
-        '<button type="button" id="a11y-leer">Leer esta pagina</button>' +
+        '<button type="button" id="a11y-leer">Leer esta página</button>' +
         '<button type="button" id="a11y-parar" hidden>Detener la lectura</button>' +
         '<a class="enlace-barra" href="#/accesibilidad">Mi perfil de accesibilidad</a>' +
       '</div>';
@@ -158,13 +158,13 @@ window.A11Y = (function () {
     document.getElementById('a11y-menos').addEventListener('click', function () {
       var n = Math.max(0.8, Math.round((leer().escala - 0.1) * 10) / 10);
       cambiar({ escala: n });
-      anunciar('Tamano de letra: ' + Math.round(n * 100) + ' por ciento.');
+      anunciar('Tamaño de letra: ' + Math.round(n * 100) + ' por ciento.');
     });
 
     document.getElementById('a11y-mas').addEventListener('click', function () {
       var n = Math.min(2.2, Math.round((leer().escala + 0.1) * 10) / 10);
       cambiar({ escala: n });
-      anunciar('Tamano de letra: ' + Math.round(n * 100) + ' por ciento.');
+      anunciar('Tamaño de letra: ' + Math.round(n * 100) + ' por ciento.');
     });
 
     document.getElementById('a11y-espaciado').addEventListener('click', function () {
@@ -180,7 +180,7 @@ window.A11Y = (function () {
     });
 
     document.getElementById('a11y-leer').addEventListener('click', function () {
-      if (!window.VOZ) { anunciar('La lectura en voz alta no esta disponible en este navegador.'); return; }
+      if (!window.VOZ) { anunciar('La lectura en voz alta no está disponible en este navegador.'); return; }
       window.VOZ.leerPagina();
     });
 
@@ -220,13 +220,13 @@ window.A11Y = (function () {
     var b = document.createElement('button');
     b.type = 'button';
     b.id = 'btn-volver-arriba';
-    b.textContent = 'Volver al inicio de la pagina';
+    b.textContent = 'Volver al inicio de la página';
     b.addEventListener('click', function () {
       window.scrollTo(0, 0);
       var primero = document.getElementById('a11y-menos') ||
                     document.querySelector('.saltar');
       if (primero) primero.focus();
-      anunciar('Volviste al inicio de la pagina.');
+      anunciar('Volviste al inicio de la página.');
     });
     pie.appendChild(b);
   }
@@ -242,6 +242,8 @@ window.A11Y = (function () {
     '3': '#/guia',
     '4': '#/buscar',
     '5': '#/staff',
+    '6': '#/interbot',
+    '7': '#/chat',
     '9': '#/accesibilidad'
   };
 

@@ -741,6 +741,60 @@ table.datos tbody th[scope="row"] { background: var(--papel); color: var(--tinta
 
 
 /* ------------------------------------------------------------------ */
+/* InterBot y chat                                                      */
+/* Los mensajes propios se distinguen con la etiqueta "Tú" y un borde   */
+/* distinto, nunca solo con color.                                      */
+/* ------------------------------------------------------------------ */
+.ib-log, .ch-log {
+  border: 2px solid var(--linea-fuerte);
+  border-radius: var(--radio);
+  background: var(--papel);
+  padding: 0.6rem;
+  max-height: 60vh;
+  overflow-y: auto;
+  margin-bottom: 0.8rem;
+}
+.ib-msg, .ch-msg {
+  border: 2px solid var(--linea);
+  border-left: 8px solid var(--azul);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  margin: 0 0 0.6rem 0;
+  background: var(--papel-hueso);
+}
+.ib-yo, .ch-mio {
+  border-left-color: var(--rojo);
+  border-style: dashed;
+  border-left-style: solid;
+  background: var(--papel);
+}
+.ib-msg p, .ch-msg p { margin: 0.25rem 0; max-width: none; }
+.ib-quien, .ch-cab {
+  font-size: 0.8rem; font-weight: 700; color: var(--gris);
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.ch-cab { text-transform: none; letter-spacing: 0; font-size: 0.85rem; }
+.ch-cab strong { color: var(--azul); font-size: 0.95rem; text-transform: none; }
+:root[data-tema="oscuro"] .ch-cab strong { color: var(--tinta); }
+.ch-cod { font-size: 0.75rem; color: var(--gris); }
+.ch-cab time { color: var(--gris); font-weight: 400; font-size: 0.8rem; }
+.ch-cab .btn { margin-left: 0.4rem; vertical-align: middle; }
+.ch-archivo a { font-weight: 700; }
+
+.ib-chips { list-style: none; padding: 0; margin: 0.3rem 0 0.8rem; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.ib-chips .btn { text-align: left; }
+
+input[type=file] {
+  width: 100%; min-height: var(--toque);
+  padding: 0.5rem 0.6rem;
+  font-family: var(--tipo); font-size: 0.95rem;
+  color: var(--tinta); background: var(--papel);
+  border: 3px dashed var(--linea-fuerte); border-radius: 8px;
+}
+input[type=file]:focus { border-color: var(--azul); }
+
+
+/* ------------------------------------------------------------------ */
 /* Perfiles sensoriales                                                 */
 /* ------------------------------------------------------------------ */
 :root[data-perfil="ceguera"] .modulo .ico,

@@ -45,27 +45,31 @@ window.VISTAS = (function () {
         '<p class="kicker">' + UI.esc(e.carrera) + '</p>' +
         '<h1>' + UI.esc(e.nombre) + '</h1>' +
         '<p>' + UI.esc(e.subtitulo) + ' de la ' + UI.esc(e.institucion) + '. ' +
-          'Aqui estan las reglas de procedimiento, la guia del delegado y tu credencial digital.</p>' +
+          'Aquí están las reglas de procedimiento, la guía del delegado y tu credencial digital.</p>' +
         '<p class="sello">' + UI.esc(e.edicion) + ', ' + UI.esc(e.anio) + ', ' + UI.esc(e.ciudad) + '</p>' +
       '</div>';
 
     if (!DB.hayConexion()) {
-      html += UI.aviso('warn', 'El portal esta en modo de solo lectura',
-        'Todavia no hay conexion con la base de datos, asi que las credenciales y el control de comidas no funcionan. El contenido academico si esta disponible.');
+      html += UI.aviso('warn', 'El portal está en modo de solo lectura',
+        'Todavía no hay conexión con la base de datos, así que las credenciales y el control de comidas no funcionan. El contenido académico sí está disponible.');
     }
 
-    html += '<h2>Que quieres hacer</h2>' +
+    html += '<h2>Qué quieres hacer</h2>' +
       listaModulos([
         { href: '#/buscar',        ico: '&#127915;', t: 'Mi credencial',
           d: 'Consulta tus datos y el estado de tus refrigerios y almuerzos.' },
         { href: '#/reglas',        ico: '&#9878;',   t: 'Reglas de procedimiento',
-          d: 'Los sistemas de reglas, el flujo de una sesion y el glosario completo.' },
-        { href: '#/guia',          ico: '&#128218;', t: 'Guia del delegado',
-          d: 'Protocolo, formas de tratamiento, vestimenta y consejos practicos.' },
-        { href: '#/comites',       ico: '&#127760;', t: 'Comites',
-          d: 'Que comite es cual y que nivel de experiencia exige cada uno.' },
+          d: 'Los sistemas de reglas, el flujo de una sesión y el glosario completo.' },
+        { href: '#/guia',          ico: '&#128218;', t: 'Guía del delegado',
+          d: 'Protocolo, formas de tratamiento, vestimenta y consejos prácticos.' },
+        { href: '#/comites',       ico: '&#127760;', t: 'Comités',
+          d: 'Qué comité es cuál y qué nivel de experiencia exige cada uno.' },
         { href: '#/datos',         ico: '&#128161;', t: 'Curiosidades',
           d: 'Datos del mundo de los Modelos de Naciones Unidas que casi nadie conoce.' },
+        { href: '#/interbot',      ico: '&#129302;', t: 'InterBot',
+          d: 'Pregúntale al asistente de InterMUN cómo proponer una moción, qué hacer en tu comité o cómo redactar.' },
+        { href: '#/chat',          ico: '&#128172;', t: 'Chat por comités',
+          d: 'Conversa con las demás delegaciones y comparte archivos PDF, en la sala general o en la de tu comité.' },
         { href: '#/accesibilidad', ico: '&#9855;',   t: 'Mi perfil de accesibilidad',
           d: 'Ajusta la letra, el contraste y la lectura en voz alta a tu medida.' },
         { href: '#/staff',         ico: '&#128274;', t: hayStaff ? 'Control de comidas' : 'Acceso del staff',
@@ -93,7 +97,7 @@ window.VISTAS = (function () {
     html += '</section>';
 
     html += '<section aria-labelledby="t-flujo">' +
-              '<h2 id="t-flujo">Como transcurre una sesion</h2>' +
+              '<h2 id="t-flujo">Cómo transcurre una sesión</h2>' +
               '<p>Estas son las diez etapas, en orden, de principio a fin.</p>' +
               '<ol class="lista-flujo">';
     C.reglas.flujo.forEach(function (f) {
@@ -104,7 +108,7 @@ window.VISTAS = (function () {
     html += '<section aria-labelledby="t-glosario">' +
               '<h2 id="t-glosario">Glosario</h2>' +
               '<label class="campo" for="filtroGlosario">' +
-                '<span>Buscar un termino</span>' +
+                '<span>Buscar un término</span>' +
                 '<input type="search" id="filtroGlosario" autocomplete="off" ' +
                   'aria-describedby="ayuda-glosario">' +
               '</label>' +
@@ -113,14 +117,14 @@ window.VISTAS = (function () {
               '<dl class="glosario" id="listaGlosario">';
     C.reglas.glosario.forEach(function (g) {
       html += '<div class="termino">' +
-                '<dt>' + UI.esc(g.es) + ' <span class="ingles">(en ingles, ' + UI.esc(g.en) + ')</span></dt>' +
+                '<dt>' + UI.esc(g.es) + ' <span class="ingles">(en inglés, ' + UI.esc(g.en) + ')</span></dt>' +
                 '<dd>' + UI.esc(g.d) + '</dd>' +
               '</div>';
     });
     html += '</dl></section>';
 
     html += '<section aria-labelledby="t-frases">' +
-              '<h2 id="t-frases">Si escuchas esto en tu comite</h2>' +
+              '<h2 id="t-frases">Si escuchas esto en tu comité</h2>' +
               '<dl class="glosario">';
     C.reglas.frases.forEach(function (f) {
       html += '<div class="termino"><dt>' + UI.esc(f.d) + '</dt><dd>' + UI.esc(f.s) + '</dd></div>';
@@ -134,12 +138,12 @@ window.VISTAS = (function () {
     filtro.addEventListener('input', function () {
       var t = filtro.value.toLowerCase();
       var visibles = 0;
-      UI.qq('#listaGlosario .termino').forEach(function (d) {
+      UI.qq('#listaGlosario .término').forEach(function (d) {
         var ok = d.textContent.toLowerCase().indexOf(t) >= 0;
         d.style.display = ok ? '' : 'none';
         if (ok) visibles++;
       });
-      conteo.textContent = visibles + (visibles === 1 ? ' termino encontrado.' : ' terminos encontrados.');
+      conteo.textContent = visibles + (visibles === 1 ? ' término encontrado.' : ' términos encontrados.');
     });
   }
 
@@ -148,9 +152,9 @@ window.VISTAS = (function () {
      GUIA DEL DELEGADO
      ================================================================ */
   function guia() {
-    var html = '<h1>Guia del delegado</h1>';
+    var html = '<h1>Guía del delegado</h1>';
 
-    html += '<section aria-labelledby="t-quees"><h2 id="t-quees">Que es todo esto</h2>';
+    html += '<section aria-labelledby="t-quees"><h2 id="t-quees">Qué es todo esto</h2>';
     C.quienesSomos.forEach(function (s) {
       html += '<details class="acordeon"><summary>' + UI.esc(s.t) + '</summary>' +
                 '<div class="cuerpo"><p>' + UI.esc(s.c) + '</p></div></details>';
@@ -165,7 +169,7 @@ window.VISTAS = (function () {
     html += '</section>';
 
     html += '<section aria-labelledby="t-consejos">' +
-              '<h2 id="t-consejos">Consejos practicos</h2>' +
+              '<h2 id="t-consejos">Consejos prácticos</h2>' +
               '<ul class="rejilla" role="list">';
     C.tips.forEach(function (t) {
       html += '<li><div class="modulo tarjeta-info">' +
@@ -183,7 +187,7 @@ window.VISTAS = (function () {
      COMITES
      ================================================================ */
   function comites() {
-    var html = '<h1>Los comites</h1>' +
+    var html = '<h1>Los comités</h1>' +
       '<p>No todos exigen la misma experiencia. Esta es la referencia que usa el circuito de Modelos de Naciones Unidas.</p>' +
       '<ul class="rejilla" role="list">';
     C.comites.forEach(function (c) {
@@ -203,7 +207,7 @@ window.VISTAS = (function () {
      ================================================================ */
   function curiosidades() {
     var html = '<h1>Curiosidades del mundo MUN</h1>' +
-      '<p>Datos que normalmente solo conoce quien lleva anos en el circuito.</p>';
+      '<p>Datos que normalmente solo conoce quien lleva años en el circuito.</p>';
     C.curiosidades.forEach(function (c, i) {
       html += '<section class="tarjeta" aria-labelledby="cur-' + i + '">' +
                 '<h2 id="cur-' + i + '">' + UI.esc(c.t) + '</h2>' +
@@ -223,11 +227,11 @@ window.VISTAS = (function () {
 
     var html =
       '<h1>Mi perfil de accesibilidad</h1>' +
-      '<p>Elige como quieres leer y escuchar InterMUN. Tu eleccion queda guardada en este ' +
+      '<p>Elige como quieres leer y escuchar InterMUN. Tu elección queda guardada en este ' +
         'dispositivo y se aplica a todas las secciones. Puedes cambiarla cuando quieras.</p>' +
 
       '<section aria-labelledby="t-perfiles">' +
-        '<h2 id="t-perfiles">Perfiles rapidos</h2>' +
+        '<h2 id="t-perfiles">Perfiles rápidos</h2>' +
         '<p>Cada perfil ajusta varias cosas a la vez, con un solo toque.</p>' +
         '<ul class="rejilla" role="list">' +
           perfil('ceguera', '&#128065;', 'Uso lector de pantalla',
@@ -235,20 +239,20 @@ window.VISTAS = (function () {
           perfil('bajavision', '&#128083;', 'Veo poco',
                  'Letra al 150 por ciento, espaciado amplio y alto contraste con fondo oscuro.') +
           perfil('neurodivergente', '&#129504;', 'Prefiero lectura tranquila',
-                 'Mas espacio entre los elementos, letra algo mayor y menos densidad en pantalla.') +
+                 'Más espacio entre los elementos, letra algo mayor y menos densidad en pantalla.') +
           perfil('', '&#8634;', 'Sin perfil',
-                 'Vuelve a la presentacion original de la aplicacion.') +
+                 'Vuelve a la presentación original de la aplicación.') +
         '</ul>' +
         (p.perfil ? '<p class="chip si">Perfil activo: ' + UI.esc(nombrePerfil(p.perfil)) + '</p>'
-                  : '<p class="chip no">Ahora mismo no tienes ningun perfil activo</p>') +
+                  : '<p class="chip no">Ahora mismo no tienes ningún perfil activo</p>') +
       '</section>' +
 
       '<section aria-labelledby="t-ajuste-fino">' +
         '<h2 id="t-ajuste-fino">Ajuste fino</h2>' +
-        '<p>Tambien puedes cambiar cada cosa por separado desde la barra de herramientas ' +
-          'que esta al principio de todas las paginas.</p>' +
+        '<p>También puedes cambiar cada cosa por separado desde la barra de herramientas ' +
+          'que está al principio de todas las páginas.</p>' +
         '<ul>' +
-          '<li>Tamano de letra actual: <strong>' + Math.round((p.escala || 1) * 100) + ' por ciento</strong>.</li>' +
+          '<li>Tamaño de letra actual: <strong>' + Math.round((p.escala || 1) * 100) + ' por ciento</strong>.</li>' +
           '<li>Espaciado: <strong>' + (p.espaciado ? 'amplio' : 'normal') + '</strong>.</li>' +
           '<li>Contraste: <strong>' + (p.tema === 'oscuro' ? 'alto, fondo oscuro' : 'normal, fondo claro') + '</strong>.</li>' +
         '</ul>' +
@@ -257,47 +261,49 @@ window.VISTAS = (function () {
       '<section aria-labelledby="t-voz">' +
         '<h2 id="t-voz">Lectura en voz alta</h2>' +
         (vozOk
-          ? '<p>InterMUN puede leerte cualquier pagina usando la voz que ya trae tu dispositivo. ' +
-            'El texto no sale de tu telefono: no se envia a ningun servidor y funciona sin internet.</p>' +
-            '<p>Voz que se usara: <strong>' + UI.esc(window.VOZ.vozActual() || 'la voz por defecto del sistema') + '</strong>.</p>' +
+          ? '<p>InterMUN puede leerte cualquier página usando la voz que ya trae tu dispositivo. ' +
+            'El texto no sale de tu teléfono: no se envia a ningún servidor y funciona sin internet.</p>' +
+            '<p>Voz que se usará: <strong>' + UI.esc(window.VOZ.vozActual() || 'la voz por defecto del sistema') + '</strong>.</p>' +
             '<label class="campo" for="velVoz"><span>Velocidad de la voz</span>' +
               '<input type="range" id="velVoz" min="0.6" max="1.6" step="0.1" value="' + window.VOZ.velocidad() + '" ' +
                 'aria-describedby="ayuda-vel"></label>' +
-            '<p class="ayuda-campo" id="ayuda-vel">Mueve hacia la izquierda para una voz mas lenta.</p>' +
+            '<p class="ayuda-campo" id="ayuda-vel">Mueve hacia la izquierda para una voz más lenta.</p>' +
             '<p class="solo-lector" role="status" aria-live="polite" id="estado-vel"></p>' +
             '<div class="fila-btn">' +
               '<button type="button" class="btn" id="probarVoz">Probar la voz</button>' +
               '<button type="button" class="btn sec" id="pararVoz">Detener</button>' +
             '</div>'
           : UI.aviso('warn', 'Tu navegador no permite lectura en voz alta',
-              'Puedes seguir usando el lector de pantalla de tu telefono, que funciona perfectamente con esta aplicacion.')) +
+              'Puedes seguir usando el lector de pantalla de tu teléfono, que funciona perfectamente con esta aplicación.')) +
       '</section>' +
 
       '<section aria-labelledby="t-atajos">' +
         '<h2 id="t-atajos">Atajos de teclado</h2>' +
-        '<p>En una computadora, manten presionada la tecla Alt y pulsa un numero.</p>' +
+        '<p>En una computadora, manten presionada la tecla Alt y pulsa un número.</p>' +
         '<ul>' +
-          '<li><strong>Alt mas 1</strong>: inicio del portal.</li>' +
-          '<li><strong>Alt mas 2</strong>: reglas de procedimiento.</li>' +
-          '<li><strong>Alt mas 3</strong>: guia del delegado.</li>' +
-          '<li><strong>Alt mas 4</strong>: mi credencial.</li>' +
-          '<li><strong>Alt mas 5</strong>: control del staff.</li>' +
-          '<li><strong>Alt mas 9</strong>: esta pagina de accesibilidad.</li>' +
-          '<li><strong>Alt mas 0</strong>: leer la pagina en voz alta.</li>' +
+          '<li><strong>Alt más 1</strong>: inicio del portal.</li>' +
+          '<li><strong>Alt más 2</strong>: reglas de procedimiento.</li>' +
+          '<li><strong>Alt más 3</strong>: guía del delegado.</li>' +
+          '<li><strong>Alt más 4</strong>: mi credencial.</li>' +
+          '<li><strong>Alt más 5</strong>: control del staff.</li>' +
+          '<li><strong>Alt más 6</strong>: InterBot.</li>' +
+          '<li><strong>Alt más 7</strong>: chat por comités.</li>' +
+          '<li><strong>Alt más 9</strong>: esta página de accesibilidad.</li>' +
+          '<li><strong>Alt más 0</strong>: leer la página en voz alta.</li>' +
         '</ul>' +
         '<p>Se usa siempre la tecla Alt para no interferir con los atajos propios ' +
           'de tu lector de pantalla.</p>' +
       '</section>' +
 
       '<section aria-labelledby="t-compromiso">' +
-        '<h2 id="t-compromiso">Como se construyo esta aplicacion</h2>' +
+        '<h2 id="t-compromiso">Cómo se construyó esta aplicación</h2>' +
         '<ul>' +
-          '<li>Todos los colores se midieron: ninguno baja de una relacion de contraste de siete a uno, el nivel mas exigente de la norma internacional.</li>' +
-          '<li>Ningun estado se comunica solo con color: siempre hay ademas texto, borde o simbolo.</li>' +
-          '<li>Nada se mueve solo. No hay carruseles, ni ventanas emergentes automaticas, ni animaciones.</li>' +
-          '<li>La tipografia es Atkinson Hyperlegible, disenada por el Braille Institute para distinguir letras que suelen confundirse.</li>' +
-          '<li>Todo boton mide al menos cuarenta y ocho pixeles, comodo para tocar con precision limitada.</li>' +
-          '<li>Al cambiar de seccion, el foco viaja al titulo de la seccion nueva y el cambio se anuncia.</li>' +
+          '<li>Todos los colores se midieron: ninguno baja de una relación de contraste de siete a uno, el nivel más exigente de la norma internacional.</li>' +
+          '<li>Ningún estado se comunica solo con color: siempre hay además texto, borde o símbolo.</li>' +
+          '<li>Nada se mueve solo. No hay carruseles, ni ventanas emergentes automáticas, ni animaciones.</li>' +
+          '<li>La tipografía es Atkinson Hyperlegible, diseñada por el Braille Institute para distinguir letras que suelen confundirse.</li>' +
+          '<li>Todo botón mide al menos cuarenta y ocho píxeles, comodo para tocar con precisión limitada.</li>' +
+          '<li>Al cambiar de sección, el foco viaja al título de la sección nueva y el cambio se anuncia.</li>' +
         '</ul>' +
       '</section>';
 
@@ -318,7 +324,7 @@ window.VISTAS = (function () {
         document.getElementById('estado-vel').textContent = 'Velocidad ajustada a ' + v.toFixed(1) + '.';
       });
       document.getElementById('probarVoz').addEventListener('click', function () {
-        window.VOZ.hablar('Asi se escucha la voz de InterMUN. Bienvenida y bienvenido al Modelo de Naciones Unidas de la Universidad Autonoma Gabriel Rene Moreno.');
+        window.VOZ.hablar('Así se escucha la voz de InterMUN. Bienvenida y bienvenido al Modelo de Naciones Unidas de la Universidad Autónoma Gabriel René Moreno.');
       });
       document.getElementById('pararVoz').addEventListener('click', function () {
         window.VOZ.detener();
@@ -348,15 +354,15 @@ window.VISTAS = (function () {
   function buscarCredencial() {
     UI.pintar(
       '<h1>Mi credencial</h1>' +
-      '<p>Escanea el codigo QR del reverso de tu credencial con la camara de tu telefono, ' +
-        'o escribe aqui el codigo que aparece impreso en ella.</p>' +
+      '<p>Escanea el código QR del reverso de tu credencial con la cámara de tu teléfono, ' +
+        'o escribe aquí el código que aparece impreso en ella.</p>' +
       '<div class="tarjeta angosto">' +
         '<label class="campo" for="codigoBuscar">' +
-          '<span>Codigo de credencial</span>' +
+          '<span>Código de credencial</span>' +
           '<input type="text" id="codigoBuscar" autocomplete="off" autocapitalize="characters" ' +
             'aria-describedby="ayuda-codigo" placeholder="' + UI.esc(window.CONFIG.PREFIJO_CODIGO) + '-0001">' +
         '</label>' +
-        '<p class="ayuda-campo" id="ayuda-codigo">Son dos letras, un guion y cuatro numeros. ' +
+        '<p class="ayuda-campo" id="ayuda-codigo">Son dos letras, un guion y cuatro números. ' +
           'Por ejemplo: ' + UI.esc(window.CONFIG.PREFIJO_CODIGO) + ' guion 0001.</p>' +
         '<button type="button" class="btn bloque" id="btnBuscar">Ver mi credencial</button>' +
       '</div>'
@@ -365,7 +371,7 @@ window.VISTAS = (function () {
     function ir() {
       var v = document.getElementById('codigoBuscar').value.trim().toUpperCase();
       if (!v) {
-        UI.tostada('Escribe tu codigo de credencial para continuar.', 'err');
+        UI.tostada('Escribe tu código de credencial para continuar.', 'err');
         document.getElementById('codigoBuscar').focus();
         return;
       }
@@ -388,8 +394,8 @@ window.VISTAS = (function () {
 
     if (!DB.hayConexion()) {
       UI.pintar('<h1>Credencial</h1>' +
-        UI.aviso('warn', 'El sistema todavia no esta conectado',
-          'Las credenciales no estan disponibles porque falta configurar la base de datos.') +
+        UI.aviso('warn', 'El sistema todavía no está conectado',
+          'Las credenciales no están disponibles porque falta configurar la base de datos.') +
         '<p><a class="btn sec" href="#/">Ir al inicio del portal</a></p>');
       return;
     }
@@ -422,9 +428,9 @@ window.VISTAS = (function () {
       .catch(function (e) {
         if (e.message === '__no_existe__') {
           UI.pintar('<h1>Credencial no encontrada</h1>' +
-            UI.aviso('err', 'No existe ninguna credencial con el codigo ' + codigo,
-              'Revisa que este bien escrito, o acercate a la mesa de acreditacion para que te ayuden.') +
-            '<p><a class="btn sec" href="#/buscar">Probar con otro codigo</a></p>');
+            UI.aviso('err', 'No existe ninguna credencial con el código ' + codigo,
+              'Revisa que esté bien escrito, o acercate a la mesa de acreditación para que te ayuden.') +
+            '<p><a class="btn sec" href="#/buscar">Probar con otro código</a></p>');
         } else {
           UI.pintar('<h1>Credencial</h1>' + UI.aviso('err', 'No se pudo cargar la credencial', UI.explicarError(e)));
         }
@@ -440,19 +446,19 @@ window.VISTAS = (function () {
       var html =
         '<h1>Credencial de ' + UI.esc(delegado.nombre) + '</h1>' +
         '<div class="credencial">' +
-          '<p class="cred-cod">Codigo ' + UI.esc(delegado.codigo) + '</p>' +
+          '<p class="cred-cod">Código ' + UI.esc(delegado.codigo) + '</p>' +
           '<h2>' + UI.esc(delegado.nombre) + '</h2>' +
           '<p><span class="chip-cred">' + UI.esc(delegado.rol || 'delegado') + '</span></p>' +
           '<div class="cred-datos">' +
-            dato('Pais que representa', delegado.pais) +
-            dato('Comite', delegado.comite) +
-            dato('Institucion', delegado.institucion) +
+            dato('País que representa', delegado.pais) +
+            dato('Comité', delegado.comite) +
+            dato('Institución', delegado.institucion) +
           '</div>' +
         '</div>';
 
       if (!delegado.activo) {
         html += UI.aviso('err', 'Esta credencial fue dada de baja',
-          'El Secretariado la desactivo. Acercate a la mesa de acreditacion para resolverlo.');
+          'El Secretariado la desactivó. Acercate a la mesa de acreditación para resolverlo.');
       }
 
       html += '<section aria-labelledby="t-comidas">' +
@@ -460,7 +466,7 @@ window.VISTAS = (function () {
                 '<p><strong>Llevas ' + entregadas + ' de ' + listaComidas.length + '.</strong></p>';
 
       if (!listaComidas.length) {
-        html += UI.vacio('&#127869;', 'Todavia no se cargo el cronograma de comidas del evento.');
+        html += UI.vacio('&#127869;', 'Todavía no se cargo el cronograma de comidas del evento.');
       } else {
         var porDia = {};
         listaComidas.forEach(function (c) {
@@ -469,13 +475,13 @@ window.VISTAS = (function () {
         });
 
         Object.keys(porDia).sort(function (a, b) { return a - b; }).forEach(function (dia) {
-          html += '<h3>Dia ' + UI.esc(dia) + '</h3><ul class="lista-comidas" role="list">';
+          html += '<h3>Día ' + UI.esc(dia) + '</h3><ul class="lista-comidas" role="list">';
           porDia[dia].forEach(function (c) {
             var e = mapa[c.id];
             var estado = e ? 'Ya entregado' : 'Pendiente';
             var detalle = e
               ? 'Entregado a las ' + UI.hora(e.entregado_en) + (e.estacion ? ', en ' + UI.esc(e.estacion) : '')
-              : 'Todavia no lo recibes';
+              : 'Todavía no lo recibes';
             html +=
               '<li class="comida-fila">' +
                 '<span class="marca-est ' + (e ? 'si' : 'no') + '" aria-hidden="true">' + (e ? '&#10003;' : '&middot;') + '</span>' +
@@ -486,9 +492,9 @@ window.VISTAS = (function () {
                 (esStaff
                   ? (e
                       ? '<button type="button" class="btn sec chico" data-quitar="' + c.id + '">' +
-                          'Deshacer <span class="solo-lector">la entrega de ' + UI.esc(c.nombre) + ' del dia ' + UI.esc(dia) + '</span></button>'
+                          'Deshacer <span class="solo-lector">la entrega de ' + UI.esc(c.nombre) + ' del día ' + UI.esc(dia) + '</span></button>'
                       : '<button type="button" class="btn verde chico" data-marcar="' + c.id + '">' +
-                          'Entregar <span class="solo-lector">' + UI.esc(c.nombre) + ' del dia ' + UI.esc(dia) + '</span></button>')
+                          'Entregar <span class="solo-lector">' + UI.esc(c.nombre) + ' del día ' + UI.esc(dia) + '</span></button>')
                   : '<span class="chip ' + (e ? 'si' : 'no') + '">' + estado + '</span>') +
               '</li>';
           });
@@ -503,8 +509,8 @@ window.VISTAS = (function () {
                   '<a class="btn sec" href="#/tablero">Ver el tablero en vivo</a>' +
                 '</div>';
       } else {
-        html += UI.aviso('info', 'Como funciona',
-          'Cuando pases por la mesa de refrigerios, muestra el codigo QR del reverso de tu credencial. ' +
+        html += UI.aviso('info', 'Cómo funciona',
+          'Cuando pases por la mesa de refrigerios, muestra el código QR del reverso de tu credencial. ' +
           'El personal lo escanea y esta pantalla se actualiza sola.') +
           '<p><a class="btn sec" href="#/">Volver al inicio del portal</a></p>';
       }
@@ -520,7 +526,7 @@ window.VISTAS = (function () {
           DB.entregas.marcar(delegado.id, b.dataset.marcar, u ? u.email : null, estacionGuardada())
             .then(function (r) {
               UI.tostada(r.duplicado
-                ? 'Esa comida ya habia sido entregada antes.'
+                ? 'Esa comida ya había sido entregada antes.'
                 : 'Entrega registrada.', r.duplicado ? 'err' : 'ok');
               return DB.entregas.deDelegado(delegado.id);
             })

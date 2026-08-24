@@ -237,6 +237,50 @@ Al escanear un QR se ve nombre, país, comité, institución y estado de comidas
 
 ---
 
+## Parte 5. InterBot y el chat por comités
+
+Estos dos módulos se agregaron después de la instalación inicial y necesitan un paso más en Supabase.
+
+### Qué son
+
+**InterBot** es un asistente con inteligencia artificial al que cualquier persona acreditada puede preguntarle, por escrito, cómo proponer una moción, qué hacer en una situación del comité, cómo redactar una cláusula, o dudas sobre la plataforma. Solo texto: no recibe imágenes ni archivos. Conoce el reglamento, el glosario, las fórmulas exactas de las mociones y el funcionamiento de la plataforma, y no inventa logística del evento (si le preguntan por aulas u horarios, remite al Secretariado).
+
+**El chat** tiene una sala general y una sala por comité. Se entra con el código de credencial (sin contraseña), se puede escribir y adjuntar archivos PDF de hasta 10 MB. Los mensajes llegan en tiempo real. El staff puede retirar mensajes y abrir o cerrar salas.
+
+### Por qué InterBot necesita una "función en la nube"
+
+La inteligencia artificial la provee Google (Gemini) con una clave gratuita. Esa clave **no puede ir en el sitio público**: cualquiera la copiaría y agotaría la cuota en minutos. Por eso la clave vive como secreto dentro de Supabase, en una pequeña función (`funciones/interbot/index.ts`) que es la única que habla con Google. El sitio le manda la pregunta a esa función, y la función responde.
+
+Además, la función limita el uso para cuidar la cuota gratuita: 40 preguntas por credencial al día, 5 por minuto, y 800 en total por día para todo el evento. Todos esos números se pueden cambiar sin tocar código (son secretos del proyecto: `LIMITE_CODIGO_DIA`, `LIMITE_CODIGO_MINUTO`, `LIMITE_GLOBAL_DIA`).
+
+### Cómo se activa (una sola vez, 10 minutos)
+
+1. **Clave de Gemini (gratis).** Entra a **aistudio.google.com**, inicia sesión con una cuenta de Google, y en "Get API key" crea una clave. Empieza con `AIza...`. No hace falta poner tarjeta: el nivel gratuito alcanza para el evento con los límites configurados.
+
+2. **Token de Supabase.** En **supabase.com/dashboard/account/tokens** genera un token (nombre sugerido: `intermun-despliegue`). Empieza con `sbp_...`. Sirve solo para ejecutar el despliegue; revócalo al terminar.
+
+3. **Ejecutar el despliegue.** En PowerShell, dentro de la carpeta `sistema`:
+
+```powershell
+$env:SUPABASE_ACCESS_TOKEN = "sbp_..."
+$env:GEMINI_API_KEY        = "AIza..."
+python funciones\desplegar-interbot.py
+```
+
+El script crea las tablas del chat, guarda la clave como secreto, despliega la función y hace una pregunta de prueba. Si al final imprime `"respuesta": "..."`, InterBot está funcionando.
+
+4. **Revocar el token** en la misma página donde lo creaste. El sistema no lo necesita para funcionar.
+
+### Abrir las salas por comité
+
+Entra a **Control** y luego a **Salas de chat**. Si ya cargaste la lista de delegados, el panel detecta solos los comités que todavía no tienen sala y ofrece un botón para crear una por cada uno. También puedes crearlas a mano, cerrarlas temporalmente o borrarlas.
+
+### Si Gemini no funciona
+
+La función también acepta Groq como proveedor alternativo (groq.com, también gratuito). Guarda `GROQ_API_KEY` y `INTERBOT_PROVEEDOR=groq` como variables de entorno antes de correr el script de despliegue.
+
+---
+
 ## Estructura de los archivos
 
 ```
@@ -255,8 +299,15 @@ sistema/
     ├── db.js                    Conexión con la base de datos
     ├── app.js                   Navegación
     ├── vistas-publicas.js       Portal y credenciales
-    ├── vistas-admin.js          Control de comidas
+    ├── vistas-admin.js          Control de comidas y salas de chat
+    ├── identidad.js             Identificación por credencial (sin contraseña)
+    ├── interbot.js              Conversación con InterBot
+    ├── chat.js                  Chat por comités con archivos PDF
     └── vendor/                  Librerías (no tocar)
+├── funciones/
+│   ├── interbot/index.ts        Función en la nube de InterBot (guarda la clave de IA)
+│   └── desplegar-interbot.py    Despliegue en un solo comando
+├── INSTALACION-INTERBOT-Y-CHAT.sql  Tablas y políticas del chat
 ```
 
 Para cambiar textos del portal (reglas, glosario, consejos, curiosidades), edita `js/contenido.js`. Está escrito para que se pueda modificar sin saber programar.

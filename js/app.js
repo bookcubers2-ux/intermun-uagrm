@@ -21,19 +21,22 @@ window.APP = (function () {
   var RUTAS = {
     '':              { nav: 'Inicio',           titulo: 'Inicio',                      ver: function () { VISTAS.inicio(); } },
     'reglas':        { nav: 'Reglas',           titulo: 'Reglas de procedimiento',     ver: function () { VISTAS.reglas(); } },
-    'guia':          { nav: 'Guia',             titulo: 'Guia del delegado',           ver: function () { VISTAS.guia(); } },
-    'comites':       { nav: 'Comites',          titulo: 'Los comites',                 ver: function () { VISTAS.comites(); } },
+    'guia':          { nav: 'Guía',             titulo: 'Guía del delegado',           ver: function () { VISTAS.guia(); } },
+    'comites':       { nav: 'Comités',          titulo: 'Los comités',                 ver: function () { VISTAS.comites(); } },
     'datos':         { nav: 'Curiosidades',     titulo: 'Curiosidades',                ver: function () { VISTAS.curiosidades(); } },
     'buscar':        { nav: 'Mi credencial',    titulo: 'Mi credencial',               ver: function () { VISTAS.buscarCredencial(); } },
     'c':             { nav: null,               titulo: 'Credencial',                  ver: function (p) { VISTAS.credencial(p); } },
     'accesibilidad': { nav: 'Accesibilidad',    titulo: 'Mi perfil de accesibilidad',  ver: function () { VISTAS.accesibilidad(); } },
+    'interbot':      { nav: 'InterBot',         titulo: 'InterBot',                    ver: function () { INTERBOT.vista(); } },
+    'chat':          { nav: 'Chat',             titulo: 'Chat de InterMUN',            ver: function (p) { CHAT.vista(p); } },
 
     'staff':         { nav: 'Control',          titulo: 'Control de InterMUN',         ver: function () { ADMIN.panel(); } },
     'escanear':      { nav: null,               titulo: 'Escanear credencial',         ver: function () { ADMIN.escanear(); },  staff: true },
     'tablero':       { nav: null,               titulo: 'Tablero en vivo',             ver: function () { ADMIN.tablero(); },   staff: true },
     'delegados':     { nav: null,               titulo: 'Delegados',                   ver: function () { ADMIN.delegados(); }, staff: true },
     'comidas':       { nav: null,               titulo: 'Comidas del evento',          ver: function () { ADMIN.comidas(); },   staff: true },
-    'qr':            { nav: null,               titulo: 'Generar los codigos QR',      ver: function () { ADMIN.qr(); },        staff: true },
+    'qr':            { nav: null,               titulo: 'Generar los códigos QR',      ver: function () { ADMIN.qr(); },        staff: true },
+    'salas':         { nav: null,               titulo: 'Salas de chat',               ver: function () { ADMIN.salas(); },     staff: true },
     'ajustes':       { nav: null,               titulo: 'Ajustes y estado',            ver: function () { ADMIN.ajustes(); } }
   };
 
@@ -75,10 +78,10 @@ window.APP = (function () {
     pintarNav();
 
     if (!def) {
-      UI.esperarFoco('Pagina no encontrada');
+      UI.esperarFoco('Página no encontrada');
       UI.pintar(
-        '<h1>Pagina no encontrada</h1>' +
-        UI.aviso('warn', null, 'La direccion que abriste no existe en el sistema. Puede que el enlace este incompleto.') +
+        '<h1>Página no encontrada</h1>' +
+        UI.aviso('warn', null, 'La dirección que abriste no existe en el sistema. Puede que el enlace esté incompleto.') +
         '<p><a class="btn" href="#/">Ir al inicio del portal</a></p>'
       );
       primeraCarga = false;
@@ -87,7 +90,7 @@ window.APP = (function () {
 
     if (def.staff === true && !usuario) {
       UI.esperarFoco('Acceso del staff');
-      ADMIN.login('Esta seccion es del equipo organizador. Inicia sesion para continuar.');
+      ADMIN.login('Esta sección es del equipo organizador. Inicia sesión para continuar.');
       primeraCarga = false;
       return;
     }
@@ -101,7 +104,7 @@ window.APP = (function () {
       def.ver(r.param);
     } catch (e) {
       console.error(e);
-      UI.pintar('<h1>Ocurrio un error</h1>' + UI.aviso('err', 'No se pudo abrir esta seccion', UI.explicarError(e)));
+      UI.pintar('<h1>Ocurrió un error</h1>' + UI.aviso('err', 'No se pudo abrir esta sección', UI.explicarError(e)));
     }
 
     if (window.A11Y) window.A11Y.vistaCambiada(def.titulo, primeraCarga);
@@ -117,7 +120,14 @@ window.APP = (function () {
 
   function cerrarCanalVivo() {
     if (canalVivo) { DB.entregas.dejarDeEscuchar(canalVivo); canalVivo = null; }
+    canalesExtra.forEach(function (c) { DB.chat.dejarDeEscuchar(c); });
+    canalesExtra = [];
   }
+
+  /* Canales de tiempo real de otras vistas (por ejemplo, una sala de
+     chat). Se cierran solos al cambiar de vista. */
+  var canalesExtra = [];
+  function registrarCanal(c) { if (c) canalesExtra.push(c); }
 
 
   /* ---------- Sesion ---------- */
@@ -125,7 +135,7 @@ window.APP = (function () {
     var chip = document.getElementById('chipSesion');
     var btn = document.getElementById('btnSalir');
     if (usuario) {
-      chip.textContent = 'Sesion de staff: ' + usuario.email;
+      chip.textContent = 'Sesión de staff: ' + usuario.email;
       chip.classList.remove('oculto');
       btn.hidden = false;
     } else {
@@ -151,7 +161,7 @@ window.APP = (function () {
     var atajos = window.A11Y ? window.A11Y.ATAJOS : {};
     var lista = Object.keys(atajos).map(function (k) {
       var destino = atajos[k].replace('#/', '') || 'inicio';
-      return 'Alt mas ' + k + ', ' + destino;
+      return 'Alt más ' + k + ', ' + destino;
     }).join('. ');
 
     document.getElementById('pie').innerHTML =
@@ -159,7 +169,7 @@ window.APP = (function () {
       '<p>' + UI.esc(e.nombre) + ', ' + UI.esc(e.edicion) + ', ' + UI.esc(e.anio) + '. ' +
         UI.esc(e.carrera) + ', ' + UI.esc(e.institucion) + '. ' + UI.esc(e.ciudad) + '.</p>' +
       '<h3>Atajos de teclado</h3>' +
-      '<p>' + UI.esc(lista) + '. Alt mas 0 lee la pagina en voz alta.</p>' +
+      '<p>' + UI.esc(lista) + '. Alt más 0 lee la página en voz alta.</p>' +
       '<p><a href="#/accesibilidad">Mi perfil de accesibilidad</a> ' +
          '&middot; <a href="#/ajustes">Estado del sistema</a></p>';
   }
@@ -172,17 +182,17 @@ window.APP = (function () {
     document.title = e.nombre + ' ' + e.anio + ' | ' + e.subtitulo;
 
     /* El pie se pinta ANTES de iniciar accesibilidad: el boton de
-       "volver al inicio de la pagina" se agrega al final del pie, y si
+       "volver al inicio de la página" se agrega al final del pie, y si
        el pie se repintara despues, ese boton desapareceria. */
     pintarPie();
     if (window.A11Y) window.A11Y.iniciar();
     if (window.INSTALAR) window.INSTALAR.construir();
 
     document.getElementById('btnSalir').addEventListener('click', function () {
-      if (!UI.confirmar('Vas a cerrar la sesion de staff en este dispositivo. Confirmas?')) return;
+      if (!UI.confirmar('Vas a cerrar la sesión de staff en este dispositivo. Confirmas?')) return;
       DB.sesion.salir().then(function () {
         fijarUsuario(null);
-        UI.tostada('Sesion cerrada.', 'ok');
+        UI.tostada('Sesión cerrada.', 'ok');
         location.hash = '#/';
       });
     });
@@ -210,7 +220,8 @@ window.APP = (function () {
     usuarioActual: usuarioActual,
     fijarUsuario: fijarUsuario,
     abrirCanalVivo: abrirCanalVivo,
-    cerrarCanalVivo: cerrarCanalVivo
+    cerrarCanalVivo: cerrarCanalVivo,
+    registrarCanal: registrarCanal
   };
 })();
 

@@ -27,10 +27,10 @@ window.CONFIG = {
   EVENTO: {
     nombre:      'InterMUN',
     subtitulo:   'Modelo de Naciones Unidas',
-    institucion: 'Universidad Autonoma Gabriel Rene Moreno',
+    institucion: 'Universidad Autónoma Gabriel René Moreno',
     carrera:     'Carrera de Relaciones Internacionales',
     ciudad:      'Santa Cruz de la Sierra, Bolivia',
-    edicion:     'I Edicion',
+    edicion:     'I Edición',
     anio:        '2026',
     sede:        'Campus Universitario UAGRM',
     contacto:    'intermun@uagrm.edu.bo'
@@ -49,9 +49,9 @@ window.CONFIG = {
      saber despues por que puerta paso cada delegado.
   ------------------------------------------------------------ */
   ESTACIONES: [
-    'Estacion 1',
-    'Estacion 2',
-    'Estacion 3',
+    'Estación 1',
+    'Estación 2',
+    'Estación 3',
     'Mesa principal'
   ]
 };

@@ -47,9 +47,9 @@ window.ADMIN = (function () {
           '<input type="email" id="correo" autocomplete="username" ' +
             'aria-describedby="ayuda-correo"></label>' +
         '<p class="ayuda-campo" id="ayuda-correo">El correo con el que el Secretariado creo tu cuenta.</p>' +
-        '<label class="campo" for="clave"><span>Contrasena</span>' +
+        '<label class="campo" for="clave"><span>Contraseña</span>' +
           '<input type="password" id="clave" autocomplete="current-password"></label>' +
-        '<button type="button" class="btn bloque" id="btnEntrar">Iniciar sesion</button>' +
+        '<button type="button" class="btn bloque" id="btnEntrar">Iniciar sesión</button>' +
       '</div>' +
       '<p>Las cuentas del staff las crea el Secretariado. Si no tienes una, pidesela a quien administra el sistema.</p>'
     );
@@ -58,7 +58,7 @@ window.ADMIN = (function () {
       var c = UI.q('#correo').value.trim();
       var k = UI.q('#clave').value;
       if (!c || !k) {
-        UI.tostada('Completa el correo y la contrasena para continuar.', 'err');
+        UI.tostada('Completa el correo y la contraseña para continuar.', 'err');
         UI.q(c ? '#clave' : '#correo').focus();
         return;
       }
@@ -68,13 +68,13 @@ window.ADMIN = (function () {
       DB.sesion.entrar(c, k)
         .then(function (u) {
           APP.fijarUsuario(u);
-          UI.tostada('Sesion iniciada como ' + u.email + '.', 'ok');
+          UI.tostada('Sesión iniciada como ' + u.email + '.', 'ok');
           location.hash = '#/staff';
         })
         .catch(function (e) {
           UI.tostada(UI.explicarError(e), 'err');
           b.disabled = false;
-          b.textContent = 'Iniciar sesion';
+          b.textContent = 'Iniciar sesión';
           UI.q('#clave').focus();
         });
     }
@@ -95,21 +95,23 @@ window.ADMIN = (function () {
 
     UI.pintar(
       '<h1>Control de InterMUN</h1>' +
-      '<p>Sesion iniciada como <strong>' + UI.esc(APP.usuarioActual().email) + '</strong>.' +
-        (est ? ' Estacion de entrega: <strong>' + UI.esc(est) + '</strong>.' : '') + '</p>' +
+      '<p>Sesión iniciada como <strong>' + UI.esc(APP.usuarioActual().email) + '</strong>.' +
+        (est ? ' Estación de entrega: <strong>' + UI.esc(est) + '</strong>.' : '') + '</p>' +
       listaModulos([
         { href: '#/escanear',  ico: '&#128247;', t: 'Escanear credencial',
-          d: 'Modo rapido para la fila de refrigerios: escanea y marca al instante.' },
+          d: 'Modo rápido para la fila de refrigerios: escanea y marca al instante.' },
         { href: '#/tablero',   ico: '&#128202;', t: 'Tablero en vivo',
-          d: 'Cuantos recibieron cada comida, en tiempo real, y descarga para Excel.' },
+          d: 'Cuántos recibieron cada comida, en tiempo real, y descarga para Excel.' },
         { href: '#/delegados', ico: '&#128100;', t: 'Delegados',
           d: 'Cargar la lista, editar datos y dar de baja credenciales.' },
         { href: '#/comidas',   ico: '&#127869;', t: 'Comidas',
-          d: 'Definir los refrigerios y almuerzos de cada dia.' },
-        { href: '#/qr',        ico: '&#128290;', t: 'Generar los codigos QR',
-          d: 'Crear e imprimir los codigos del reverso de cada credencial.' },
+          d: 'Definir los refrigerios y almuerzos de cada día.' },
+        { href: '#/salas',     ico: '&#128172;', t: 'Salas de chat',
+          d: 'Abrir la sala general y una sala por cada comité, y moderar.' },
+        { href: '#/qr',        ico: '&#128290;', t: 'Generar los códigos QR',
+          d: 'Crear e imprimir los códigos del reverso de cada credencial.' },
         { href: '#/ajustes',   ico: '&#9881;',   t: 'Ajustes y estado',
-          d: 'Elegir tu estacion de entrega y revisar el estado del sistema.' }
+          d: 'Elegir tu estación de entrega y revisar el estado del sistema.' }
       ])
     );
   }
@@ -120,12 +122,12 @@ window.ADMIN = (function () {
      ================================================================ */
   function escanear() {
     detenerEscaner();
-    UI.cargando('Preparando el escaner');
+    UI.cargando('Preparando el escáner');
 
     DB.comidas.activas().then(function (comidas) {
       if (!comidas.length) {
         UI.pintar('<h1>Escanear credencial</h1>' +
-          UI.aviso('warn', 'Todavia no hay comidas cargadas',
+          UI.aviso('warn', 'Todavía no hay comidas cargadas',
             'Primero define los refrigerios y almuerzos del evento para poder marcarlos.') +
           '<p><a class="btn" href="#/comidas">Ir a definir las comidas</a></p>');
         return;
@@ -137,33 +139,33 @@ window.ADMIN = (function () {
 
       var opciones = comidas.map(function (c) {
         return '<option value="' + c.id + '"' + (c.id === elegida.id ? ' selected' : '') + '>' +
-               'Dia ' + c.dia + ', ' + UI.esc(c.nombre) + '</option>';
+               'Día ' + c.dia + ', ' + UI.esc(c.nombre) + '</option>';
       }).join('');
 
       UI.pintar(
         '<h1>Escanear credencial</h1>' +
 
         '<section class="tarjeta" aria-labelledby="t-que-comida">' +
-          '<h2 id="t-que-comida">Que estas entregando</h2>' +
+          '<h2 id="t-que-comida">Qué estás entregando</h2>' +
           '<label class="campo" for="selComida"><span>Comida que se entrega ahora</span>' +
             '<select id="selComida" aria-describedby="ayuda-comida">' + opciones + '</select></label>' +
-          '<p class="ayuda-campo" id="ayuda-comida">Todo lo que escanees se registrara como esta comida ' +
-            'hasta que la cambies aqui.</p>' +
+          '<p class="ayuda-campo" id="ayuda-comida">Todo lo que escanees se registrará como esta comida ' +
+            'hasta que la cambies aquí.</p>' +
         '</section>' +
 
         '<section class="tarjeta" aria-labelledby="t-camara">' +
-          '<h2 id="t-camara">Con la camara</h2>' +
+          '<h2 id="t-camara">Con la cámara</h2>' +
           '<div class="fila-btn">' +
-            '<button type="button" class="btn verde" id="btnCam">Encender la camara</button>' +
-            '<button type="button" class="btn sec" id="btnApagar" disabled>Apagar la camara</button>' +
+            '<button type="button" class="btn verde" id="btnCam">Encender la cámara</button>' +
+            '<button type="button" class="btn sec" id="btnApagar" disabled>Apagar la cámara</button>' +
           '</div>' +
           '<div id="lector"></div>' +
         '</section>' +
 
         '<section class="tarjeta" aria-labelledby="t-mano">' +
-          '<h2 id="t-mano">O escribiendo el codigo</h2>' +
-          '<p>Sirve si la camara falla o el codigo QR esta danado.</p>' +
-          '<label class="campo" for="codManual"><span>Codigo de credencial</span>' +
+          '<h2 id="t-mano">O escribiendo el código</h2>' +
+          '<p>Sirve si la cámara falla o el código QR está dañado.</p>' +
+          '<label class="campo" for="codManual"><span>Código de credencial</span>' +
             '<input type="text" id="codManual" autocomplete="off" autocapitalize="characters" ' +
               'placeholder="' + UI.esc(window.CONFIG.PREFIJO_CODIGO) + '-0001"></label>' +
           '<button type="button" class="btn bloque" id="btnManual">Registrar la entrega</button>' +
@@ -172,13 +174,13 @@ window.ADMIN = (function () {
         '<section aria-labelledby="t-resultado">' +
           '<h2 id="t-resultado">Resultado</h2>' +
           '<div id="resultado" role="status" aria-live="assertive" aria-atomic="true">' +
-            '<p class="silencio">Aqui aparece que paso con cada credencial que escanees.</p>' +
+            '<p class="silencio">Aquí aparece que paso con cada credencial que escanees.</p>' +
           '</div>' +
         '</section>' +
 
         '<section aria-labelledby="t-historial">' +
-          '<h2 id="t-historial">Entregas de esta sesion</h2>' +
-          '<p id="contador" role="status" aria-live="polite">Todavia no registraste ninguna entrega.</p>' +
+          '<h2 id="t-historial">Entregas de esta sesión</h2>' +
+          '<p id="contador" role="status" aria-live="polite">Todavía no registraste ninguna entrega.</p>' +
           '<div id="historial"></div>' +
         '</section>'
       );
@@ -188,7 +190,7 @@ window.ADMIN = (function () {
       UI.q('#selComida').addEventListener('change', function () {
         try { localStorage.setItem('intermun_comida_activa', this.value); } catch (e) {}
         var txt = this.options[this.selectedIndex].textContent;
-        if (window.A11Y) window.A11Y.anunciar('Ahora se registrara: ' + txt + '.');
+        if (window.A11Y) window.A11Y.anunciar('Ahora se registrará: ' + txt + '.');
       });
 
       UI.q('#btnCam').addEventListener('click', encenderCamara);
@@ -196,13 +198,13 @@ window.ADMIN = (function () {
         detenerEscaner();
         UI.q('#btnCam').disabled = false;
         UI.q('#btnApagar').disabled = true;
-        if (window.A11Y) window.A11Y.anunciar('Camara apagada.');
+        if (window.A11Y) window.A11Y.anunciar('Cámara apagada.');
       });
 
       UI.q('#btnManual').addEventListener('click', function () {
         var v = UI.q('#codManual').value.trim().toUpperCase();
         if (!v) {
-          UI.tostada('Escribe un codigo de credencial.', 'err');
+          UI.tostada('Escribe un código de credencial.', 'err');
           UI.q('#codManual').focus();
           return;
         }
@@ -217,7 +219,7 @@ window.ADMIN = (function () {
 
       function encenderCamara() {
         UI.q('#btnCam').disabled = true;
-        if (window.A11Y) window.A11Y.anunciar('Encendiendo la camara.');
+        if (window.A11Y) window.A11Y.anunciar('Encendiendo la cámara.');
         cargarLibreriaEscaner().then(function () {
           try {
             escanerActivo = new Html5Qrcode('lector', { verbose: false });
@@ -228,19 +230,19 @@ window.ADMIN = (function () {
               function () {}
             ).then(function () {
               UI.q('#btnApagar').disabled = false;
-              UI.tostada('Camara lista. Apunta al codigo QR de la credencial.', 'ok');
+              UI.tostada('Cámara lista. Apunta al código QR de la credencial.', 'ok');
             }).catch(function (e) {
               UI.q('#btnCam').disabled = false;
-              UI.tostada('No se pudo abrir la camara. ' + (e.message || '') +
-                ' Puedes escribir el codigo a mano mas abajo.', 'err');
+              UI.tostada('No se pudo abrir la cámara. ' + (e.message || '') +
+                ' Puedes escribir el código a mano más abajo.', 'err');
             });
           } catch (e) {
             UI.q('#btnCam').disabled = false;
-            UI.tostada('Este navegador no permite usar la camara aqui. Escribe el codigo a mano.', 'err');
+            UI.tostada('Este navegador no permite usar la cámara aquí. Escribe el código a mano.', 'err');
           }
         }).catch(function () {
           UI.q('#btnCam').disabled = false;
-          UI.tostada('No se pudo cargar el escaner. Escribe el codigo a mano.', 'err');
+          UI.tostada('No se pudo cargar el escáner. Escribe el código a mano.', 'err');
         });
       }
 
@@ -261,7 +263,7 @@ window.ADMIN = (function () {
           if (!d) {
             pitar(false);
             mostrar('err', 'Credencial desconocida',
-              'El codigo ' + codigo + ' no esta en la lista de acreditados.');
+              'El código ' + codigo + ' no está en la lista de acreditados.');
             return;
           }
           if (!d.activo) {
@@ -274,12 +276,12 @@ window.ADMIN = (function () {
             .then(function (r) {
               if (r.duplicado) {
                 pitar(false);
-                mostrar('warn', 'Ya habia recibido esta comida',
-                  d.nombre + ' ya tiene registrado el ' + comida.nombre + ' del dia ' + comida.dia + '.', d);
+                mostrar('warn', 'Ya había recibido esta comida',
+                  d.nombre + ' ya tiene registrado el ' + comida.nombre + ' del día ' + comida.dia + '.', d);
               } else {
                 pitar(true);
                 mostrar('ok', 'Entrega registrada',
-                  d.nombre + '. ' + comida.nombre + ' del dia ' + comida.dia + '.', d);
+                  d.nombre + '. ' + comida.nombre + ' del día ' + comida.dia + '.', d);
                 historial.unshift({ nombre: d.nombre, codigo: d.codigo, hora: new Date().toISOString() });
                 pintarHistorial();
               }
@@ -301,13 +303,13 @@ window.ADMIN = (function () {
 
       function pintarHistorial() {
         UI.q('#contador').textContent = historial.length === 1
-          ? 'Registraste 1 entrega en esta sesion.'
-          : 'Registraste ' + historial.length + ' entregas en esta sesion.';
+          ? 'Registraste 1 entrega en esta sesión.'
+          : 'Registraste ' + historial.length + ' entregas en esta sesión.';
 
         UI.q('#historial').innerHTML =
           '<div class="tabla-env"><table class="datos">' +
-          '<caption class="solo-lector">Entregas registradas en esta sesion, de la mas reciente a la mas antigua</caption>' +
-          '<thead><tr><th scope="col">Hora</th><th scope="col">Codigo</th><th scope="col">Nombre</th></tr></thead><tbody>' +
+          '<caption class="solo-lector">Entregas registradas en esta sesión, de la más reciente a la más antigua</caption>' +
+          '<thead><tr><th scope="col">Hora</th><th scope="col">Código</th><th scope="col">Nombre</th></tr></thead><tbody>' +
           historial.slice(0, 40).map(function (h) {
             return '<tr><td class="mono">' + UI.hora(h.hora) + '</td>' +
                    '<td class="mono">' + UI.esc(h.codigo) + '</td>' +
@@ -315,7 +317,7 @@ window.ADMIN = (function () {
           }).join('') + '</tbody></table></div>';
       }
     }).catch(function (e) {
-      UI.pintar('<h1>Escanear credencial</h1>' + UI.aviso('err', 'No se pudo preparar el escaner', UI.explicarError(e)));
+      UI.pintar('<h1>Escanear credencial</h1>' + UI.aviso('err', 'No se pudo preparar el escáner', UI.explicarError(e)));
     });
   }
 
@@ -390,7 +392,7 @@ window.ADMIN = (function () {
       entregas.forEach(function (e) { porComida[e.comida_id] = (porComida[e.comida_id] || 0) + 1; });
 
       var html = '<h1>Tablero en vivo</h1>' +
-        '<p>Se actualiza solo cuando cualquier estacion registra una entrega.</p>' +
+        '<p>Se actualiza solo cuando cualquier estación registra una entrega.</p>' +
         '<ul class="metricas" role="list">' +
           met(activos.length, 'Acreditados activos', '') +
           met(comidas.length, 'Comidas programadas', 'oro') +
@@ -398,7 +400,7 @@ window.ADMIN = (function () {
         '</ul>';
 
       if (!comidas.length) {
-        html += UI.vacio('&#127869;', 'Todavia no hay comidas cargadas.');
+        html += UI.vacio('&#127869;', 'Todavía no hay comidas cargadas.');
         UI.pintar(html);
         return;
       }
@@ -408,7 +410,7 @@ window.ADMIN = (function () {
         var n = porComida[c.id] || 0;
         var pct = activos.length ? Math.round(n * 100 / activos.length) : 0;
         html += '<div class="avance-comida">' +
-                  '<p><strong>Dia ' + c.dia + ', ' + UI.esc(c.nombre) + '.</strong> ' +
+                  '<p><strong>Día ' + c.dia + ', ' + UI.esc(c.nombre) + '.</strong> ' +
                     n + ' de ' + activos.length + ' personas, ' + pct + ' por ciento.</p>' +
                   '<div class="progreso" role="img" aria-label="' + pct + ' por ciento completado">' +
                     '<i style="width:' + pct + '%"></i></div>' +
@@ -417,11 +419,11 @@ window.ADMIN = (function () {
       html += '</section>';
 
       html += '<section aria-labelledby="t-falta">' +
-                '<h2 id="t-falta">Quien falta</h2>' +
+                '<h2 id="t-falta">Quién falta</h2>' +
                 '<label class="campo" for="selFalta"><span>Elige la comida</span>' +
                   '<select id="selFalta">' +
                     comidas.map(function (c) {
-                      return '<option value="' + c.id + '">Dia ' + c.dia + ', ' + UI.esc(c.nombre) + '</option>';
+                      return '<option value="' + c.id + '">Día ' + c.dia + ', ' + UI.esc(c.nombre) + '</option>';
                     }).join('') +
                   '</select></label>' +
                 '<div id="listaFalta" role="region" aria-live="polite"></div>' +
@@ -450,20 +452,20 @@ window.ADMIN = (function () {
           return;
         }
         UI.q('#listaFalta').innerHTML =
-          '<p>' + faltan.length + (faltan.length === 1 ? ' persona todavia no la recibe.' : ' personas todavia no la reciben.') + '</p>' +
+          '<p>' + faltan.length + (faltan.length === 1 ? ' persona todavía no la recibe.' : ' personas todavía no la reciben.') + '</p>' +
           '<div class="tabla-env"><table class="datos">' +
-          '<caption class="solo-lector">Personas que todavia no reciben la comida seleccionada</caption>' +
-          '<thead><tr><th scope="col">Codigo</th><th scope="col">Nombre</th>' +
-          '<th scope="col">Comite</th><th scope="col">Institucion</th></tr></thead><tbody>' +
+          '<caption class="solo-lector">Personas que todavía no reciben la comida seleccionada</caption>' +
+          '<thead><tr><th scope="col">Código</th><th scope="col">Nombre</th>' +
+          '<th scope="col">Comité</th><th scope="col">Institución</th></tr></thead><tbody>' +
           faltan.map(function (d) {
             return '<tr><td class="mono"><a href="#/c/' + encodeURIComponent(d.codigo) + '">' + UI.esc(d.codigo) + '</a></td>' +
-                   '<td>' + UI.esc(d.nombre) + '</td><td>' + UI.esc(d.comite || 'sin comite') + '</td>' +
-                   '<td>' + UI.esc(d.institucion || 'sin institucion') + '</td></tr>';
+                   '<td>' + UI.esc(d.nombre) + '</td><td>' + UI.esc(d.comite || 'sin comité') + '</td>' +
+                   '<td>' + UI.esc(d.institucion || 'sin institución') + '</td></tr>';
           }).join('') + '</tbody></table></div>';
       }
 
       UI.q('#btnCSV').addEventListener('click', function () {
-        var enc = ['Codigo', 'Nombre', 'Pais', 'Comite', 'Institucion', 'Rol', 'Activo'];
+        var enc = ['Código', 'Nombre', 'País', 'Comité', 'Institución', 'Rol', 'Activo'];
         comidas.forEach(function (c) { enc.push('D' + c.dia + ' ' + c.nombre); });
         enc.push('Total recibidas');
 
@@ -474,7 +476,7 @@ window.ADMIN = (function () {
         });
 
         var filas = delegados.map(function (d) {
-          var f = [d.codigo, d.nombre, d.pais || '', d.comite || '', d.institucion || '', d.rol || '', d.activo ? 'si' : 'no'];
+          var f = [d.codigo, d.nombre, d.pais || '', d.comite || '', d.institucion || '', d.rol || '', d.activo ? 'sí' : 'no'];
           var total = 0;
           comidas.forEach(function (c) {
             var e = mapa[d.id] && mapa[d.id][c.id];
@@ -510,11 +512,11 @@ window.ADMIN = (function () {
 
       html += '<details class="acordeon"><summary>Agregar una persona</summary><div class="cuerpo">' +
                 '<div class="fila-campos">' +
-                  campo('nvCodigo', 'Codigo', 'Si lo dejas vacio, se genera solo.') +
-                  campo('nvNombre', 'Nombre completo', 'Es el unico dato obligatorio.') +
-                  campo('nvPais', 'Pais que representa', '') +
-                  campo('nvComite', 'Comite', '') +
-                  campo('nvInst', 'Institucion', '') +
+                  campo('nvCodigo', 'Código', 'Si lo dejas vacío, se genera solo.') +
+                  campo('nvNombre', 'Nombre completo', 'Es el único dato obligatorio.') +
+                  campo('nvPais', 'País que representa', '') +
+                  campo('nvComite', 'Comité', '') +
+                  campo('nvInst', 'Institución', '') +
                 '</div>' +
                 '<label class="campo" for="nvRol"><span>Rol</span><select id="nvRol">' +
                   ['delegado', 'chair', 'secretariado', 'prensa', 'observador', 'staff']
@@ -524,13 +526,13 @@ window.ADMIN = (function () {
               '</div></details>';
 
       html += '<details class="acordeon"><summary>Cargar la lista completa de una vez</summary><div class="cuerpo">' +
-                '<p>Pega la lista con una persona por linea, separando los datos con punto y coma. ' +
+                '<p>Pega la lista con una persona por línea, separando los datos con punto y coma. ' +
                   'Puedes copiarla directo de Excel si ordenas las columnas en este orden:</p>' +
-                '<p class="mono"><strong>nombre ; pais ; comite ; institucion ; rol</strong></p>' +
+                '<p class="mono"><strong>nombre ; país ; comité ; institución ; rol</strong></p>' +
                 '<label class="campo" for="masivo"><span>Lista de personas</span>' +
                   '<textarea id="masivo" aria-describedby="ayuda-masivo" ' +
-                    'placeholder="Ana Rodriguez ; Bolivia ; Consejo de Seguridad ; UAGRM ; delegado"></textarea></label>' +
-                '<p class="ayuda-campo" id="ayuda-masivo">Los codigos de credencial se generan solos, ' +
+                    'placeholder="Ana Rodríguez ; Bolivia ; Consejo de Seguridad ; UAGRM ; delegado"></textarea></label>' +
+                '<p class="ayuda-campo" id="ayuda-masivo">Los códigos de credencial se generan solos, ' +
                   'en orden, empezando por el siguiente libre.</p>' +
                 '<div class="fila-btn">' +
                   '<button type="button" class="btn" id="btnMasivo">Cargar la lista</button>' +
@@ -539,7 +541,7 @@ window.ADMIN = (function () {
               '</div></details>';
 
       if (!lista.length) {
-        html += UI.vacio('&#128100;', 'Todavia no hay nadie acreditado. Usa la carga masiva de arriba.');
+        html += UI.vacio('&#128100;', 'Todavía no hay nadie acreditado. Usa la carga masiva de arriba.');
         UI.pintar(html);
         enlazarAltas();
         return;
@@ -552,8 +554,8 @@ window.ADMIN = (function () {
               '<div class="tabla-env"><table class="datos" id="tablaDel">' +
               '<caption class="solo-lector">Personas acreditadas en InterMUN</caption>' +
               '<thead><tr>' +
-                '<th scope="col">Codigo</th><th scope="col">Nombre</th><th scope="col">Pais</th>' +
-                '<th scope="col">Comite</th><th scope="col">Institucion</th><th scope="col">Rol</th>' +
+                '<th scope="col">Código</th><th scope="col">Nombre</th><th scope="col">País</th>' +
+                '<th scope="col">Comité</th><th scope="col">Institución</th><th scope="col">Rol</th>' +
                 '<th scope="col">Estado</th><th scope="col">Acciones</th>' +
               '</tr></thead><tbody>';
 
@@ -609,7 +611,7 @@ window.ADMIN = (function () {
       UI.qq('[data-borrar]').forEach(function (b) {
         b.addEventListener('click', function () {
           if (!UI.confirmar('Vas a borrar definitivamente a ' + b.dataset.nom +
-                            ', junto con su registro de comidas. Esta accion no se puede deshacer. Confirmas?')) return;
+                            ', junto con su registro de comidas. Esta acción no se puede deshacer. Confirmas?')) return;
           DB.delegados.borrar(b.dataset.borrar)
             .then(function () { UI.tostada('Persona eliminada.', 'ok'); delegados(); })
             .catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); });
@@ -618,10 +620,10 @@ window.ADMIN = (function () {
 
       UI.q('#btnExpDel').addEventListener('click', function () {
         var filas = lista.map(function (d) {
-          return [d.codigo, d.nombre, d.pais || '', d.comite || '', d.institucion || '', d.rol || '', d.activo ? 'si' : 'no'];
+          return [d.codigo, d.nombre, d.pais || '', d.comite || '', d.institucion || '', d.rol || '', d.activo ? 'sí' : 'no'];
         });
         UI.descargar('intermun-delegados.csv',
-          UI.aCSV(['Codigo', 'Nombre', 'Pais', 'Comite', 'Institucion', 'Rol', 'Activo'], filas));
+          UI.aCSV(['Código', 'Nombre', 'País', 'Comité', 'Institución', 'Rol', 'Activo'], filas));
         UI.tostada('Lista descargada.', 'ok');
       });
     }).catch(function (e) {
@@ -656,8 +658,8 @@ window.ADMIN = (function () {
       UI.q('#btnPlantilla').addEventListener('click', function () {
         UI.descargar('intermun-plantilla-delegados.csv',
           UI.aCSV(['nombre', 'pais', 'comite', 'institucion', 'rol'],
-                  [['Ana Rodriguez', 'Bolivia', 'Consejo de Seguridad', 'UAGRM', 'delegado'],
-                   ['Luis Mendez', 'Francia', 'SOCHUM', 'UPDS', 'delegado']]));
+                  [['Ana Rodríguez', 'Bolivia', 'Consejo de Seguridad', 'UAGRM', 'delegado'],
+                   ['Luis Méndez', 'Francia', 'SOCHUM', 'UPDS', 'delegado']]));
         UI.tostada('Plantilla descargada.', 'ok');
       });
 
@@ -690,7 +692,7 @@ window.ADMIN = (function () {
             };
           }).filter(Boolean);
 
-          if (!nuevos.length) throw new Error('No se encontro ninguna fila valida en lo que pegaste.');
+          if (!nuevos.length) throw new Error('No se encontró ninguna fila válida en lo que pegaste.');
           return DB.delegados.crearVarios(nuevos).then(function () { return nuevos.length; });
         }).then(function (n) {
           UI.tostada(n + (n === 1 ? ' persona cargada.' : ' personas cargadas.'), 'ok');
@@ -712,12 +714,12 @@ window.ADMIN = (function () {
 
     DB.comidas.listar().then(function (lista) {
       var html = '<h1>Comidas del evento</h1>' +
-        '<p>Define aqui cada refrigerio y almuerzo. Es lo que el staff podra marcar al escanear.</p>';
+        '<p>Define aquí cada refrigerio y almuerzo. Es lo que el staff podrá marcar al escanear.</p>';
 
       html += '<details class="acordeon"><summary>Agregar una comida</summary><div class="cuerpo">' +
                 '<div class="fila-campos">' +
-                  campo('cmNombre', 'Nombre', 'Por ejemplo: Almuerzo, o Refrigerio de la manana.') +
-                  '<label class="campo" for="cmDia"><span>Dia</span>' +
+                  campo('cmNombre', 'Nombre', 'Por ejemplo: Almuerzo, o Refrigerio de la mañana.') +
+                  '<label class="campo" for="cmDia"><span>Día</span>' +
                     '<input type="number" id="cmDia" value="1" min="1" max="10"></label>' +
                   '<label class="campo" for="cmTipo"><span>Tipo</span><select id="cmTipo">' +
                     ['almuerzo', 'refrigerio', 'cena', 'coffee'].map(function (t) {
@@ -730,11 +732,11 @@ window.ADMIN = (function () {
               '</div></details>';
 
       if (!lista.length) {
-        html += UI.vacio('&#127869;', 'Todavia no hay comidas cargadas.');
+        html += UI.vacio('&#127869;', 'Todavía no hay comidas cargadas.');
       } else {
         html += '<div class="tabla-env"><table class="datos">' +
                 '<caption class="solo-lector">Comidas programadas del evento</caption>' +
-                '<thead><tr><th scope="col">Dia</th><th scope="col">Nombre</th><th scope="col">Tipo</th>' +
+                '<thead><tr><th scope="col">Día</th><th scope="col">Nombre</th><th scope="col">Tipo</th>' +
                 '<th scope="col">Fecha</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead><tbody>';
         lista.forEach(function (c) {
           html += '<tr>' +
@@ -746,9 +748,9 @@ window.ADMIN = (function () {
             '<td>' +
               '<button type="button" class="btn sec chico" data-tog="' + c.id + '" data-a="' + (c.activa ? '1' : '0') + '">' +
                 (c.activa ? 'Ocultar' : 'Activar') +
-                '<span class="solo-lector"> ' + UI.esc(c.nombre) + ' del dia ' + c.dia + '</span></button> ' +
+                '<span class="solo-lector"> ' + UI.esc(c.nombre) + ' del día ' + c.dia + '</span></button> ' +
               '<button type="button" class="btn rojo chico" data-delc="' + c.id + '" data-n="' + UI.esc(c.nombre) + '">' +
-                'Borrar<span class="solo-lector"> ' + UI.esc(c.nombre) + ' del dia ' + c.dia + '</span></button>' +
+                'Borrar<span class="solo-lector"> ' + UI.esc(c.nombre) + ' del día ' + c.dia + '</span></button>' +
             '</td></tr>';
         });
         html += '</tbody></table></div>';
@@ -789,7 +791,7 @@ window.ADMIN = (function () {
       UI.qq('[data-delc]').forEach(function (b) {
         b.addEventListener('click', function () {
           if (!UI.confirmar('Vas a borrar "' + b.dataset.n + '" y todos sus registros de entrega. ' +
-                            'Esta accion no se puede deshacer. Confirmas?')) return;
+                            'Esta acción no se puede deshacer. Confirmas?')) return;
           DB.comidas.borrar(b.dataset.delc)
             .then(function () { UI.tostada('Comida borrada.', 'ok'); comidas(); })
             .catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); });
@@ -808,25 +810,25 @@ window.ADMIN = (function () {
     UI.cargando('Cargando delegados');
 
     DB.delegados.listar().then(function (lista) {
-      var html = '<h1>Generar los codigos QR</h1>' +
+      var html = '<h1>Generar los códigos QR</h1>' +
         '<section class="tarjeta no-imprimir" aria-labelledby="t-conf-qr">' +
-          '<h2 id="t-conf-qr">Configuracion</h2>' +
-          '<label class="campo" for="urlBase"><span>Direccion publica del sitio</span>' +
+          '<h2 id="t-conf-qr">Configuración</h2>' +
+          '<label class="campo" for="urlBase"><span>Dirección pública del sitio</span>' +
             '<input type="text" id="urlBase" value="' + UI.esc(urlBase()) + '" ' +
               'aria-describedby="ayuda-url"></label>' +
-          '<p class="ayuda-campo" id="ayuda-url">Cada codigo QR abre la credencial de esa persona. ' +
-            'Verifica que esta sea la direccion definitiva antes de imprimir: un codigo QR no se puede ' +
-            'corregir despues de impreso.</p>' +
+          '<p class="ayuda-campo" id="ayuda-url">Cada código QR abre la credencial de esa persona. ' +
+            'Verifica que esta sea la dirección definitiva antes de imprimir: un código QR no se puede ' +
+            'corregir después de impreso.</p>' +
           '<div class="fila-campos">' +
-            '<label class="campo" for="qrTam"><span>Tamano del codigo</span><select id="qrTam">' +
+            '<label class="campo" for="qrTam"><span>Tamaño del código</span><select id="qrTam">' +
               '<option value="3">Chico</option><option value="4" selected>Mediano</option>' +
               '<option value="6">Grande</option></select></label>' +
             '<label class="campo" for="qrDatos"><span>Datos impresos</span><select id="qrDatos">' +
-              '<option value="full" selected>Nombre, codigo y comite</option>' +
-              '<option value="min">Solo el codigo</option></select></label>' +
+              '<option value="full" selected>Nombre, código y comité</option>' +
+              '<option value="min">Solo el código</option></select></label>' +
           '</div>' +
           '<div class="fila-btn">' +
-            '<button type="button" class="btn" id="btnGen">Generar los codigos</button>' +
+            '<button type="button" class="btn" id="btnGen">Generar los códigos</button>' +
             '<button type="button" class="btn oro" id="btnImp">Imprimir</button>' +
           '</div>' +
           '<p role="status" aria-live="polite" id="estadoQR"></p>' +
@@ -863,7 +865,7 @@ window.ADMIN = (function () {
           /* El SVG es una imagen con significado: se le da nombre para
              quien revise la hoja con lector de pantalla. */
           caja.innerHTML =
-            '<div role="img" aria-label="Codigo QR de ' + UI.esc(d.nombre) + ', credencial ' + UI.esc(d.codigo) + '">' +
+            '<div role="img" aria-label="Código QR de ' + UI.esc(d.nombre) + ', credencial ' + UI.esc(d.codigo) + '">' +
               g.createSvgTag({ cellSize: tam, margin: 1, scalable: true }) +
             '</div>' +
             (modo === 'full'
@@ -875,11 +877,11 @@ window.ADMIN = (function () {
         });
 
         UI.q('#estadoQR').textContent = lista.length === 1
-          ? 'Se genero 1 codigo QR.'
-          : 'Se generaron ' + lista.length + ' codigos QR.';
+          ? 'Se genero 1 código QR.'
+          : 'Se generaron ' + lista.length + ' códigos QR.';
       }
     }).catch(function (e) {
-      UI.pintar('<h1>Generar los codigos QR</h1>' + UI.aviso('err', 'No se pudo cargar', UI.explicarError(e)));
+      UI.pintar('<h1>Generar los códigos QR</h1>' + UI.aviso('err', 'No se pudo cargar', UI.explicarError(e)));
     });
   }
 
@@ -903,16 +905,16 @@ window.ADMIN = (function () {
 
       '<section class="tarjeta" aria-labelledby="t-dispositivo">' +
         '<h2 id="t-dispositivo">Este dispositivo</h2>' +
-        '<label class="campo" for="selEst"><span>Estacion de entrega</span>' +
+        '<label class="campo" for="selEst"><span>Estación de entrega</span>' +
           '<select id="selEst" aria-describedby="ayuda-est">' +
             '<option value="">Sin especificar</option>' +
             window.CONFIG.ESTACIONES.map(function (e) {
               return '<option value="' + UI.esc(e) + '"' + (e === est ? ' selected' : '') + '>' + UI.esc(e) + '</option>';
             }).join('') +
           '</select></label>' +
-        '<p class="ayuda-campo" id="ayuda-est">Queda guardada en este telefono. Sirve para saber despues ' +
+        '<p class="ayuda-campo" id="ayuda-est">Queda guardada en este teléfono. Sirve para saber después ' +
           'por que puerta paso cada delegado.</p>' +
-        '<label class="campo" for="urlPub"><span>Direccion publica del sitio</span>' +
+        '<label class="campo" for="urlPub"><span>Dirección pública del sitio</span>' +
           '<input type="text" id="urlPub" value="' + UI.esc(urlBase()) + '"></label>' +
         '<button type="button" class="btn" id="btnGuardarAj">Guardar</button>' +
       '</section>' +
@@ -940,12 +942,12 @@ window.ADMIN = (function () {
     });
 
     var filas = [
-      ['Configuracion de conexion', window.CONFIG.estaConfigurado()
-        ? ['si', 'Lista'] : ['err', 'Falta editar el archivo de configuracion']],
-      ['Sesion de staff', u ? ['si', u.email] : ['no', 'Sin sesion iniciada']],
+      ['Configuración de conexión', window.CONFIG.estaConfigurado()
+        ? ['si', 'Lista'] : ['err', 'Falta editar el archivo de configuración']],
+      ['Sesión de staff', u ? ['si', u.email] : ['no', 'Sin sesión iniciada']],
       ['Lectura en voz alta', window.VOZ ? ['si', 'Disponible'] : ['no', 'No disponible en este navegador']],
-      ['Instalada como aplicacion', (window.INSTALAR && window.INSTALAR.yaInstalada())
-        ? ['si', 'Si'] : ['no', 'Todavia no']]
+      ['Instalada como aplicación', (window.INSTALAR && window.INSTALAR.yaInstalada())
+        ? ['si', 'Sí'] : ['no', 'Todavía no']]
     ];
 
     DB.probar().then(function (r) {
@@ -973,20 +975,136 @@ window.ADMIN = (function () {
   }
 
 
+  /* ================================================================
+     SALAS DE CHAT
+     ================================================================ */
+  function salas() {
+    UI.cargando('Cargando las salas');
+
+    Promise.all([DB.chat.salas(), DB.delegados.listar()]).then(function (r) {
+      var lista = r[0], delegados = r[1];
+
+      /* Comités que aparecen en la lista de delegados y todavía no tienen sala */
+      var existentes = {};
+      lista.forEach(function (x) { if (x.comite) existentes[x.comite.toLowerCase()] = true; });
+      var comites = {};
+      delegados.forEach(function (d) { if (d.comite && d.comite.trim()) comites[d.comite.trim()] = true; });
+      var faltantes = Object.keys(comites).filter(function (c) { return !existentes[c.toLowerCase()]; }).sort();
+
+      var html = '<h1>Salas de chat</h1>' +
+        '<p>Cada sala es un espacio de conversación con archivos PDF. La sala general es para todas las personas ' +
+        'acreditadas; las demás corresponden a un comité.</p>';
+
+      if (faltantes.length) {
+        html += '<div class="aviso info" role="note"><b>Comités sin sala</b>' +
+          'En la lista de delegados hay ' + faltantes.length + ' comité(s) que todavía no tienen sala: ' +
+          UI.esc(faltantes.join(', ')) + '. ' +
+          '<button type="button" class="btn chico" id="btnSalasComites" style="margin-top:.5rem">Crear una sala por cada uno</button></div>';
+      }
+
+      html += '<details class="acordeon"><summary>Crear una sala</summary><div class="cuerpo">' +
+        '<div class="fila-campos">' +
+          campo('slNombre', 'Nombre de la sala', 'Por ejemplo: Consejo de Seguridad.') +
+          campo('slComite', 'Comité asociado (opcional)', 'Exactamente como figura en la lista de delegados, para sugerirla como "tu comité".') +
+        '</div>' +
+        '<label class="campo" for="slDesc"><span>Descripción (opcional)</span><input type="text" id="slDesc"></label>' +
+        '<button type="button" class="btn" id="btnCrearSala">Crear sala</button>' +
+      '</div></details>';
+
+      if (!lista.length) {
+        html += UI.vacio('&#128172;', 'No hay salas todavía. Ejecuta el script INSTALACION-INTERBOT-Y-CHAT.sql para crear la sala general.');
+      } else {
+        html += '<div class="tabla-env"><table class="datos">' +
+          '<caption class="solo-lector">Salas de chat del evento</caption>' +
+          '<thead><tr><th scope="col">Sala</th><th scope="col">Tipo</th><th scope="col">Comité</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead><tbody>';
+        lista.forEach(function (x) {
+          html += '<tr>' +
+            '<td><strong>' + UI.esc(x.nombre) + '</strong><br><small class="silencio">' + UI.esc(x.descripcion || '') + '</small></td>' +
+            '<td>' + UI.esc(x.tipo) + '</td>' +
+            '<td>' + UI.esc(x.comite || '') + '</td>' +
+            '<td><span class="chip ' + (x.activa ? 'si' : 'no') + '">' + (x.activa ? 'Abierta' : 'Cerrada') + '</span></td>' +
+            '<td>' +
+              '<a class="btn sec chico" href="#/chat/' + encodeURIComponent(x.clave) + '">Entrar<span class="solo-lector"> a ' + UI.esc(x.nombre) + '</span></a> ' +
+              '<button type="button" class="btn sec chico" data-tog-sala="' + x.id + '" data-a="' + (x.activa ? '1' : '0') + '">' +
+                (x.activa ? 'Cerrar' : 'Abrir') + '<span class="solo-lector"> ' + UI.esc(x.nombre) + '</span></button> ' +
+              (x.tipo === 'general' ? '' :
+                '<button type="button" class="btn rojo chico" data-del-sala="' + x.id + '" data-n="' + UI.esc(x.nombre) + '">Borrar<span class="solo-lector"> ' + UI.esc(x.nombre) + '</span></button>') +
+            '</td></tr>';
+        });
+        html += '</tbody></table></div>';
+      }
+
+      UI.pintar(html);
+
+      function claveDe(nombre) {
+        return nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || ('sala-' + Date.now());
+      }
+
+      function crear(nombre, comite, desc) {
+        return DB.chat.crearSala({
+          clave: claveDe(nombre), nombre: nombre, comite: comite || null,
+          descripcion: desc || null, tipo: 'comite',
+          orden: (lista.length ? Math.max.apply(null, lista.map(function (x) { return x.orden || 0; })) : 0) + 1
+        });
+      }
+
+      UI.q('#btnCrearSala').addEventListener('click', function () {
+        var nombre = UI.q('#slNombre').value.trim();
+        if (!nombre) { UI.tostada('Ponle un nombre a la sala.', 'err'); UI.q('#slNombre').focus(); return; }
+        crear(nombre, UI.q('#slComite').value.trim(), UI.q('#slDesc').value.trim())
+          .then(function () { UI.tostada('Sala creada.', 'ok'); salas(); })
+          .catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); });
+      });
+
+      var btnAuto = UI.q('#btnSalasComites');
+      if (btnAuto) btnAuto.addEventListener('click', function () {
+        btnAuto.disabled = true;
+        var cadena = Promise.resolve();
+        faltantes.forEach(function (c) {
+          cadena = cadena.then(function () { return crear(c, c, 'Sala del comité ' + c + '.'); });
+        });
+        cadena.then(function () { UI.tostada(faltantes.length + ' sala(s) creada(s).', 'ok'); salas(); })
+          .catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); btnAuto.disabled = false; });
+      });
+
+      UI.qq('[data-tog-sala]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          DB.chat.actualizarSala(b.dataset.togSala, { activa: b.dataset.a === '0' })
+            .then(function () { UI.tostada('Sala actualizada.', 'ok'); salas(); })
+            .catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); });
+        });
+      });
+
+      UI.qq('[data-del-sala]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          if (!UI.confirmar('Vas a borrar la sala "' + b.dataset.n + '" con TODOS sus mensajes. No se puede deshacer. Confirmas?')) return;
+          DB.chat.borrarSala(b.dataset.delSala)
+            .then(function () { UI.tostada('Sala borrada.', 'ok'); salas(); })
+            .catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); });
+        });
+      });
+    }).catch(function (e) {
+      UI.pintar('<h1>Salas de chat</h1>' + UI.aviso('err', 'No se pudieron cargar las salas',
+        UI.explicarError(e) + ' Si las tablas del chat no existen todavía, ejecuta INSTALACION-INTERBOT-Y-CHAT.sql.'));
+    });
+  }
+
+
   /* ---------- Pantalla cuando falta configurar ---------- */
   function sinConfigurar() {
     UI.pintar(
       '<h1>Falta conectar el sistema</h1>' +
-      UI.aviso('warn', 'Todavia no esta configurado',
-        'El portal funciona, pero las credenciales y el control de comidas necesitan la conexion con la base de datos.') +
-      '<h2>Que hay que hacer</h2>' +
+      UI.aviso('warn', 'Todavía no está configurado',
+        'El portal funciona, pero las credenciales y el control de comidas necesitan la conexión con la base de datos.') +
+      '<h2>Qué hay que hacer</h2>' +
       '<ol>' +
         '<li>Crear un proyecto gratuito en supabase punto com.</li>' +
-        '<li>Ejecutar el archivo de instalacion en su editor de consultas.</li>' +
-        '<li>Copiar la direccion y la clave publica del proyecto en el archivo de configuracion.</li>' +
+        '<li>Ejecutar el archivo de instalación en su editor de consultas.</li>' +
+        '<li>Copiar la dirección y la clave pública del proyecto en el archivo de configuración.</li>' +
         '<li>Crear los usuarios del staff.</li>' +
       '</ol>' +
-      '<p>Los pasos completos estan en la guia de instalacion que acompana al sistema.</p>' +
+      '<p>Los pasos completos están en la guía de instalación que acompaña al sistema.</p>' +
       '<p><a class="btn sec" href="#/">Volver al portal</a></p>'
     );
   }
@@ -1000,6 +1118,7 @@ window.ADMIN = (function () {
     delegados: delegados,
     comidas: comidas,
     qr: qr,
+    salas: salas,
     ajustes: ajustes
   };
 })();

@@ -1,7 +1,7 @@
 {
   "name": "InterMUN UAGRM, Modelo de Naciones Unidas",
   "short_name": "InterMUN",
-  "description": "Portal accesible de InterMUN, el Modelo de Naciones Unidas de la Carrera de Relaciones Internacionales de la UAGRM. Reglas de procedimiento, guia del delegado, glosario y credencial digital.",
+  "description": "Portal accesible de InterMUN, el Modelo de Naciones Unidas de la Carrera de Relaciones Internacionales de la UAGRM. Reglas de procedimiento, guía del delegado, glosario y credencial digital.",
   "id": "/intermun-uagrm/",
   "start_url": "./",
   "scope": "./",
@@ -37,6 +37,12 @@
   ],
   "shortcuts": [
     {
+      "name": "InterBot",
+      "short_name": "InterBot",
+      "description": "Preguntarle al asistente de InterMUN",
+      "url": "./#/interbot"
+    },
+    {
       "name": "Mi credencial",
       "short_name": "Credencial",
       "description": "Ver mis datos y el estado de mis refrigerios",
@@ -45,7 +51,7 @@
     {
       "name": "Reglas de procedimiento",
       "short_name": "Reglas",
-      "description": "Glosario y flujo de una sesion de comite",
+      "description": "Glosario y flujo de una sesión de comité",
       "url": "./#/reglas"
     },
     {

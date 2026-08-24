@@ -272,6 +272,160 @@ window.DB = (function () {
   };
 
 
+  /* ============================================================
+     IDENTIDAD DEL DELEGADO
+     Sin contraseña: la identidad es el código de la credencial,
+     verificado contra la tabla de delegados y guardado en el
+     dispositivo. Se usa para InterBot y para el chat.
+     ============================================================ */
+  var identidad = {
+    obtener: function () {
+      try {
+        var g = JSON.parse(localStorage.getItem('intermun_identidad') || 'null');
+        return (g && g.codigo) ? g : null;
+      } catch (e) { return null; }
+    },
+    verificar: function (codigo) {
+      return delegados.porCodigo(codigo).then(function (d) {
+        if (!d || !d.activo) return null;
+        var yo = { id: d.id, codigo: d.codigo, nombre: d.nombre, pais: d.pais || '', comite: d.comite || '', rol: d.rol || 'delegado' };
+        try { localStorage.setItem('intermun_identidad', JSON.stringify(yo)); } catch (e) {}
+        return yo;
+      });
+    },
+    limpiar: function () { try { localStorage.removeItem('intermun_identidad'); } catch (e) {} }
+  };
+
+
+  /* ============================================================
+     INTERBOT (llama a la función en la nube, nunca al proveedor)
+     ============================================================ */
+  var interbot = {
+    preguntar: function (codigo, mensajes) {
+      var url = window.CONFIG.SUPABASE_URL + '/functions/v1/interbot';
+      return fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': window.CONFIG.SUPABASE_ANON,
+          'Authorization': 'Bearer ' + window.CONFIG.SUPABASE_ANON
+        },
+        body: JSON.stringify({ codigo: codigo, mensajes: mensajes })
+      }).then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (d) {
+          if (!r.ok || d.error) {
+            var e = new Error(d.error || ('HTTP ' + r.status));
+            e.codigo = d.error || '';
+            e.detalle = d.detalle || '';
+            throw e;
+          }
+          return d;
+        });
+      });
+    }
+  };
+
+
+  /* ============================================================
+     CHAT POR COMITÉS
+     ============================================================ */
+  function traducirErrorChat(err) {
+    var m = (err && err.message) || '';
+    var mapa = {
+      'CREDENCIAL_INVALIDA': 'Tu credencial no está activa. Vuelve a identificarte o acércate a la mesa de acreditación.',
+      'SALA_INVALIDA': 'Esta sala ya no está disponible.',
+      'MENSAJE_VACIO': 'Escribe un mensaje o adjunta un PDF.',
+      'MENSAJE_LARGO': 'El mensaje supera los 2000 caracteres.',
+      'DEMASIADOS_MENSAJES': 'Estás enviando demasiados mensajes seguidos. Espera un minuto.'
+    };
+    for (var k in mapa) { if (m.indexOf(k) >= 0) return new Error(mapa[k]); }
+    return err;
+  }
+
+  function limpiarNombreArchivo(n) {
+    return String(n || 'archivo.pdf')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^A-Za-z0-9._-]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 80) || 'archivo.pdf';
+  }
+
+  var chat = {
+    salas: function () {
+      return exigir().from('chat_salas').select('*').order('orden', { ascending: true }).order('nombre', { ascending: true }).then(revisar);
+    },
+    salasActivas: function () {
+      return chat.salas().then(function (l) { return l.filter(function (s) { return s.activa; }); });
+    },
+    salaPorClave: function (clave) {
+      return exigir().from('chat_salas').select('*').eq('clave', clave).maybeSingle().then(function (r) {
+        if (r.error) throw r.error;
+        return r.data;
+      });
+    },
+    crearSala: function (s) { return exigir().from('chat_salas').insert(s).select().then(revisar); },
+    actualizarSala: function (id, cambios) { return exigir().from('chat_salas').update(cambios).eq('id', id).select().then(revisar); },
+    borrarSala: function (id) {
+      return exigir().from('chat_salas').delete().eq('id', id).then(function (r) { if (r.error) throw r.error; return true; });
+    },
+
+    mensajes: function (salaId, limite) {
+      return exigir().from('chat_mensajes').select('*')
+        .eq('sala_id', salaId)
+        .order('creado_en', { ascending: false })
+        .limit(limite || 100)
+        .then(revisar)
+        .then(function (l) { return l.reverse(); });
+    },
+    enviar: function (codigo, salaId, texto, archivo) {
+      return exigir().rpc('chat_enviar', {
+        p_codigo: codigo,
+        p_sala: salaId,
+        p_texto: texto || null,
+        p_archivo_ruta: archivo ? archivo.ruta : null,
+        p_archivo_nombre: archivo ? archivo.nombre : null,
+        p_archivo_tamano: archivo ? archivo.tamano : null
+      }).then(function (r) {
+        if (r.error) throw traducirErrorChat(r.error);
+        return r.data;
+      });
+    },
+    subirArchivo: function (codigo, file) {
+      var ruta = codigo + '/' + Date.now() + '-' + limpiarNombreArchivo(file.name);
+      return exigir().storage.from('chat-archivos')
+        .upload(ruta, file, { contentType: 'application/pdf', upsert: false })
+        .then(function (r) {
+          if (r.error) {
+            var m = r.error.message || '';
+            if (/row-level security|policy|403|Unauthorized/i.test(m)) throw new Error('No se pudo subir el archivo: tu credencial no está autorizada.');
+            if (/size|too large|413/i.test(m)) throw new Error('El archivo supera el tamaño permitido (10 MB).');
+            if (/mime|type/i.test(m)) throw new Error('Solo se pueden adjuntar archivos PDF.');
+            throw r.error;
+          }
+          return { ruta: ruta, nombre: file.name, tamano: file.size };
+        });
+    },
+    urlArchivo: function (ruta) {
+      return exigir().storage.from('chat-archivos').getPublicUrl(ruta).data.publicUrl;
+    },
+    borrar: function (id) {
+      return exigir().from('chat_mensajes').delete().eq('id', id).then(function (r) { if (r.error) throw r.error; return true; });
+    },
+    escuchar: function (salaId, fn) {
+      if (!hayConexion()) return null;
+      return cliente
+        .channel('chat-' + salaId)
+        .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'chat_mensajes', filter: 'sala_id=eq.' + salaId },
+            function (p) { fn(p); })
+        .subscribe();
+    },
+    dejarDeEscuchar: function (canal) {
+      if (canal && cliente) { try { cliente.removeChannel(canal); } catch (e) {} }
+    }
+  };
+
+
   /* ---------- Utilidad interna ---------- */
   function revisar(r) {
     if (r.error) throw r.error;
@@ -299,6 +453,9 @@ window.DB = (function () {
     delegados:    delegados,
     dieta:        dieta,
     comidas:      comidas,
-    entregas:     entregas
+    entregas:     entregas,
+    identidad:    identidad,
+    interbot:     interbot,
+    chat:         chat
   };
 })();

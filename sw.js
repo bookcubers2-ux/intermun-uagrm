@@ -8,7 +8,7 @@
    comidas siempre tiene que trabajar con datos frescos.
    ==================================================================== */
 
-var CACHE = 'intermun-v4-marca';
+var CACHE = 'intermun-v5-chat';
 
 var ARCHIVOS = [
   './',
@@ -36,6 +36,9 @@ var ARCHIVOS = [
   './js/app.js',
   './js/vistas-publicas.js',
   './js/vistas-admin.js',
+  './js/identidad.js',
+  './js/interbot.js',
+  './js/chat.js',
   './js/vendor/supabase.min.js',
   './js/vendor/qrcode-generator.js',
   './js/vendor/html5-qrcode.min.js'

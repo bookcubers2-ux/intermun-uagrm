@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>InterMUN UAGRM | Modelo de Naciones Unidas</title>
-<meta name="description" content="Portal accesible de InterMUN, el Modelo de Naciones Unidas de la Carrera de Relaciones Internacionales de la UAGRM. Reglas de procedimiento, guia del delegado y credencial digital.">
+<meta name="description" content="Portal accesible de InterMUN, el Modelo de Naciones Unidas de la Carrera de Relaciones Internacionales de la UAGRM. Reglas de procedimiento, guía del delegado y credencial digital.">
 <meta name="theme-color" content="#040635">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="css/estilos.css">
@@ -33,18 +33,18 @@
 
 <!-- Enlaces de salto: primeros del documento, invisibles hasta recibir foco -->
 <a class="saltar" href="#contenido">Saltar al contenido principal</a>
-<a class="saltar" href="#navegacion">Saltar a la navegacion</a>
+<a class="saltar" href="#navegacion">Saltar a la navegación</a>
 <a class="saltar" href="#barra-accesibilidad">Saltar a las herramientas de accesibilidad</a>
 
 <!-- Herramientas de accesibilidad: lo primero que encuentra el lector.
      Es un landmark propio para poder saltar directo a el navegando por
-     regiones, sin recorrer toda la pagina. -->
+     regiones, sin recorrer toda la página. -->
 <section id="barra-accesibilidad" aria-label="Herramientas de accesibilidad"></section>
 
 <header class="barra">
   <div class="barra-inner">
     <a class="marca" href="#/">
-      <!-- Logotipo oficial. El alt va vacio a proposito: el texto de al
+      <!-- Logotipo oficial. El alt va vacio a propósito: el texto de al
            lado ya nombra el enlace, y repetirlo obligaria al lector de
            pantalla a decir "InterMUN InterMUN". -->
       <img class="marca-logo" src="img/logo-240.png" alt="" width="54" height="54">
@@ -55,16 +55,16 @@
     </a>
     <span class="barra-sp"></span>
     <span class="sesion-chip oculto" id="chipSesion"></span>
-    <button type="button" class="btn-salir" id="btnSalir" hidden>Cerrar sesion</button>
+    <button type="button" class="btn-salir" id="btnSalir" hidden>Cerrar sesión</button>
   </div>
 
-  <nav class="nav" aria-label="Navegacion principal">
+  <nav class="nav" aria-label="Navegación principal">
     <div class="nav-inner" id="navegacion"></div>
   </nav>
 </header>
 
 <!-- Regiones de anuncio para lectores de pantalla.
-     Si algo cambia y no se anuncia aqui, para una persona ciega no paso. -->
+     Si algo cambia y no se anuncia aquí, para una persona ciega no paso. -->
 <p id="anuncio-vivo" class="solo-lector" role="status" aria-live="polite" aria-atomic="true"></p>
 <p id="anuncio-alerta" class="solo-lector" role="alert" aria-live="assertive" aria-atomic="true"></p>
 
@@ -77,15 +77,15 @@
 
 <footer class="pie" id="pie"></footer>
 
-<!-- Aviso visual breve. Su version hablada va por la region de anuncios,
-     asi que se oculta al lector de pantalla para no repetir el mensaje. -->
+<!-- Aviso visual breve. Su versión hablada va por la región de anuncios,
+     así que se oculta al lector de pantalla para no repetir el mensaje. -->
 <div id="tostada" class="oculto" aria-hidden="true"></div>
 
 <!-- Librerias servidas desde el propio sitio -->
 <script src="js/vendor/supabase.min.js"></script>
 <script src="js/vendor/qrcode-generator.js"></script>
 
-<!-- Configuracion y contenido -->
+<!-- Configuración y contenido -->
 <script src="js/config.js"></script>
 <script src="js/contenido.js"></script>
 
@@ -95,11 +95,14 @@
 <script src="js/voz.js"></script>
 <script src="js/instalar.js"></script>
 
-<!-- Nucleo de la aplicacion -->
+<!-- Nucleo de la aplicación -->
 <script src="js/ui.js"></script>
 <script src="js/db.js"></script>
 <script src="js/vistas-publicas.js"></script>
 <script src="js/vistas-admin.js"></script>
+<script src="js/identidad.js"></script>
+<script src="js/interbot.js"></script>
+<script src="js/chat.js"></script>
 <script src="js/app.js"></script>
 
 </body>

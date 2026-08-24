@@ -157,13 +157,13 @@ window.UI = (function () {
   function explicarError(e) {
     var m = (e && e.message) ? e.message : String(e);
     if (/Invalid login credentials/i.test(m)) {
-      return 'El correo o la contrasena no coinciden. Revisa que no haya espacios de mas y vuelve a intentarlo.';
+      return 'El correo o la contraseña no coinciden. Revisa que no haya espacios de más y vuelve a intentarlo.';
     }
     if (/Failed to fetch|NetworkError|network/i.test(m)) {
-      return 'No hay conexion con la base de datos. Revisa tu internet y vuelve a intentarlo.';
+      return 'No hay conexión con la base de datos. Revisa tu internet y vuelve a intentarlo.';
     }
     if (/JWT|not authenticated|permission denied|row-level security|42501/i.test(m)) {
-      return 'No tienes permiso para hacer esto. Inicia sesion como staff desde el menu Control.';
+      return 'No tienes permiso para hacer esto. Inicia sesión como staff desde el menú Control.';
     }
     if (/duplicate key|23505/i.test(m)) {
       return 'Ese registro ya existe. Revisa la lista antes de volver a crearlo.';
