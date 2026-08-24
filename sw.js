@@ -8,7 +8,7 @@
    comidas siempre tiene que trabajar con datos frescos.
    ==================================================================== */
 
-var CACHE = 'intermun-v6-red-primero';
+var CACHE = 'intermun-v7-interbot-abierto';
 
 var ARCHIVOS = [
   './',

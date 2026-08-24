@@ -67,7 +67,7 @@ window.VISTAS = (function () {
         { href: '#/datos',         ico: '&#128161;', t: 'Curiosidades',
           d: 'Datos del mundo de los Modelos de Naciones Unidas que casi nadie conoce.' },
         { href: '#/interbot',      ico: '&#129302;', t: 'InterBot',
-          d: 'Pregúntale al asistente de InterMUN cómo proponer una moción, qué hacer en tu comité o cómo redactar.' },
+          d: 'Pregúntale al asistente de InterMUN cómo proponer una moción, qué hacer en tu comité o cómo redactar. No necesitas credencial.' },
         { href: '#/chat',          ico: '&#128172;', t: 'Chat por comités',
           d: 'Conversa con las demás delegaciones y comparte archivos PDF, en la sala general o en la de tu comité.' },
         { href: '#/accesibilidad', ico: '&#9855;',   t: 'Mi perfil de accesibilidad',

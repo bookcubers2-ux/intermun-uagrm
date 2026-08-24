@@ -1,9 +1,12 @@
 /* ====================================================================
    InterMUN UAGRM | InterBot, el asistente con inteligencia artificial
    --------------------------------------------------------------------
-   Solo texto. Cada delegada o delegado conversa identificándose con
-   su código de credencial; la respuesta la produce la función en la
-   nube "interbot" (que es la que guarda la clave del proveedor).
+   Solo texto. Está abierto: cualquiera puede conversar sin credencial,
+   como invitado y con un tope diario más bajo. Quien sí tiene credencial
+   recibe respuestas personalizadas con su país y su comité. La respuesta
+   la produce la función en la nube "interbot" (la que guarda la clave del
+   proveedor); allí se enciende o apaga el modo abierto con el secreto
+   INTERBOT_ABIERTO.
 
    Accesibilidad:
    - La conversación es una región de registro (role="log") con
@@ -25,6 +28,21 @@ window.INTERBOT = (function () {
     '¿Cómo empiezo mi discurso de apertura?'
   ];
 
+  /* Quien no tiene credencial conversa como invitado. Se le genera un
+     identificador que vive solo en su dispositivo; sirve para contar sus
+     preguntas del día, no para saber quién es. */
+  function identidadInvitado() {
+    var id = null;
+    try { id = localStorage.getItem('intermun_interbot_invitado'); } catch (e) {}
+    if (!/^INV-[A-Z0-9]{6}$/.test(id || '')) {
+      var abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', s6 = '';
+      for (var i = 0; i < 6; i++) s6 += abc.charAt(Math.floor(Math.random() * abc.length));
+      id = 'INV-' + s6;
+      try { localStorage.setItem('intermun_interbot_invitado', id); } catch (e) {}
+    }
+    return { codigo: id, nombre: 'Invitado', invitado: true };
+  }
+
   function claveHistorial(codigo) { return 'intermun_interbot_' + codigo; }
 
   function leerHistorial(codigo) {
@@ -44,13 +62,14 @@ window.INTERBOT = (function () {
     if (!DB.hayConexion()) {
       UI.pintar('<h1>InterBot</h1>' +
         UI.aviso('warn', 'El sistema todavía no está conectado',
-          'InterBot necesita la conexión con la base de datos para verificar tu credencial.'));
+          'InterBot necesita conexión para poder responder. Inténtalo de nuevo en un momento.'));
       return;
     }
 
-    var yo = DB.identidad.obtener();
-    if (!yo) { pedirCredencial(); return; }
-    pintarChat(yo);
+    /* InterBot está abierto: se entra directo. Si ya hay una credencial
+       guardada se usa, porque así las respuestas salen personalizadas con
+       el país y el comité; si no la hay, se conversa como invitado. */
+    pintarChat(DB.identidad.obtener() || identidadInvitado());
   }
 
 
@@ -73,9 +92,13 @@ window.INTERBOT = (function () {
 
     UI.pintar(
       '<h1>InterBot</h1>' +
-      '<p class="silencio">Conversas como <strong>' + UI.esc(yo.nombre) + '</strong>' +
-        (yo.pais ? ', ' + UI.esc(yo.pais) : '') + (yo.comite ? ', ' + UI.esc(yo.comite) : '') +
-        '. <button type="button" class="btn sec chico" id="ibCambiar">Cambiar de credencial</button></p>' +
+      (yo.invitado
+        ? '<p class="silencio">Conversas como <strong>invitado</strong>. Puedes preguntar sin credencial. ' +
+          'Si te identificas, InterBot responde con ejemplos de tu país y tu comité. ' +
+          '<button type="button" class="btn sec chico" id="ibCambiar">Identificarme con mi credencial</button></p>'
+        : '<p class="silencio">Conversas como <strong>' + UI.esc(yo.nombre) + '</strong>' +
+          (yo.pais ? ', ' + UI.esc(yo.pais) : '') + (yo.comite ? ', ' + UI.esc(yo.comite) : '') +
+          '. <button type="button" class="btn sec chico" id="ibCambiar">Cambiar de credencial</button></p>') +
 
       '<section aria-labelledby="t-ib-conv">' +
         '<h2 id="t-ib-conv">Conversación</h2>' +
@@ -110,8 +133,9 @@ window.INTERBOT = (function () {
     if (historial.length) {
       historial.forEach(function (m) { agregar(m.rol, m.texto, true); });
     } else {
-      agregar('bot', 'Hola, ' + yo.nombre.split(' ')[0] + '. Soy InterBot. Pregúntame lo que necesites sobre ' +
-        'el procedimiento, cómo intervenir en tu comité o cómo redactar tus documentos.', true);
+      agregar('bot', (yo.invitado ? 'Hola. ' : 'Hola, ' + yo.nombre.split(' ')[0] + '. ') +
+        'Soy InterBot. Pregúntame lo que necesites sobre el procedimiento, cómo intervenir ' +
+        'en un comité o cómo redactar tus documentos.', true);
     }
     pintarSugerencias(!historial.length);
 

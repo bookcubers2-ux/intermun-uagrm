@@ -48,6 +48,17 @@ const MODELO = MODELOS[0];
 const LIMITE_CODIGO_DIA = Number(ENTORNO('LIMITE_CODIGO_DIA', '40'));
 const LIMITE_CODIGO_MINUTO = Number(ENTORNO('LIMITE_CODIGO_MINUTO', '5'));
 const LIMITE_GLOBAL_DIA = Number(ENTORNO('LIMITE_GLOBAL_DIA', '800'));
+/* Modo abierto: con INTERBOT_ABIERTO=1 cualquiera conversa sin credencial.
+   Se usa mientras InterMUN se presenta en publico; para volver a exigir la
+   credencial basta con poner ese secreto en 0, sin tocar el codigo.
+   Quien entra sin credencial tiene un limite diario mas bajo. */
+const ABIERTO = ENTORNO('INTERBOT_ABIERTO', '0') === '1';
+const LIMITE_INVITADO_DIA = Number(ENTORNO('LIMITE_INVITADO_DIA', '15'));
+const CONTEXTO_INVITADO =
+  '\n\nQUIÉN TE ESCRIBE\nUna persona interesada en InterMUN que todavía no tiene credencial. ' +
+  'No sabes su nombre, su país ni su comité: no los inventes ni se los preguntes con insistencia. ' +
+  'Responde con ejemplos generales y, cuando venga al caso, cuéntale que al acreditarse podrás ' +
+  'personalizar las respuestas con el país y el comité que le toquen.';
 /* Si un modelo no responde en este tiempo, se pasa al siguiente de la cadena. */
 const TOPE_MODELO_MS = Number(ENTORNO('TOPE_MODELO_MS', '20000'));
 const ORIGENES = ENTORNO('ORIGENES_PERMITIDOS', 'https://bookcubers2-ux.github.io,http://127.0.0.1:8899,http://localhost:8899')
@@ -340,50 +351,64 @@ Deno.serve(async (req: Request) => {
 
   const codigo = String(cuerpo.codigo ?? '').trim().toUpperCase();
   const mensajes = Array.isArray(cuerpo.mensajes) ? cuerpo.mensajes : [];
-  if (!codigo || !mensajes.length) return responder({ error: 'DATOS_INCOMPLETOS' }, 400, cors);
+  if (!mensajes.length) return responder({ error: 'DATOS_INCOMPLETOS' }, 400, cors);
+  if (!codigo && !ABIERTO) return responder({ error: 'DATOS_INCOMPLETOS' }, 400, cors);
 
   /* Solo se conserva un historial corto y limpio. */
   const historial: Mensaje[] = mensajes
     .filter((m) => m && (m.rol === 'usuario' || m.rol === 'bot') && typeof m.texto === 'string')
     .map((m) => ({ rol: m.rol, texto: m.texto.slice(0, 1500) }))
     .slice(-12);
-  if (historial[historial.length - 1].rol !== 'usuario') {
+  if (!historial.length || historial[historial.length - 1].rol !== 'usuario') {
     return responder({ error: 'DATOS_INCOMPLETOS' }, 400, cors);
   }
 
-  /* 1. La credencial debe existir y estar activa. */
-  const rd = await rest(`delegados?select=id,nombre,pais,comite,rol&codigo=eq.${encodeURIComponent(codigo)}&activo=eq.true&limit=1`);
-  const delegados = rd.ok ? await rd.json() : [];
-  if (!delegados.length) return responder({ error: 'CREDENCIAL_INVALIDA' }, 401, cors);
-  const d = delegados[0];
+  /* 1. Si viene credencial, debe existir y estar activa. Sin credencial solo
+        se sigue cuando el modo abierto esta encendido, y entonces se conversa
+        como invitado: sin datos personales y con un tope diario mas bajo. */
+  let d: { nombre: string; pais?: string; comite?: string; rol?: string } | null = null;
+  if (codigo) {
+    const rd = await rest(`delegados?select=id,nombre,pais,comite,rol&codigo=eq.${encodeURIComponent(codigo)}&activo=eq.true&limit=1`);
+    const delegados = rd.ok ? await rd.json() : [];
+    d = delegados.length ? delegados[0] : null;
+  }
+  if (!d && !ABIERTO) return responder({ error: 'CREDENCIAL_INVALIDA' }, 401, cors);
+
+  /* Clave con la que se cuentan los usos. Al invitado se le acepta el
+     identificador que guarda su navegador (INV-XXXX) para poder limitarlo
+     por separado sin conocer quien es. */
+  const esInvitado = !d;
+  const clave = d ? codigo : (/^INV-[A-Z0-9]{4,20}$/.test(codigo) ? codigo : 'INVITADO');
+  const topeDia = esInvitado ? LIMITE_INVITADO_DIA : LIMITE_CODIGO_DIA;
 
   /* 2. Límites de uso. */
   const ahora = Date.now();
   const hace24h = new Date(ahora - 24 * 3600 * 1000).toISOString();
   const hace1m = new Date(ahora - 60 * 1000).toISOString();
   const [porDia, porMinuto, global] = await Promise.all([
-    contar(`codigo=eq.${encodeURIComponent(codigo)}&creado_en=gte.${hace24h}`),
-    contar(`codigo=eq.${encodeURIComponent(codigo)}&creado_en=gte.${hace1m}`),
+    contar(`codigo=eq.${encodeURIComponent(clave)}&creado_en=gte.${hace24h}`),
+    contar(`codigo=eq.${encodeURIComponent(clave)}&creado_en=gte.${hace1m}`),
     contar(`creado_en=gte.${hace24h}`),
   ]);
   if (porMinuto >= LIMITE_CODIGO_MINUTO) return responder({ error: 'MUY_RAPIDO' }, 429, cors);
-  if (porDia >= LIMITE_CODIGO_DIA) return responder({ error: 'LIMITE_DIARIO', limite: LIMITE_CODIGO_DIA }, 429, cors);
+  if (porDia >= topeDia) return responder({ error: 'LIMITE_DIARIO', limite: topeDia }, 429, cors);
   if (global >= LIMITE_GLOBAL_DIA) return responder({ error: 'LIMITE_GLOBAL' }, 429, cors);
 
   /* 3. Se registra el uso antes de llamar al proveedor. */
   await rest('interbot_uso', {
     method: 'POST',
     headers: { 'Prefer': 'return=minimal' },
-    body: JSON.stringify({ codigo }),
+    body: JSON.stringify({ codigo: clave }),
   });
 
-  /* 4. Contexto del delegado y llamada al proveedor. */
-  const contexto = [
+  /* 4. Contexto de quien escribe y llamada al proveedor. */
+  const contexto = !d ? CONTEXTO_INVITADO : [
     `\n\nQUIÉN TE ESCRIBE\nNombre: ${d.nombre}. Rol: ${d.rol ?? 'delegado'}.`,
     d.pais ? `Representa a: ${d.pais}.` : '',
     d.comite ? `Comité: ${d.comite}.` : '',
     'Usa estos datos para personalizar (por ejemplo, ejemplos con su país), sin repetirlos innecesariamente.',
   ].filter(Boolean).join(' ');
+
 
   try {
     const sistema = CONOCIMIENTO + contexto;
