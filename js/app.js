@@ -29,6 +29,7 @@ window.APP = (function () {
     'accesibilidad': { nav: 'Accesibilidad',    titulo: 'Mi perfil de accesibilidad',  ver: function () { VISTAS.accesibilidad(); } },
     'interbot':      { nav: 'InterBot',         titulo: 'InterBot',                    ver: function () { INTERBOT.vista(); } },
     'chat':          { nav: 'Chat',             titulo: 'Chat de InterMUN',            ver: function (p) { CHAT.vista(p); } },
+    'puntuaciones':  { nav: 'Puntuaciones',     titulo: 'Puntuaciones en vivo',        ver: function (p) { PUNTOS.vista(p); } },
 
     'staff':         { nav: 'Control',          titulo: 'Control de InterMUN',         ver: function () { ADMIN.panel(); } },
     'escanear':      { nav: null,               titulo: 'Escanear credencial',         ver: function () { ADMIN.escanear(); },  staff: true },
@@ -37,6 +38,7 @@ window.APP = (function () {
     'comidas':       { nav: null,               titulo: 'Comidas del evento',          ver: function () { ADMIN.comidas(); },   staff: true },
     'qr':            { nav: null,               titulo: 'Generar los códigos QR',      ver: function () { ADMIN.qr(); },        staff: true },
     'salas':         { nav: null,               titulo: 'Salas de chat',               ver: function () { ADMIN.salas(); },     staff: true },
+    'puntuar':       { nav: null,               titulo: 'Puntuar a los delegados',     ver: function (p) { PUNTOS.panel(p); },  staff: true },
     'ajustes':       { nav: null,               titulo: 'Ajustes y estado',            ver: function () { ADMIN.ajustes(); } }
   };
 

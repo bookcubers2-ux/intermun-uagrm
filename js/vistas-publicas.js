@@ -403,17 +403,24 @@ window.VISTAS = (function () {
     UI.cargando('Buscando la credencial');
 
     var delegado = null, listaComidas = [], entregas = [];
+    var foros = [], misPuntos = [], puntosForo = [], delegadosForo = [], miForo = null;
 
     DB.delegados.porCodigo(codigo)
       .then(function (d) {
         if (!d) throw new Error('__no_existe__');
         delegado = d;
-        return Promise.all([DB.comidas.activas(), DB.entregas.deDelegado(d.id)]);
+        return Promise.all([DB.comidas.activas(), DB.entregas.deDelegado(d.id), cargarPuntos()]);
       })
       .then(function (r) {
         listaComidas = r[0];
         entregas = r[1];
         pintarCredencial();
+        APP.registrarCanal(DB.puntos.escuchar(function () {
+          cargarPuntos().then(function () {
+            pintarCredencial(true);
+            UI.tostada('Tus puntuaciones se actualizaron.', 'ok');
+          });
+        }));
         APP.abrirCanalVivo(function () {
           DB.entregas.deDelegado(delegado.id).then(function (e) {
             var antes = entregas.length;
@@ -437,7 +444,23 @@ window.VISTAS = (function () {
       });
 
 
-    function pintarCredencial() {
+    /* Puntuaciones: las del delegado y las de su foro (para el puesto). */
+    function cargarPuntos() {
+      return Promise.all([DB.chat.salasActivas(), DB.puntos.deDelegado(delegado.id)])
+        .then(function (r) {
+          foros = PUNTOS.soloForos(r[0]);
+          misPuntos = r[1];
+          miForo = PUNTOS.foroDelDelegado(delegado, foros);
+          if (!miForo) { puntosForo = []; delegadosForo = []; return; }
+          return Promise.all([DB.puntos.deForo(miForo.clave), DB.delegados.listar()]).then(function (q) {
+            puntosForo = q[0];
+            delegadosForo = PUNTOS.delegadosDelForo(q[1], miForo);
+          });
+        })
+        .catch(function () { foros = []; misPuntos = []; puntosForo = []; delegadosForo = []; });
+    }
+
+    function pintarCredencial(transitorio) {
       var esStaff = !!APP.usuarioActual();
       var mapa = {};
       entregas.forEach(function (x) { mapa[x.comida_id] = x; });
@@ -503,6 +526,8 @@ window.VISTAS = (function () {
       }
       html += '</section>';
 
+      html += PUNTOS.seccionCredencial(delegado, foros, misPuntos, puntosForo, delegadosForo);
+
       if (esStaff) {
         html += '<div class="fila-btn no-imprimir">' +
                   '<a class="btn" href="#/escanear">Escanear la siguiente credencial</a>' +
@@ -515,7 +540,7 @@ window.VISTAS = (function () {
           '<p><a class="btn sec" href="#/">Volver al inicio del portal</a></p>';
       }
 
-      UI.pintar(html);
+      UI.pintar(html, { transitorio: !!transitorio });
 
       if (!esStaff) return;
 

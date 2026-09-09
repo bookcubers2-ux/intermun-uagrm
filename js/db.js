@@ -426,6 +426,41 @@ window.DB = (function () {
   };
 
 
+  /* ============================================================
+     PUNTUACIONES (publicas; escribe solo el staff)
+     ============================================================ */
+  var puntos = {
+    deForo: function (foro) {
+      return exigir().from('puntuaciones').select('*').eq('foro', foro)
+        .order('creado_en', { ascending: false }).then(revisar);
+    },
+    deDelegado: function (delegadoId) {
+      return exigir().from('puntuaciones').select('*').eq('delegado_id', delegadoId)
+        .order('creado_en', { ascending: false }).then(revisar);
+    },
+    todas: function () {
+      return exigir().from('puntuaciones').select('*').then(revisar);
+    },
+    otorgar: function (p) {
+      return exigir().from('puntuaciones').insert(p).select().then(revisar);
+    },
+    quitar: function (id) {
+      return exigir().from('puntuaciones').delete().eq('id', id).then(function (r) {
+        if (r.error) throw r.error; return true;
+      });
+    },
+    escuchar: function (fn) {
+      if (!hayConexion()) return null;
+      return cliente.channel('puntos-vivo-' + Date.now())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'puntuaciones' }, function (p) { fn(p); })
+        .subscribe();
+    },
+    dejarDeEscuchar: function (canal) {
+      if (canal && cliente) { try { cliente.removeChannel(canal); } catch (e) {} }
+    }
+  };
+
+
   /* ---------- Utilidad interna ---------- */
   function revisar(r) {
     if (r.error) throw r.error;
@@ -456,6 +491,7 @@ window.DB = (function () {
     entregas:     entregas,
     identidad:    identidad,
     interbot:     interbot,
-    chat:         chat
+    chat:         chat,
+    puntos:       puntos
   };
 })();

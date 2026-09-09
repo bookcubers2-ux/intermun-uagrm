@@ -281,6 +281,20 @@ La función también acepta Groq como proveedor alternativo (groq.com, también 
 
 ---
 
+## Parte 6. Puntuaciones por foro
+
+Se instala con una sola consulta: abre el **SQL Editor** de Supabase, pega el contenido de `INSTALACION-PUNTUACIONES.sql` y presiona **Run**. (En el proyecto actual ya está hecho.)
+
+**Para los chairs.** Entrar a **Control**, luego **Puntuar a los delegados**, elegir el foro. Se toca la delegación en la tabla, se elige el criterio y la sesión, y se presiona un botón rápido (+1, +2, +3, +5) o se escribe otro valor. Los criterios que admiten descuento (protocolo y conducta) tienen botones negativos. Si algo se otorgó por error, en "Últimas puntuaciones" está el botón **Quitar**.
+
+**Para los delegados.** En el menú **Puntuaciones** ven el ranking en vivo de cada foro, y en su credencial la sección "Mis puntuaciones" con su total, su puesto y el desglose por criterio.
+
+**Requisito.** El comité escrito en cada credencial tiene que coincidir con el nombre, la sigla o la clave de la sala del foro (por ejemplo "CSI", "Consejo de Seguridad Internacional" o "csi"). Si un foro muestra 0 delegaciones, revisa ese campo en **Delegados**.
+
+Los criterios, los máximos sugeridos, los botones rápidos y la cantidad de sesiones se cambian en `js/config.js`, sección 5.
+
+---
+
 ## Estructura de los archivos
 
 ```
@@ -303,11 +317,13 @@ sistema/
     ├── identidad.js             Identificación por credencial (sin contraseña)
     ├── interbot.js              Conversación con InterBot
     ├── chat.js                  Chat por comités con archivos PDF
+    ├── puntuaciones.js          Puntuaciones por foro en vivo
     └── vendor/                  Librerías (no tocar)
 ├── funciones/
 │   ├── interbot/index.ts        Función en la nube de InterBot (guarda la clave de IA)
 │   └── desplegar-interbot.py    Despliegue en un solo comando
 ├── INSTALACION-INTERBOT-Y-CHAT.sql  Tablas y políticas del chat
+├── INSTALACION-PUNTUACIONES.sql     Tabla y políticas de puntuaciones
 ```
 
 Para cambiar textos del portal (reglas, glosario, consejos, curiosidades), edita `js/contenido.js`. Está escrito para que se pueda modificar sin saber programar.

@@ -8,7 +8,7 @@
    comidas siempre tiene que trabajar con datos frescos.
    ==================================================================== */
 
-var CACHE = 'intermun-v7-interbot-abierto';
+var CACHE = 'intermun-v8-puntuaciones';
 
 var ARCHIVOS = [
   './',
@@ -39,6 +39,7 @@ var ARCHIVOS = [
   './js/identidad.js',
   './js/interbot.js',
   './js/chat.js',
+  './js/puntuaciones.js',
   './js/vendor/supabase.min.js',
   './js/vendor/qrcode-generator.js',
   './js/vendor/html5-qrcode.min.js'

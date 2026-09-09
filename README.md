@@ -46,6 +46,10 @@ Verificado con axe-core (0 violaciones en 10 rutas) y 20 pruebas de comportamien
 
 Ambos módulos siguen el mismo estándar de accesibilidad del resto del sitio: regiones en vivo para que el lector de pantalla anuncie cada respuesta y cada mensaje nuevo, estados en texto (nunca un indicador giratorio), y mensajes propios marcados con la palabra "Tú" y no solo con color.
 
+## Puntuaciones en vivo por foro
+
+Los chairs puntúan a cada delegación durante las sesiones desde el celular, con sesión de staff: eligen el foro, tocan la delegación, el criterio (discursos, mociones y procedimiento, negociación, documento de posición, redacción de resoluciones, protocolo y conducta) y los puntos. Cada puntuación se publica al instante: el ranking del foro (**Puntuaciones** en el menú) y la sección "Mis puntuaciones" de cada credencial se actualizan solos, sin recargar. Las puntuaciones son públicas por diseño y quedan registradas con sesión, nota y quién las otorgó; el staff puede quitar una puntuación equivocada. Los criterios y los botones rápidos se ajustan en `js/config.js`; la tabla y sus políticas están en `INSTALACION-PUNTUACIONES.sql`.
+
 ## Instalable en el teléfono
 
 Se instala como aplicación desde el navegador, sin tienda de aplicaciones. Una vez instalada, las reglas, el glosario y la guía del delegado funcionan sin conexión.
@@ -65,6 +69,7 @@ La base de datos es PostgreSQL en Supabase, con las políticas de seguridad a ni
 | `js/db.js` | Capa de acceso a datos |
 | `js/vistas-publicas.js` | Portal y credenciales |
 | `js/vistas-admin.js` | Control de comidas |
+| `js/puntuaciones.js` | Puntuaciones por foro: ranking público, panel de los chairs y sección en la credencial |
 | `js/vendor/` | Librerías incluidas |
 
 ---

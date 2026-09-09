@@ -108,6 +108,8 @@ window.ADMIN = (function () {
           d: 'Definir los refrigerios y almuerzos de cada día.' },
         { href: '#/salas',     ico: '&#128172;', t: 'Salas de chat',
           d: 'Abrir la sala general y una sala por cada comité, y moderar.' },
+        { href: '#/puntuar',   ico: '&#127942;', t: 'Puntuar a los delegados',
+          d: 'Los chairs otorgan puntos por foro durante las sesiones; el ranking se actualiza en vivo.' },
         { href: '#/qr',        ico: '&#128290;', t: 'Generar los códigos QR',
           d: 'Crear e imprimir los códigos del reverso de cada credencial.' },
         { href: '#/ajustes',   ico: '&#9881;',   t: 'Ajustes y estado',

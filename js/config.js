@@ -53,6 +53,30 @@ window.CONFIG = {
     'Estación 2',
     'Estación 3',
     'Mesa principal'
+  ],
+
+
+  /* ---- 5. CRITERIOS DE PUNTUACION -----------------------------
+     Con estos criterios los chairs puntuan a cada delegado durante
+     las sesiones. Las puntuaciones son publicas: se ven en vivo en
+     el portal (Puntuaciones) y en la credencial de cada delegado.
+     "max" es el maximo sugerido por sesion, "rapidos" son los
+     botones de un toque que ve el chair.
+  ------------------------------------------------------------ */
+  SESIONES_PUNTAJE: 6,
+  CRITERIOS_PUNTAJE: [
+    { clave: 'discurso',    nombre: 'Discursos e intervenciones',    max: 10, rapidos: [1, 2, 3, 5],
+      d: 'Claridad, argumentación y uso del tiempo en la lista de oradores y los caucus.' },
+    { clave: 'procedimiento', nombre: 'Mociones y procedimiento',    max: 5,  rapidos: [1, 2, 3],
+      d: 'Mociones bien formuladas y oportunas, puntos usados correctamente.' },
+    { clave: 'negociacion', nombre: 'Negociación y diplomacia',      max: 10, rapidos: [1, 2, 3, 5],
+      d: 'Construcción de bloques, liderazgo en el caucus no moderado y acuerdos.' },
+    { clave: 'documento',   nombre: 'Documento de posición',         max: 10, rapidos: [2, 5, 8, 10],
+      d: 'Investigación, coherencia con la política exterior del pais y propuestas.' },
+    { clave: 'resolucion',  nombre: 'Redacción de resoluciones',     max: 10, rapidos: [1, 2, 3, 5],
+      d: 'Cláusulas propuestas, patrocinio y enmiendas aprobadas.' },
+    { clave: 'conducta',    nombre: 'Protocolo y conducta',          max: 5,  rapidos: [1, 2, -1, -2],
+      d: 'Lenguaje diplomático, respeto al reglamento y puntualidad. Admite descuentos.' }
   ]
 };
 
