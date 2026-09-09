@@ -92,30 +92,48 @@ window.ADMIN = (function () {
     if (!APP.usuarioActual()) { login(); return; }
 
     var est = VISTAS.estacionGuardada();
+    var admin = APP.esAdmin();
 
-    UI.pintar(
-      '<h1>Control de InterMUN</h1>' +
-      '<p>Sesión iniciada como <strong>' + UI.esc(APP.usuarioActual().email) + '</strong>.' +
+    var operacion = [
+      { href: '#/escanear',  ico: '&#128247;', t: 'Escanear credencial',
+        d: 'Modo rápido para la fila: escanea el QR y marca desayuno, almuerzo o merienda al instante.' },
+      { href: '#/tablero',   ico: '&#128202;', t: 'Tablero en vivo',
+        d: 'Cuántos recibieron cada comida, quién falta, y descarga para Excel.' },
+      { href: '#/puntuar',   ico: '&#127942;', t: 'Puntuar a los delegados',
+        d: 'Otorgar y corregir puntos por foro durante las sesiones; el ranking se actualiza en vivo.' },
+      { href: '#/chat',      ico: '&#128172;', t: 'Ver los chats',
+        d: 'Leer la sala general y la de cada comité.' + (admin ? ' Como administrador puedes retirar mensajes.' : '') },
+      { href: '#/archivos',  ico: '&#128196;', t: 'Archivos compartidos',
+        d: 'Todos los PDF que subieron los delegados, por sala y por persona, listos para descargar.' }
+    ];
+    var administracion = [
+      { href: '#/delegados', ico: '&#128100;', t: 'Delegados y PIN',
+        d: 'Cargar la lista, editar datos, ver y cambiar el PIN de cada persona, dar de baja credenciales.' },
+      { href: '#/comidas',   ico: '&#127869;', t: 'Comidas del evento',
+        d: 'Definir desayuno, almuerzo y las cuatro meriendas de cada día.' },
+      { href: '#/salas',     ico: '&#128172;', t: 'Salas de chat',
+        d: 'Abrir o cerrar la sala general y la de cada foro.' },
+      { href: '#/qr',        ico: '&#128290;', t: 'Generar los códigos QR',
+        d: 'Imprimir los códigos del reverso de cada credencial, con o sin el PIN.' },
+      { href: '#/cuentas',   ico: '&#128273;', t: 'Cuentas del staff',
+        d: 'Dar acceso a otras personas como operador o administrador.' }
+    ];
+
+    var html = '<h1>Control de InterMUN</h1>' +
+      '<p>Sesión iniciada como <strong>' + UI.esc(APP.usuarioActual().email) + '</strong>, ' +
+        (admin ? 'con permisos de <strong>administrador</strong>.' : 'con permisos de <strong>operador</strong>.') +
         (est ? ' Estación de entrega: <strong>' + UI.esc(est) + '</strong>.' : '') + '</p>' +
-      listaModulos([
-        { href: '#/escanear',  ico: '&#128247;', t: 'Escanear credencial',
-          d: 'Modo rápido para la fila de refrigerios: escanea y marca al instante.' },
-        { href: '#/tablero',   ico: '&#128202;', t: 'Tablero en vivo',
-          d: 'Cuántos recibieron cada comida, en tiempo real, y descarga para Excel.' },
-        { href: '#/delegados', ico: '&#128100;', t: 'Delegados',
-          d: 'Cargar la lista, editar datos y dar de baja credenciales.' },
-        { href: '#/comidas',   ico: '&#127869;', t: 'Comidas',
-          d: 'Definir los refrigerios y almuerzos de cada día.' },
-        { href: '#/salas',     ico: '&#128172;', t: 'Salas de chat',
-          d: 'Abrir la sala general y una sala por cada comité, y moderar.' },
-        { href: '#/puntuar',   ico: '&#127942;', t: 'Puntuar a los delegados',
-          d: 'Los chairs otorgan puntos por foro durante las sesiones; el ranking se actualiza en vivo.' },
-        { href: '#/qr',        ico: '&#128290;', t: 'Generar los códigos QR',
-          d: 'Crear e imprimir los códigos del reverso de cada credencial.' },
-        { href: '#/ajustes',   ico: '&#9881;',   t: 'Ajustes y estado',
-          d: 'Elegir tu estación de entrega y revisar el estado del sistema.' }
-      ])
-    );
+      '<h2>Operación del evento</h2>' + listaModulos(operacion);
+
+    if (admin) {
+      html += '<h2>Administración</h2>' + listaModulos(administracion);
+    } else {
+      html += UI.aviso('info', 'Qué puede hacer un operador',
+        'Escanear credenciales y marcar comidas, puntuar delegados, leer los chats y descargar los archivos. ' +
+        'Cambiar delegados, comidas, salas o cuentas es tarea del administrador.');
+    }
+    html += '<p><a class="btn sec" href="#/ajustes">Ajustes y estado de este dispositivo</a></p>';
+    UI.pintar(html);
   }
 
 
@@ -508,16 +526,24 @@ window.ADMIN = (function () {
   function delegados() {
     UI.cargando('Cargando delegados');
 
-    DB.delegados.listar().then(function (lista) {
+    Promise.all([DB.delegados.listar(), DB.pines.listar()]).then(function (r) {
+      var lista = r[0];
+      var pinDe = {};
+      r[1].forEach(function (x) { pinDe[x.delegado_id] = x.pin; });
+
       var html = '<h1>Delegados</h1>' +
-        '<p>' + (lista.length === 1 ? 'Hay 1 persona acreditada.' : 'Hay ' + lista.length + ' personas acreditadas.') + '</p>';
+        '<p>' + (lista.length === 1 ? 'Hay 1 persona acreditada.' : 'Hay ' + lista.length + ' personas acreditadas.') + '</p>' +
+        UI.aviso('info', 'El PIN personal',
+          'A cada persona se le genera un PIN de cuatro dígitos al crearla. Es lo que le permite ver sus comidas, su desempeño y ' +
+          'escribir en el chat. Se lo entregas en acreditación (o lo imprimes en la credencial desde "Generar los códigos QR"). ' +
+          'Aquí puedes verlo y cambiarlo.');
 
       html += '<details class="acordeon"><summary>Agregar una persona</summary><div class="cuerpo">' +
                 '<div class="fila-campos">' +
                   campo('nvCodigo', 'Código', 'Si lo dejas vacío, se genera solo.') +
                   campo('nvNombre', 'Nombre completo', 'Es el único dato obligatorio.') +
                   campo('nvPais', 'País que representa', '') +
-                  campo('nvComite', 'Comité', '') +
+                  campo('nvComite', 'Comité', 'Escríbelo con la sigla entre paréntesis, igual que la sala: por ejemplo "Consejo de Seguridad Internacional (CSI)".') +
                   campo('nvInst', 'Institución', '') +
                 '</div>' +
                 '<label class="campo" for="nvRol"><span>Rol</span><select id="nvRol">' +
@@ -558,7 +584,7 @@ window.ADMIN = (function () {
               '<thead><tr>' +
                 '<th scope="col">Código</th><th scope="col">Nombre</th><th scope="col">País</th>' +
                 '<th scope="col">Comité</th><th scope="col">Institución</th><th scope="col">Rol</th>' +
-                '<th scope="col">Estado</th><th scope="col">Acciones</th>' +
+                '<th scope="col">PIN</th><th scope="col">Estado</th><th scope="col">Acciones</th>' +
               '</tr></thead><tbody>';
 
       lista.forEach(function (d) {
@@ -569,6 +595,8 @@ window.ADMIN = (function () {
           '<td>' + UI.esc(d.comite || '') + '</td>' +
           '<td>' + UI.esc(d.institucion || '') + '</td>' +
           '<td>' + UI.esc(d.rol || '') + '</td>' +
+          '<td class="mono">' + (pinDe[d.id] ? UI.esc(pinDe[d.id]) : '<span class="chip ojo">sin PIN</span>') +
+            ' <button type="button" class="btn sec chico" data-pin="' + d.id + '" data-nom="' + UI.esc(d.nombre) + '">Cambiar<span class="solo-lector"> el PIN de ' + UI.esc(d.nombre) + '</span></button></td>' +
           '<td><span class="chip ' + (d.activo ? 'si' : 'err') + '">' + (d.activo ? 'Activa' : 'De baja') + '</span></td>' +
           '<td>' +
             '<button type="button" class="btn sec chico" data-baja="' + d.id + '" data-est="' + (d.activo ? '1' : '0') + '">' +
@@ -581,7 +609,7 @@ window.ADMIN = (function () {
 
       html += '</tbody></table></div></section>' +
               '<div class="fila-btn"><button type="button" class="btn sec" id="btnExpDel">' +
-              'Descargar la lista para Excel</button></div>';
+              'Descargar la lista con los PIN para Excel</button></div>';
 
       UI.pintar(html);
       enlazarAltas();
@@ -610,6 +638,19 @@ window.ADMIN = (function () {
         });
       });
 
+      UI.qq('[data-pin]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var nuevo = window.prompt('Nuevo PIN para ' + b.dataset.nom + ' (cuatro dígitos). Deja vacío para generar uno al azar.');
+          if (nuevo === null) return;
+          nuevo = String(nuevo).trim();
+          if (!nuevo) nuevo = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+          if (!/^\d{4,8}$/.test(nuevo)) { UI.tostada('El PIN debe tener entre cuatro y ocho dígitos.', 'err'); return; }
+          DB.pines.cambiar(b.dataset.pin, nuevo)
+            .then(function () { UI.tostada('PIN de ' + b.dataset.nom + ' cambiado a ' + nuevo + '.', 'ok'); delegados(); })
+            .catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); });
+        });
+      });
+
       UI.qq('[data-borrar]').forEach(function (b) {
         b.addEventListener('click', function () {
           if (!UI.confirmar('Vas a borrar definitivamente a ' + b.dataset.nom +
@@ -622,10 +663,10 @@ window.ADMIN = (function () {
 
       UI.q('#btnExpDel').addEventListener('click', function () {
         var filas = lista.map(function (d) {
-          return [d.codigo, d.nombre, d.pais || '', d.comite || '', d.institucion || '', d.rol || '', d.activo ? 'sí' : 'no'];
+          return [d.codigo, pinDe[d.id] || '', d.nombre, d.pais || '', d.comite || '', d.institucion || '', d.rol || '', d.activo ? 'sí' : 'no'];
         });
-        UI.descargar('intermun-delegados.csv',
-          UI.aCSV(['Código', 'Nombre', 'País', 'Comité', 'Institución', 'Rol', 'Activo'], filas));
+        UI.descargar('intermun-delegados-con-pin.csv',
+          UI.aCSV(['Código', 'PIN', 'Nombre', 'País', 'Comité', 'Institución', 'Rol', 'Activo'], filas));
         UI.tostada('Lista descargada.', 'ok');
       });
     }).catch(function (e) {
@@ -716,15 +757,16 @@ window.ADMIN = (function () {
 
     DB.comidas.listar().then(function (lista) {
       var html = '<h1>Comidas del evento</h1>' +
-        '<p>Define aquí cada refrigerio y almuerzo. Es lo que el staff podrá marcar al escanear.</p>';
+        '<p>Define aquí cada comida de cada día. Es lo que el staff podrá marcar al escanear. ' +
+        'El cronograma oficial de InterMUN 2026 es desayuno, almuerzo y cuatro meriendas por día, durante tres días: dieciocho en total.</p>';
 
       html += '<details class="acordeon"><summary>Agregar una comida</summary><div class="cuerpo">' +
                 '<div class="fila-campos">' +
-                  campo('cmNombre', 'Nombre', 'Por ejemplo: Almuerzo, o Refrigerio de la mañana.') +
+                  campo('cmNombre', 'Nombre', 'Por ejemplo: Desayuno, Almuerzo, Merienda 1.') +
                   '<label class="campo" for="cmDia"><span>Día</span>' +
                     '<input type="number" id="cmDia" value="1" min="1" max="10"></label>' +
                   '<label class="campo" for="cmTipo"><span>Tipo</span><select id="cmTipo">' +
-                    ['almuerzo', 'refrigerio', 'cena', 'coffee'].map(function (t) {
+                    ['desayuno', 'almuerzo', 'merienda', 'refrigerio', 'cena', 'coffee'].map(function (t) {
                       return '<option>' + t + '</option>'; }).join('') +
                   '</select></label>' +
                   '<label class="campo" for="cmFecha"><span>Fecha, opcional</span>' +
@@ -811,7 +853,10 @@ window.ADMIN = (function () {
   function qr() {
     UI.cargando('Cargando delegados');
 
-    DB.delegados.listar().then(function (lista) {
+    Promise.all([DB.delegados.listar(), DB.pines.listar()]).then(function (r) {
+      var lista = r[0];
+      var pinDe = {};
+      r[1].forEach(function (x) { pinDe[x.delegado_id] = x.pin; });
       var html = '<h1>Generar los códigos QR</h1>' +
         '<section class="tarjeta no-imprimir" aria-labelledby="t-conf-qr">' +
           '<h2 id="t-conf-qr">Configuración</h2>' +
@@ -820,13 +865,15 @@ window.ADMIN = (function () {
               'aria-describedby="ayuda-url"></label>' +
           '<p class="ayuda-campo" id="ayuda-url">Cada código QR abre la credencial de esa persona. ' +
             'Verifica que esta sea la dirección definitiva antes de imprimir: un código QR no se puede ' +
-            'corregir después de impreso.</p>' +
+            'corregir después de impreso. La opción con PIN es para la copia que se entrega en mano a cada ' +
+            'persona en acreditación: el PIN es privado y no debe quedar a la vista en la credencial colgada.</p>' +
           '<div class="fila-campos">' +
             '<label class="campo" for="qrTam"><span>Tamaño del código</span><select id="qrTam">' +
               '<option value="3">Chico</option><option value="4" selected>Mediano</option>' +
               '<option value="6">Grande</option></select></label>' +
             '<label class="campo" for="qrDatos"><span>Datos impresos</span><select id="qrDatos">' +
               '<option value="full" selected>Nombre, código y comité</option>' +
+              '<option value="pin">Nombre, código, comité y PIN personal</option>' +
               '<option value="min">Solo el código</option></select></label>' +
           '</div>' +
           '<div class="fila-btn">' +
@@ -870,11 +917,12 @@ window.ADMIN = (function () {
             '<div role="img" aria-label="Código QR de ' + UI.esc(d.nombre) + ', credencial ' + UI.esc(d.codigo) + '">' +
               g.createSvgTag({ cellSize: tam, margin: 1, scalable: true }) +
             '</div>' +
-            (modo === 'full'
-              ? '<p class="qr-nom">' + UI.esc(d.nombre) + '</p>' +
+            (modo === 'min'
+              ? '<p class="qr-cod">' + UI.esc(d.codigo) + '</p>'
+              : '<p class="qr-nom">' + UI.esc(d.nombre) + '</p>' +
                 '<p class="qr-cod">' + UI.esc(d.codigo) + '</p>' +
-                '<p class="qr-meta">' + UI.esc([d.pais, d.comite].filter(Boolean).join(', ')) + '</p>'
-              : '<p class="qr-cod">' + UI.esc(d.codigo) + '</p>');
+                '<p class="qr-meta">' + UI.esc([d.pais, d.comite].filter(Boolean).join(', ')) + '</p>' +
+                (modo === 'pin' ? '<p class="qr-cod">PIN ' + UI.esc(pinDe[d.id] || 'sin PIN') + '</p>' : ''));
           cont.appendChild(caja);
         });
 
@@ -946,7 +994,7 @@ window.ADMIN = (function () {
     var filas = [
       ['Configuración de conexión', window.CONFIG.estaConfigurado()
         ? ['si', 'Lista'] : ['err', 'Falta editar el archivo de configuración']],
-      ['Sesión de staff', u ? ['si', u.email] : ['no', 'Sin sesión iniciada']],
+      ['Sesión de staff', u ? ['si', u.email + (APP.esAdmin() ? ' (administrador)' : ' (operador)')] : ['no', 'Sin sesión iniciada']],
       ['Lectura en voz alta', window.VOZ ? ['si', 'Disponible'] : ['no', 'No disponible en este navegador']],
       ['Instalada como aplicación', (window.INSTALAR && window.INSTALAR.yaInstalada())
         ? ['si', 'Sí'] : ['no', 'Todavía no']]
@@ -1068,6 +1116,182 @@ window.ADMIN = (function () {
   }
 
 
+  /* ================================================================
+     ARCHIVOS COMPARTIDOS (admin y operador)
+     Todos los PDF subidos al chat, para descargarlos sin recorrer
+     sala por sala.
+     ================================================================ */
+  function archivos() {
+    UI.cargando('Buscando los archivos');
+    Promise.all([DB.chat.archivos(), DB.chat.salas()]).then(function (r) {
+      var lista = r[0], salas = r[1];
+      var salaDe = {};
+      salas.forEach(function (x) { salaDe[x.id] = x; });
+
+      var html = '<h1>Archivos compartidos</h1>' +
+        '<p>' + (lista.length === 1 ? 'Hay 1 archivo PDF compartido en el chat.' : 'Hay ' + lista.length + ' archivos PDF compartidos en el chat.') +
+          ' Toca el nombre para abrirlo o descargarlo.</p>';
+
+      if (!lista.length) {
+        html += UI.vacio('&#128196;', 'Todavía nadie compartió un archivo.');
+        UI.pintar(html);
+        return;
+      }
+
+      html += '<label class="campo" for="filtroArch"><span>Buscar por persona, código, sala o nombre del archivo</span>' +
+                '<input type="search" id="filtroArch" autocomplete="off"></label>' +
+              '<p class="solo-lector" role="status" aria-live="polite" id="conteoArch"></p>' +
+              '<div class="tabla-env"><table class="datos" id="tablaArch">' +
+              '<caption class="solo-lector">Archivos PDF compartidos en el chat</caption>' +
+              '<thead><tr><th scope="col">Fecha</th><th scope="col">Archivo</th><th scope="col">Quién</th><th scope="col">Sala</th>' +
+              (APP.esAdmin() ? '<th scope="col">Acción</th>' : '') + '</tr></thead><tbody>';
+      lista.forEach(function (m) {
+        var sala = salaDe[m.sala_id];
+        html += '<tr>' +
+          '<td class="mono">' + UI.fechaHora(m.creado_en) + '</td>' +
+          '<td><a href="' + UI.esc(DB.chat.urlArchivo(m.archivo_ruta)) + '" target="_blank" rel="noopener" download>' +
+            UI.esc(m.archivo_nombre || 'archivo.pdf') + '</a>' +
+            (m.archivo_tamano ? ' <small class="silencio">(' + Math.max(1, Math.round(m.archivo_tamano / 1024)) + ' KB)</small>' : '') + '</td>' +
+          '<td>' + UI.esc(m.nombre) + ' <span class="mono">' + UI.esc(m.codigo) + '</span></td>' +
+          '<td>' + (sala ? '<a href="#/chat/' + encodeURIComponent(sala.clave) + '">' + UI.esc(sala.nombre) + '</a>' : 'Sala borrada') + '</td>' +
+          (APP.esAdmin()
+            ? '<td><button type="button" class="btn rojo chico" data-borrar-arch="' + m.id + '" data-n="' + UI.esc(m.archivo_nombre || '') + '">Retirar<span class="solo-lector"> ' + UI.esc(m.archivo_nombre || '') + '</span></button></td>'
+            : '') +
+        '</tr>';
+      });
+      html += '</tbody></table></div>';
+      UI.pintar(html);
+
+      var conteo = UI.q('#conteoArch');
+      UI.q('#filtroArch').addEventListener('input', function () {
+        var t = this.value.toLowerCase(), n = 0;
+        UI.qq('#tablaArch tbody tr').forEach(function (tr) {
+          var ok = tr.textContent.toLowerCase().indexOf(t) >= 0;
+          tr.style.display = ok ? '' : 'none';
+          if (ok) n++;
+        });
+        conteo.textContent = n + (n === 1 ? ' archivo encontrado.' : ' archivos encontrados.');
+      });
+
+      UI.qq('[data-borrar-arch]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          if (!UI.confirmar('Vas a retirar el mensaje con el archivo "' + b.dataset.n + '" de la sala. Confirmas?')) return;
+          DB.chat.borrar(b.dataset.borrarArch)
+            .then(function () { UI.tostada('Archivo retirado.', 'ok'); archivos(); })
+            .catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); });
+        });
+      });
+    }).catch(function (e) {
+      UI.pintar('<h1>Archivos compartidos</h1>' + UI.aviso('err', 'No se pudieron cargar', UI.explicarError(e)));
+    });
+  }
+
+
+  /* ================================================================
+     CUENTAS DEL STAFF (solo administrador)
+     ================================================================ */
+  function cuentas() {
+    UI.cargando('Cargando las cuentas');
+    DB.staff.listar().then(function (lista) {
+      var html = '<h1>Cuentas del staff</h1>' +
+        '<p>Dos niveles de acceso. <strong>Operador</strong>: escanear y marcar comidas, puntuar, leer los chats y ' +
+          'descargar archivos. <strong>Administrador</strong>: todo lo anterior y además delegados, PIN, comidas, salas, ' +
+          'códigos QR y estas cuentas. Nadie puede ver ni modificar el código de la plataforma desde aquí.</p>';
+
+      html += '<details class="acordeon" open><summary>Dar acceso a una persona</summary><div class="cuerpo">' +
+        '<div class="fila-campos">' +
+          campo('ctCorreo', 'Correo', 'Con este correo iniciará sesión.', 'email') +
+          campo('ctNombre', 'Nombre (opcional)', '') +
+          campo('ctClave', 'Contraseña inicial', 'Mínimo ocho caracteres. Pásasela en persona.', 'text') +
+          '<label class="campo" for="ctRol"><span>Nivel</span><select id="ctRol">' +
+            '<option value="operador">Operador</option><option value="admin">Administrador</option></select></label>' +
+        '</div>' +
+        '<button type="button" class="btn" id="btnCrearCuenta">Crear la cuenta</button>' +
+        '<p class="ayuda-campo">La persona recibirá un correo para confirmar su dirección; hasta que lo abra, no podrá iniciar sesión. ' +
+          'Si el correo no llega, el administrador puede confirmarla desde Supabase, en Authentication.</p>' +
+      '</div></details>';
+
+      html += '<section aria-labelledby="t-cuentas"><h2 id="t-cuentas">Cuentas con acceso</h2>';
+      if (!lista.length) {
+        html += UI.vacio('&#128273;', 'Todavía no hay cuentas registradas.');
+      } else {
+        html += '<div class="tabla-env"><table class="datos">' +
+          '<caption class="solo-lector">Cuentas del staff y su nivel</caption>' +
+          '<thead><tr><th scope="col">Correo</th><th scope="col">Nombre</th><th scope="col">Nivel</th><th scope="col">Acciones</th></tr></thead><tbody>';
+        var yo = (APP.usuarioActual() || {}).email || '';
+        lista.forEach(function (c) {
+          var esYo = c.email.toLowerCase() === yo.toLowerCase();
+          html += '<tr>' +
+            '<td class="mono">' + UI.esc(c.email) + (esYo ? ' <span class="chip si">tú</span>' : '') + '</td>' +
+            '<td>' + UI.esc(c.nombre || '') + '</td>' +
+            '<td><span class="chip ' + (c.rol === 'admin' ? 'rol' : 'no') + '">' + (c.rol === 'admin' ? 'Administrador' : 'Operador') + '</span></td>' +
+            '<td>' +
+              (esYo ? '' :
+                '<button type="button" class="btn sec chico" data-rol="' + UI.esc(c.email) + '" data-a="' + (c.rol === 'admin' ? 'operador' : 'admin') + '">' +
+                  (c.rol === 'admin' ? 'Pasar a operador' : 'Hacer administrador') + '<span class="solo-lector"> a ' + UI.esc(c.email) + '</span></button> ' +
+                '<button type="button" class="btn rojo chico" data-quitar-cta="' + UI.esc(c.email) + '">Quitar acceso<span class="solo-lector"> a ' + UI.esc(c.email) + '</span></button>') +
+            '</td></tr>';
+        });
+        html += '</tbody></table></div>';
+      }
+      html += '</section>' +
+        UI.aviso('info', 'Cómo funciona por dentro',
+          'La base de datos decide qué puede hacer cada cuenta según esta tabla, no el navegador. Aunque alguien ' +
+          'modifique la página en su teléfono, la base rechaza lo que su nivel no permite.');
+      UI.pintar(html);
+
+      UI.q('#btnCrearCuenta').addEventListener('click', function () {
+        var correo = UI.q('#ctCorreo').value.trim().toLowerCase();
+        var clave = UI.q('#ctClave').value;
+        var rol = UI.q('#ctRol').value;
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)) { UI.tostada('Escribe un correo válido.', 'err'); UI.q('#ctCorreo').focus(); return; }
+        if (clave.length < 8) { UI.tostada('La contraseña debe tener al menos ocho caracteres.', 'err'); UI.q('#ctClave').focus(); return; }
+        var b = UI.q('#btnCrearCuenta'); b.disabled = true; b.textContent = 'Creando, un momento';
+        DB.staff.guardar(correo, UI.q('#ctNombre').value.trim(), rol)
+          .then(function () { return DB.staff.crearCuenta(correo, clave); })
+          .then(function (r) {
+            UI.tostada(r.confirmada
+              ? 'Cuenta creada. Ya puede iniciar sesión.'
+              : 'Cuenta creada. Se envió un correo de confirmación a ' + correo + '.', 'ok');
+            cuentas();
+          })
+          .catch(function (e) {
+            var m = (e && e.message) || '';
+            if (/already registered|already exists|user_already/i.test(m)) {
+              UI.tostada('Ese correo ya tenía cuenta: se le asignó el nivel elegido.', 'ok');
+              cuentas();
+              return;
+            }
+            UI.tostada(UI.explicarError(e), 'err');
+            b.disabled = false; b.textContent = 'Crear la cuenta';
+          });
+      });
+
+      UI.qq('[data-rol]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var fila = lista.filter(function (c) { return c.email === b.dataset.rol; })[0] || {};
+          DB.staff.guardar(b.dataset.rol, fila.nombre, b.dataset.a)
+            .then(function () { UI.tostada('Nivel actualizado.', 'ok'); cuentas(); })
+            .catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); });
+        });
+      });
+
+      UI.qq('[data-quitar-cta]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          if (!UI.confirmar('Vas a quitar el acceso de ' + b.dataset.quitarCta + '. Su cuenta seguirá existiendo pero sin permisos de administrador; ' +
+                            'para bloquearla del todo, bórrala en Supabase, en Authentication. Confirmas?')) return;
+          DB.staff.quitar(b.dataset.quitarCta)
+            .then(function () { UI.tostada('Acceso retirado.', 'ok'); cuentas(); })
+            .catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); });
+        });
+      });
+    }).catch(function (e) {
+      UI.pintar('<h1>Cuentas del staff</h1>' + UI.aviso('err', 'No se pudieron cargar',
+        UI.explicarError(e) + ' Si la tabla staff no existe, ejecuta INSTALACION-IDENTIDAD-Y-ROLES.sql.'));
+    });
+  }
+
+
   /* ---------- Pantalla cuando falta configurar ---------- */
   function sinConfigurar() {
     UI.pintar(
@@ -1096,6 +1320,8 @@ window.ADMIN = (function () {
     comidas: comidas,
     qr: qr,
     salas: salas,
+    archivos: archivos,
+    cuentas: cuentas,
     ajustes: ajustes
   };
 })();

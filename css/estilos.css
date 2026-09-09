@@ -888,3 +888,10 @@ table.ranking tr.elegida td { outline: 3px solid var(--azul); outline-offset: -3
   .barras-puntos li { grid-template-columns: 1fr auto; }
   .barras-puntos .barra-p { grid-column: 1 / -1; }
 }
+
+/* ---------- Comités y tópicos oficiales ---------- */
+.tarjeta.comite { margin-bottom: 1rem; }
+.tarjeta.comite h3 { margin-top: .5rem; }
+.tarjeta.comite h4 { margin-bottom: .25rem; }
+.tarjeta.comite-en { border-left: 6px solid var(--rojo); }
+.chip strong { font-weight: 700; }

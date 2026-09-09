@@ -57,23 +57,29 @@ window.VISTAS = (function () {
     html += '<h2>Qué quieres hacer</h2>' +
       listaModulos([
         { href: '#/buscar',        ico: '&#127915;', t: 'Mi credencial',
-          d: 'Consulta tus datos y el estado de tus refrigerios y almuerzos.' },
+          d: 'Tus datos de acreditación: nombre, país, comité e institución.' },
+        { href: '#/mis-comidas',   ico: '&#127869;', t: 'Mis comidas',
+          d: 'Desayuno, almuerzo y meriendas de cada día: cuáles ya recibiste. Pide tu código y tu PIN.' },
+        { href: '#/mi-desempeno',  ico: '&#127942;', t: 'Mi desempeño',
+          d: 'Tus puntos por criterio, tu puesto en el foro y el detalle de cada puntuación. Pide tu código y tu PIN.' },
         { href: '#/reglas',        ico: '&#9878;',   t: 'Reglas de procedimiento',
           d: 'Los sistemas de reglas, el flujo de una sesión y el glosario completo.' },
         { href: '#/guia',          ico: '&#128218;', t: 'Guía del delegado',
           d: 'Protocolo, formas de tratamiento, vestimenta y consejos prácticos.' },
-        { href: '#/comites',       ico: '&#127760;', t: 'Comités',
-          d: 'Qué comité es cuál y qué nivel de experiencia exige cada uno.' },
+        { href: '#/comites',       ico: '&#127760;', t: 'Comités y tópicos',
+          d: 'Los diez foros oficiales de InterMUN 2026 con sus tópicos. Uno de ellos sesiona en inglés.' },
+        { href: '#/puntuaciones',  ico: '&#128202;', t: 'Ranking por foro',
+          d: 'El ranking público de cada foro, actualizado en vivo cuando los chairs puntúan.' },
         { href: '#/datos',         ico: '&#128161;', t: 'Curiosidades',
           d: 'Datos del mundo de los Modelos de Naciones Unidas que casi nadie conoce.' },
         { href: '#/interbot',      ico: '&#129302;', t: 'InterBot',
           d: 'Pregúntale al asistente de InterMUN cómo proponer una moción, qué hacer en tu comité o cómo redactar. No necesitas credencial.' },
         { href: '#/chat',          ico: '&#128172;', t: 'Chat por comités',
-          d: 'Conversa con las demás delegaciones y comparte archivos PDF, en la sala general o en la de tu comité.' },
+          d: 'Conversa con las demás delegaciones y comparte archivos PDF, en la sala general o en la de tu comité. Pide tu código y tu PIN.' },
         { href: '#/accesibilidad', ico: '&#9855;',   t: 'Mi perfil de accesibilidad',
           d: 'Ajusta la letra, el contraste y la lectura en voz alta a tu medida.' },
-        { href: '#/staff',         ico: '&#128274;', t: hayStaff ? 'Control de comidas' : 'Acceso del staff',
-          d: hayStaff ? 'Escanear credenciales, marcar entregas y ver el tablero.'
+        { href: '#/staff',         ico: '&#128274;', t: hayStaff ? 'Control de InterMUN' : 'Acceso del staff',
+          d: hayStaff ? 'Escanear credenciales, marcar comidas, puntuar y ver el tablero.'
                       : 'Solo para el equipo organizador de InterMUN.' }
       ]);
 
@@ -187,17 +193,44 @@ window.VISTAS = (function () {
      COMITES
      ================================================================ */
   function comites() {
-    var html = '<h1>Los comités</h1>' +
-      '<p>No todos exigen la misma experiencia. Esta es la referencia que usa el circuito de Modelos de Naciones Unidas.</p>' +
-      '<ul class="rejilla" role="list">';
-    C.comites.forEach(function (c) {
-      html += '<li><div class="modulo tarjeta-info">' +
-                '<p class="chip rol">Nivel ' + UI.esc(c.nivel) + '</p>' +
-                '<strong>' + UI.esc(c.n) + '</strong>' +
-                '<span class="d"><strong>' + UI.esc(c.t) + '.</strong> ' + UI.esc(c.d) + '</span>' +
-              '</div></li>';
+    var html = '<h1>Comités y tópicos oficiales</h1>' +
+      '<p>InterMUN 2026 sesiona en diez foros, del 4 al 6 de noviembre. Cada delegación debate los tópicos ' +
+        'de su foro desde la política exterior del país que representa. La asignación de foro y país la hace ' +
+        'la Secretaría Académica al confirmar la inscripción.</p>' +
+      UI.aviso('info', 'Un comité en inglés',
+        'La Primera Comisión (DISEC) sesiona íntegramente en inglés: discursos, mociones, documento de posición y ' +
+        'resoluciones. Los otros nueve foros sesionan en español.');
+
+    var secciones = [];
+    C.comites.forEach(function (c) { if (secciones.indexOf(c.seccion) < 0) secciones.push(c.seccion); });
+
+    secciones.forEach(function (sec, i) {
+      html += '<section aria-labelledby="t-sec-' + i + '"><h2 id="t-sec-' + i + '">' + UI.esc(sec) + '</h2>';
+      C.comites.filter(function (c) { return c.seccion === sec; }).forEach(function (c) {
+        html += '<article class="tarjeta comite' + (c.en ? ' comite-en' : '') + '" aria-labelledby="t-com-' + UI.esc(c.sigla).replace(/\s+/g, '-') + '">' +
+          '<p>' + '<span class="chip rol">' + UI.esc(c.sigla) + '</span> ' +
+                  '<span class="chip">Nivel ' + UI.esc(c.nivel) + '</span> ' +
+                  (c.en ? '<span class="chip err"><strong>En inglés</strong></span>' : '<span class="chip si">En español</span>') + '</p>' +
+          '<h3 id="t-com-' + UI.esc(c.sigla).replace(/\s+/g, '-') + '">' + UI.esc(c.n) + (c.sigla !== c.n ? ' (' + UI.esc(c.sigla) + ')' : '') + '</h3>' +
+          '<p>' + UI.esc(c.d) + '</p>' +
+          (c.idioma ? UI.aviso('warn', 'Sesiona en inglés', c.idioma) : '') +
+          '<h4>' + (c.topicos.length === 1 ? 'Tópico único' : 'Tópicos') + '</h4>' +
+          '<ol class="lista-flujo">' +
+            c.topicos.map(function (t, j) {
+              return '<li>' + (c.topicos.length > 1 ? '<strong>Tópico ' + String.fromCharCode(65 + j) + '.</strong> ' : '') +
+                     (c.en ? '<span lang="en">' + UI.esc(t) + '</span>' : UI.esc(t)) + '</li>';
+            }).join('') +
+          '</ol>' +
+          '<p><a class="enlace-chico" href="#/puntuaciones">Ver el ranking en vivo</a> &middot; ' +
+             '<a class="enlace-chico" href="#/chat">Ir a la sala de chat</a></p>' +
+        '</article>';
+      });
+      html += '</section>';
     });
-    html += '</ul>';
+
+    html += UI.aviso('info', 'Cómo se asigna el foro',
+      'Se toma como prioritaria la primera opción marcada en el formulario de inscripción. Si ese foro ya está completo, ' +
+      'se asigna la segunda opción u otro foro. El país se asigna según la experiencia previa en modelos y no se cambia.');
     UI.pintar(html);
   }
 
@@ -387,7 +420,11 @@ window.VISTAS = (function () {
 
   /* ================================================================
      CREDENCIAL DEL DELEGADO
-     Es la vista que abre el codigo QR de la credencial.
+     Es la vista que abre el codigo QR de la credencial. Es publica:
+     muestra solo los datos de acreditacion. Las comidas y el
+     desempeno viven en sus propios modulos y exigen codigo + PIN.
+     Si quien la abre es staff con sesion, aparecen ademas las
+     comidas con los botones para marcar la entrega.
      ================================================================ */
   function credencial(codigo) {
     if (!codigo) { buscarCredencial(); return; }
@@ -403,34 +440,23 @@ window.VISTAS = (function () {
     UI.cargando('Buscando la credencial');
 
     var delegado = null, listaComidas = [], entregas = [];
-    var foros = [], misPuntos = [], puntosForo = [], delegadosForo = [], miForo = null;
+    var esStaff = !!APP.usuarioActual();
 
     DB.delegados.porCodigo(codigo)
       .then(function (d) {
         if (!d) throw new Error('__no_existe__');
         delegado = d;
-        return Promise.all([DB.comidas.activas(), DB.entregas.deDelegado(d.id), cargarPuntos()]);
+        if (!esStaff) return null;
+        return Promise.all([DB.comidas.activas(), DB.entregas.deDelegado(d.id)]);
       })
       .then(function (r) {
-        listaComidas = r[0];
-        entregas = r[1];
+        if (r) { listaComidas = r[0]; entregas = r[1]; }
         pintarCredencial();
-        APP.registrarCanal(DB.puntos.escuchar(function () {
-          cargarPuntos().then(function () {
-            pintarCredencial(true);
-            UI.tostada('Tus puntuaciones se actualizaron.', 'ok');
+        if (esStaff) {
+          APP.abrirCanalVivo(function () {
+            DB.entregas.deDelegado(delegado.id).then(function (e) { entregas = e; pintarCredencial(true); });
           });
-        }));
-        APP.abrirCanalVivo(function () {
-          DB.entregas.deDelegado(delegado.id).then(function (e) {
-            var antes = entregas.length;
-            entregas = e;
-            pintarCredencial();
-            if (e.length > antes) {
-              UI.tostada('Se registro una entrega nueva en tu credencial.', 'ok');
-            }
-          });
-        });
+        }
       })
       .catch(function (e) {
         if (e.message === '__no_existe__') {
@@ -443,143 +469,270 @@ window.VISTAS = (function () {
         }
       });
 
-
-    /* Puntuaciones: las del delegado y las de su foro (para el puesto). */
-    function cargarPuntos() {
-      return Promise.all([DB.chat.salasActivas(), DB.puntos.deDelegado(delegado.id)])
-        .then(function (r) {
-          foros = PUNTOS.soloForos(r[0]);
-          misPuntos = r[1];
-          miForo = PUNTOS.foroDelDelegado(delegado, foros);
-          if (!miForo) { puntosForo = []; delegadosForo = []; return; }
-          return Promise.all([DB.puntos.deForo(miForo.clave), DB.delegados.listar()]).then(function (q) {
-            puntosForo = q[0];
-            delegadosForo = PUNTOS.delegadosDelForo(q[1], miForo);
-          });
-        })
-        .catch(function () { foros = []; misPuntos = []; puntosForo = []; delegadosForo = []; });
-    }
-
     function pintarCredencial(transitorio) {
-      var esStaff = !!APP.usuarioActual();
-      var mapa = {};
-      entregas.forEach(function (x) { mapa[x.comida_id] = x; });
-      var entregadas = listaComidas.filter(function (c) { return mapa[c.id]; }).length;
-
-      var html =
-        '<h1>Credencial de ' + UI.esc(delegado.nombre) + '</h1>' +
-        '<div class="credencial">' +
-          '<p class="cred-cod">Código ' + UI.esc(delegado.codigo) + '</p>' +
-          '<h2>' + UI.esc(delegado.nombre) + '</h2>' +
-          '<p><span class="chip-cred">' + UI.esc(delegado.rol || 'delegado') + '</span></p>' +
-          '<div class="cred-datos">' +
-            dato('País que representa', delegado.pais) +
-            dato('Comité', delegado.comite) +
-            dato('Institución', delegado.institucion) +
-          '</div>' +
-        '</div>';
+      var html = '<h1>Credencial de ' + UI.esc(delegado.nombre) + '</h1>' + tarjetaCredencial(delegado);
 
       if (!delegado.activo) {
         html += UI.aviso('err', 'Esta credencial fue dada de baja',
           'El Secretariado la desactivó. Acercate a la mesa de acreditación para resolverlo.');
       }
 
-      html += '<section aria-labelledby="t-comidas">' +
-                '<h2 id="t-comidas">Refrigerios y almuerzos</h2>' +
-                '<p><strong>Llevas ' + entregadas + ' de ' + listaComidas.length + '.</strong></p>';
-
-      if (!listaComidas.length) {
-        html += UI.vacio('&#127869;', 'Todavía no se cargo el cronograma de comidas del evento.');
-      } else {
-        var porDia = {};
-        listaComidas.forEach(function (c) {
-          if (!porDia[c.dia]) porDia[c.dia] = [];
-          porDia[c.dia].push(c);
-        });
-
-        Object.keys(porDia).sort(function (a, b) { return a - b; }).forEach(function (dia) {
-          html += '<h3>Día ' + UI.esc(dia) + '</h3><ul class="lista-comidas" role="list">';
-          porDia[dia].forEach(function (c) {
-            var e = mapa[c.id];
-            var estado = e ? 'Ya entregado' : 'Pendiente';
-            var detalle = e
-              ? 'Entregado a las ' + UI.hora(e.entregado_en) + (e.estacion ? ', en ' + UI.esc(e.estacion) : '')
-              : 'Todavía no lo recibes';
-            html +=
-              '<li class="comida-fila">' +
-                '<span class="marca-est ' + (e ? 'si' : 'no') + '" aria-hidden="true">' + (e ? '&#10003;' : '&middot;') + '</span>' +
-                '<span class="info">' +
-                  '<b>' + UI.esc(c.nombre) + '</b>' +
-                  '<small>' + UI.esc(c.tipo) + '. ' + detalle + '.</small>' +
-                '</span>' +
-                (esStaff
-                  ? (e
-                      ? '<button type="button" class="btn sec chico" data-quitar="' + c.id + '">' +
-                          'Deshacer <span class="solo-lector">la entrega de ' + UI.esc(c.nombre) + ' del día ' + UI.esc(dia) + '</span></button>'
-                      : '<button type="button" class="btn verde chico" data-marcar="' + c.id + '">' +
-                          'Entregar <span class="solo-lector">' + UI.esc(c.nombre) + ' del día ' + UI.esc(dia) + '</span></button>')
-                  : '<span class="chip ' + (e ? 'si' : 'no') + '">' + estado + '</span>') +
-              '</li>';
-          });
-          html += '</ul>';
-        });
-      }
-      html += '</section>';
-
-      html += PUNTOS.seccionCredencial(delegado, foros, misPuntos, puntosForo, delegadosForo);
-
       if (esStaff) {
-        html += '<div class="fila-btn no-imprimir">' +
+        html += '<section aria-labelledby="t-comidas">' +
+                  '<h2 id="t-comidas">Comidas de esta persona</h2>' +
+                  htmlComidas(listaComidas, entregas, true) +
+                '</section>' +
+                '<div class="fila-btn no-imprimir">' +
                   '<a class="btn" href="#/escanear">Escanear la siguiente credencial</a>' +
                   '<a class="btn sec" href="#/tablero">Ver el tablero en vivo</a>' +
+                  '<a class="btn sec" href="#/puntuar">Puntuar</a>' +
                 '</div>';
       } else {
-        html += UI.aviso('info', 'Cómo funciona',
-          'Cuando pases por la mesa de refrigerios, muestra el código QR del reverso de tu credencial. ' +
-          'El personal lo escanea y esta pantalla se actualiza sola.') +
+        html += '<h2>Tu información personal</h2>' +
+          '<p>Lo que sigue es privado. Cada sección te pedirá tu código y tu PIN personal, el que recibiste en acreditación.</p>' +
+          listaModulos([
+            { href: '#/mis-comidas',  ico: '&#127869;', t: 'Mis comidas',
+              d: 'Desayuno, almuerzo y meriendas de cada día: cuáles ya recibiste.' },
+            { href: '#/mi-desempeno', ico: '&#127942;', t: 'Mi desempeño',
+              d: 'Tus puntos por criterio, tu puesto en el foro y el detalle de cada puntuación.' },
+            { href: '#/chat',         ico: '&#128172;', t: 'Chat por comités',
+              d: 'La sala general y la sala de tu comité, con archivos PDF.' }
+          ]) +
+          UI.aviso('info', 'Cómo funciona en la fila de comidas',
+            'Muestra el código QR del reverso de tu credencial. El personal lo escanea y la entrega queda registrada ' +
+            'al instante; puedes verla en "Mis comidas".') +
           '<p><a class="btn sec" href="#/">Volver al inicio del portal</a></p>';
       }
 
       UI.pintar(html, { transitorio: !!transitorio });
+      if (esStaff) enlazarBotonesComida(delegado, function (e) { entregas = e; pintarCredencial(true); });
+    }
+  }
 
-      if (!esStaff) return;
 
-      UI.qq('[data-marcar]').forEach(function (b) {
-        b.addEventListener('click', function () {
-          b.disabled = true;
-          var u = APP.usuarioActual();
-          DB.entregas.marcar(delegado.id, b.dataset.marcar, u ? u.email : null, estacionGuardada())
-            .then(function (r) {
-              UI.tostada(r.duplicado
-                ? 'Esa comida ya había sido entregada antes.'
-                : 'Entrega registrada.', r.duplicado ? 'err' : 'ok');
-              return DB.entregas.deDelegado(delegado.id);
-            })
-            .then(function (e) { entregas = e; pintarCredencial(); })
-            .catch(function (err) { UI.tostada(UI.explicarError(err), 'err'); b.disabled = false; });
-        });
+  /* ---------- Piezas compartidas por credencial, Mis comidas y Mi desempeño ---------- */
+  function tarjetaCredencial(delegado) {
+    return '<div class="credencial">' +
+      '<p class="cred-cod">Código ' + UI.esc(delegado.codigo) + '</p>' +
+      '<h2>' + UI.esc(delegado.nombre) + '</h2>' +
+      '<p><span class="chip-cred">' + UI.esc(delegado.rol || 'delegado') + '</span></p>' +
+      '<div class="cred-datos">' +
+        dato('País que representa', delegado.pais) +
+        dato('Comité', delegado.comite) +
+        dato('Institución', delegado.institucion) +
+      '</div>' +
+    '</div>';
+  }
+
+  function dato(k, v) {
+    if (!v) return '';
+    return '<span class="cred-dato"><span class="k">' + UI.esc(k) + '</span>' +
+           '<span class="v">' + UI.esc(v) + '</span></span>';
+  }
+
+  function nombreTipo(t) {
+    return { desayuno: 'Desayuno', almuerzo: 'Almuerzo', merienda: 'Merienda', refrigerio: 'Refrigerio', cena: 'Cena', coffee: 'Coffee break' }[t] || t;
+  }
+
+  /* Lista de comidas por día con su estado. Con botones = true agrega
+     Entregar / Deshacer (solo tiene sentido con sesión de staff). */
+  function htmlComidas(listaComidas, entregas, botones) {
+    var mapa = {};
+    entregas.forEach(function (x) { mapa[x.comida_id] = x; });
+    var entregadas = listaComidas.filter(function (c) { return mapa[c.id]; }).length;
+    var html = '<p><strong>' + (botones ? 'Lleva ' : 'Llevas ') + entregadas + ' de ' + listaComidas.length + '.</strong></p>';
+
+    if (!listaComidas.length) {
+      return html + UI.vacio('&#127869;', 'Todavía no se cargó el cronograma de comidas del evento.');
+    }
+    var porDia = {};
+    listaComidas.forEach(function (c) { (porDia[c.dia] = porDia[c.dia] || []).push(c); });
+
+    Object.keys(porDia).sort(function (a, b) { return a - b; }).forEach(function (dia) {
+      var delDia = porDia[dia], hechas = delDia.filter(function (c) { return mapa[c.id]; }).length;
+      html += '<h3>Día ' + UI.esc(dia) + ' <small class="silencio">(' + hechas + ' de ' + delDia.length + ')</small></h3><ul class="lista-comidas" role="list">';
+      delDia.forEach(function (c) {
+        var e = mapa[c.id];
+        var estado = e ? 'Ya entregado' : 'Pendiente';
+        var detalle = e
+          ? 'Entregado a las ' + UI.hora(e.entregado_en) + (e.estacion ? ', en ' + UI.esc(e.estacion) : '')
+          : 'Todavía no lo recibes';
+        html +=
+          '<li class="comida-fila">' +
+            '<span class="marca-est ' + (e ? 'si' : 'no') + '" aria-hidden="true">' + (e ? '&#10003;' : '&middot;') + '</span>' +
+            '<span class="info">' +
+              '<b>' + UI.esc(c.nombre) + '</b>' +
+              '<small>' + UI.esc(nombreTipo(c.tipo)) + '. ' + detalle + '.</small>' +
+            '</span>' +
+            (botones
+              ? (e
+                  ? '<button type="button" class="btn sec chico" data-quitar="' + c.id + '">' +
+                      'Deshacer <span class="solo-lector">la entrega de ' + UI.esc(c.nombre) + ' del día ' + UI.esc(dia) + '</span></button>'
+                  : '<button type="button" class="btn verde chico" data-marcar="' + c.id + '">' +
+                      'Entregar <span class="solo-lector">' + UI.esc(c.nombre) + ' del día ' + UI.esc(dia) + '</span></button>')
+              : '<span class="chip ' + (e ? 'si' : 'no') + '">' + estado + '</span>') +
+          '</li>';
+      });
+      html += '</ul>';
+    });
+    return html;
+  }
+
+  function enlazarBotonesComida(delegado, alCambiar) {
+    UI.qq('[data-marcar]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        b.disabled = true;
+        var u = APP.usuarioActual();
+        DB.entregas.marcar(delegado.id, b.dataset.marcar, u ? u.email : null, estacionGuardada())
+          .then(function (r) {
+            UI.tostada(r.duplicado ? 'Esa comida ya había sido entregada antes.' : 'Entrega registrada.', r.duplicado ? 'err' : 'ok');
+            return DB.entregas.deDelegado(delegado.id);
+          })
+          .then(alCambiar)
+          .catch(function (err) { UI.tostada(UI.explicarError(err), 'err'); b.disabled = false; });
+      });
+    });
+    UI.qq('[data-quitar]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (!UI.confirmar('Vas a deshacer esta entrega. Se usa solo si fue marcada por error. Confirmas?')) return;
+        b.disabled = true;
+        DB.entregas.desmarcar(delegado.id, b.dataset.quitar)
+          .then(function () { UI.tostada('Entrega deshecha.', 'ok'); return DB.entregas.deDelegado(delegado.id); })
+          .then(alCambiar)
+          .catch(function (err) { UI.tostada(UI.explicarError(err), 'err'); b.disabled = false; });
+      });
+    });
+  }
+
+  /* Si la base rechaza el PIN guardado (por ejemplo, el administrador
+     lo cambió), se borra la identidad y se vuelve a pedir. */
+  function pinRechazado(e, reintentar) {
+    var m = (e && e.message) || '';
+    if (/PIN no coincide|PIN_INVALIDO|no está activa|CREDENCIAL_INVALIDA/i.test(m)) {
+      DB.identidad.limpiar();
+      UI.tostada(m, 'err');
+      reintentar();
+      return true;
+    }
+    return false;
+  }
+
+
+  /* ================================================================
+     MIS COMIDAS (privado: código + PIN)
+     ================================================================ */
+  function misComidas() {
+    if (!DB.hayConexion()) {
+      UI.pintar('<h1>Mis comidas</h1>' + UI.aviso('warn', 'El sistema todavía no está conectado', 'Inténtalo de nuevo en un momento.'));
+      return;
+    }
+    IDENT.exigir({
+      titulo: 'Mis comidas',
+      intro: '<p>Durante los tres días del evento tienes desayuno, almuerzo y cuatro meriendas por día. ' +
+             'Aquí ves cuáles ya recibiste y a qué hora.</p>',
+      boton: 'Ver mis comidas'
+    }, function (yo) {
+      UI.cargando('Cargando tus comidas');
+      var listaComidas = [], entregas = [];
+
+      function traer() {
+        return Promise.all([DB.comidas.activas(), DB.entregas.mias(yo.codigo, yo.pin)])
+          .then(function (r) { listaComidas = r[0]; entregas = r[1]; });
+      }
+
+      traer().then(function () {
+        pintar();
+        /* Las entregas son privadas, así que el navegador no recibe avisos
+           en vivo: se consulta cada 20 segundos mientras la pantalla esté abierta. */
+        var reloj = setInterval(function () {
+          var antes = entregas.length;
+          traer().then(function () {
+            if (entregas.length !== antes) { pintar(true); UI.tostada('Se registró una entrega nueva.', 'ok'); }
+          }).catch(function () {});
+        }, 20000);
+        APP.registrarLimpieza(function () { clearInterval(reloj); });
+      }).catch(function (e) {
+        if (pinRechazado(e, misComidas)) return;
+        UI.pintar('<h1>Mis comidas</h1>' + UI.aviso('err', 'No se pudieron cargar', UI.explicarError(e)));
       });
 
-      UI.qq('[data-quitar]').forEach(function (b) {
-        b.addEventListener('click', function () {
-          if (!UI.confirmar('Vas a deshacer esta entrega. Se usa solo si fue marcada por error. Confirmas?')) return;
-          b.disabled = true;
-          DB.entregas.desmarcar(delegado.id, b.dataset.quitar)
-            .then(function () {
-              UI.tostada('Entrega deshecha.', 'ok');
-              return DB.entregas.deDelegado(delegado.id);
-            })
-            .then(function (e) { entregas = e; pintarCredencial(); })
-            .catch(function (err) { UI.tostada(UI.explicarError(err), 'err'); b.disabled = false; });
-        });
-      });
-    }
+      function pintar(transitorio) {
+        UI.pintar(
+          '<h1>Mis comidas</h1>' +
+          IDENT.lineaIdentidad(yo, 'mcCambiar') +
+          '<section aria-labelledby="t-mc"><h2 id="t-mc">Refrigerios y almuerzos</h2>' +
+            htmlComidas(listaComidas, entregas, false) +
+          '</section>' +
+          UI.aviso('info', 'Cómo funciona',
+            'En la fila, muestra el código QR de tu credencial. El personal lo escanea y esta pantalla se actualiza sola en menos de un minuto. ' +
+            'Cada comida se entrega una sola vez por persona.') +
+          '<div class="fila-btn"><a class="btn sec" href="#/mi-desempeno">Ver mi desempeño</a><a class="btn sec" href="#/">Inicio</a></div>',
+          { transitorio: !!transitorio });
+        UI.q('#mcCambiar').addEventListener('click', function () { DB.identidad.limpiar(); misComidas(); });
+      }
+    });
+  }
 
-    function dato(k, v) {
-      if (!v) return '';
-      return '<span class="cred-dato"><span class="k">' + UI.esc(k) + '</span>' +
-             '<span class="v">' + UI.esc(v) + '</span></span>';
+
+  /* ================================================================
+     MI DESEMPEÑO (privado: código + PIN)
+     ================================================================ */
+  function miDesempeno() {
+    if (!DB.hayConexion()) {
+      UI.pintar('<h1>Mi desempeño</h1>' + UI.aviso('warn', 'El sistema todavía no está conectado', 'Inténtalo de nuevo en un momento.'));
+      return;
     }
+    IDENT.exigir({
+      titulo: 'Mi desempeño',
+      intro: '<p>Los chairs puntúan a cada delegación durante las sesiones. Aquí ves tus puntos por criterio, ' +
+             'tu puesto en el foro y el detalle de cada puntuación, en vivo.</p>',
+      boton: 'Ver mi desempeño'
+    }, function (yo) {
+      UI.cargando('Cargando tu desempeño');
+      var delegado = null, foros = [], misPuntos = [], puntosForo = [], delegadosForo = [], miForo = null;
+
+      function cargar() {
+        return Promise.all([DB.chat.salasActivas(), DB.puntos.deDelegado(delegado.id)])
+          .then(function (r) {
+            foros = PUNTOS.soloForos(r[0]);
+            misPuntos = r[1];
+            miForo = PUNTOS.foroDelDelegado(delegado, foros);
+            if (!miForo) { puntosForo = []; delegadosForo = []; return; }
+            return Promise.all([DB.puntos.deForo(miForo.clave), DB.delegados.listar()]).then(function (q) {
+              puntosForo = q[0];
+              delegadosForo = PUNTOS.delegadosDelForo(q[1], miForo);
+            });
+          });
+      }
+
+      DB.delegados.porCodigo(yo.codigo)
+        .then(function (d) {
+          if (!d || !d.activo) throw new Error('CREDENCIAL_INVALIDA');
+          delegado = d;
+          return cargar();
+        })
+        .then(function () {
+          pintar();
+          APP.registrarCanal(DB.puntos.escuchar(function () {
+            cargar().then(function () { pintar(true); UI.tostada('Tus puntuaciones se actualizaron.', 'ok'); });
+          }));
+        })
+        .catch(function (e) {
+          if (pinRechazado(e, miDesempeno)) return;
+          UI.pintar('<h1>Mi desempeño</h1>' + UI.aviso('err', 'No se pudo cargar', UI.explicarError(e)));
+        });
+
+      function pintar(transitorio) {
+        UI.pintar(
+          '<h1>Mi desempeño</h1>' +
+          IDENT.lineaIdentidad(yo, 'mdCambiar') +
+          tarjetaCredencial(delegado) +
+          PUNTOS.seccionCredencial(delegado, foros, misPuntos, puntosForo, delegadosForo) +
+          '<div class="fila-btn"><a class="btn sec" href="#/mis-comidas">Ver mis comidas</a><a class="btn sec" href="#/">Inicio</a></div>',
+          { transitorio: !!transitorio });
+        UI.q('#mdCambiar').addEventListener('click', function () { DB.identidad.limpiar(); miDesempeno(); });
+      }
+    });
   }
 
 
@@ -596,6 +749,8 @@ window.VISTAS = (function () {
     curiosidades: curiosidades,
     accesibilidad: accesibilidad,
     credencial: credencial,
+    misComidas: misComidas,
+    miDesempeno: miDesempeno,
     buscarCredencial: buscarCredencial,
     estacionGuardada: estacionGuardada
   };

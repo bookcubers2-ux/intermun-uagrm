@@ -66,6 +66,63 @@ window.DB = (function () {
       cliente.auth.onAuthStateChange(function (_evento, ses) {
         fn(ses ? ses.user : null);
       });
+    },
+
+    /* Rol de la sesión actual según la tabla staff: 'admin', 'operador'
+       o null si no hay sesión. Lo decide la base, no el navegador. */
+    rol: function () {
+      if (!hayConexion()) return Promise.resolve(null);
+      return cliente.rpc('mi_rol').then(function (r) {
+        if (r.error) return 'operador';
+        return r.data || null;
+      }).catch(function () { return 'operador'; });
+    }
+  };
+
+
+  /* ============================================================
+     CUENTAS DEL STAFF (solo el administrador)
+     La cuenta se crea con un cliente aparte para no pisar la sesión
+     del administrador. La persona recibe un correo de confirmación
+     y recién después puede iniciar sesión.
+     ============================================================ */
+  var staff = {
+    listar: function () {
+      return exigir().from('staff').select('*').order('rol').order('email').then(revisar);
+    },
+    guardar: function (email, nombre, rol) {
+      return exigir().from('staff').upsert({ email: String(email).trim().toLowerCase(), nombre: nombre || null, rol: rol })
+        .then(function (r) { if (r.error) throw r.error; return true; });
+    },
+    quitar: function (email) {
+      return exigir().from('staff').delete().eq('email', email).then(function (r) { if (r.error) throw r.error; return true; });
+    },
+    crearCuenta: function (email, clave) {
+      var aparte = window.supabase.createClient(window.CONFIG.SUPABASE_URL, window.CONFIG.SUPABASE_ANON,
+        { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
+      return aparte.auth.signUp({ email: String(email).trim().toLowerCase(), password: clave,
+        options: { emailRedirectTo: location.origin + location.pathname } })
+        .then(function (r) {
+          if (r.error) throw r.error;
+          return { confirmada: !!(r.data && r.data.session) };
+        });
+    }
+  };
+
+
+  /* ============================================================
+     PIN PERSONAL DE CADA DELEGADO (solo lo ve el administrador)
+     ============================================================ */
+  var pines = {
+    listar: function () {
+      return exigir().from('delegados_pin').select('*').then(function (r) {
+        if (r.error) return [];   /* operador: la base lo oculta, no es un error */
+        return r.data || [];
+      });
+    },
+    cambiar: function (delegadoId, pin) {
+      return exigir().from('delegados_pin').upsert({ delegado_id: delegadoId, pin: String(pin) })
+        .then(function (r) { if (r.error) throw r.error; return true; });
     }
   };
 
@@ -218,6 +275,15 @@ window.DB = (function () {
         .then(revisar);
     },
 
+    /* Las entregas son privadas: el delegado las consulta con su
+       código y su PIN, verificados en la base. */
+    mias: function (codigo, pin) {
+      return exigir().rpc('mis_entregas', { p_codigo: codigo, p_pin: pin }).then(function (r) {
+        if (r.error) throw traducirErrorChat(r.error);
+        return r.data || [];
+      });
+    },
+
     /* Registra la entrega. Si ya existia, la base la rechaza por
        la restriccion UNIQUE y devolvemos un aviso claro en vez
        de un error tecnico. */
@@ -274,21 +340,24 @@ window.DB = (function () {
 
   /* ============================================================
      IDENTIDAD DEL DELEGADO
-     Sin contraseña: la identidad es el código de la credencial,
-     verificado contra la tabla de delegados y guardado en el
-     dispositivo. Se usa para InterBot y para el chat.
+     Dos partes: el código de la credencial (público, impreso bajo el
+     QR) y el PIN personal (privado, entregado en acreditación). La
+     base verifica el par; el navegador solo lo guarda para no pedirlo
+     en cada sección. Lo usan comidas, desempeño, chat e InterBot.
      ============================================================ */
   var identidad = {
     obtener: function () {
       try {
         var g = JSON.parse(localStorage.getItem('intermun_identidad') || 'null');
-        return (g && g.codigo) ? g : null;
+        return (g && g.codigo && g.pin) ? g : null;
       } catch (e) { return null; }
     },
-    verificar: function (codigo) {
-      return delegados.porCodigo(codigo).then(function (d) {
-        if (!d || !d.activo) return null;
-        var yo = { id: d.id, codigo: d.codigo, nombre: d.nombre, pais: d.pais || '', comite: d.comite || '', rol: d.rol || 'delegado' };
+    verificar: function (codigo, pin) {
+      return exigir().rpc('verificar_delegado', { p_codigo: codigo, p_pin: pin }).then(function (r) {
+        if (r.error) throw r.error;
+        var d = (r.data && r.data[0]) || null;
+        if (!d) return null;
+        var yo = { id: d.id, codigo: d.codigo, pin: String(pin), nombre: d.nombre, pais: d.pais || '', comite: d.comite || '', institucion: d.institucion || '', rol: d.rol || 'delegado' };
         try { localStorage.setItem('intermun_identidad', JSON.stringify(yo)); } catch (e) {}
         return yo;
       });
@@ -333,6 +402,7 @@ window.DB = (function () {
     var m = (err && err.message) || '';
     var mapa = {
       'CREDENCIAL_INVALIDA': 'Tu credencial no está activa. Vuelve a identificarte o acércate a la mesa de acreditación.',
+      'PIN_INVALIDO': 'El PIN no coincide con esa credencial. Vuelve a identificarte.',
       'SALA_INVALIDA': 'Esta sala ya no está disponible.',
       'MENSAJE_VACIO': 'Escribe un mensaje o adjunta un PDF.',
       'MENSAJE_LARGO': 'El mensaje supera los 2000 caracteres.',
@@ -377,9 +447,10 @@ window.DB = (function () {
         .then(revisar)
         .then(function (l) { return l.reverse(); });
     },
-    enviar: function (codigo, salaId, texto, archivo) {
+    enviar: function (yo, salaId, texto, archivo) {
       return exigir().rpc('chat_enviar', {
-        p_codigo: codigo,
+        p_codigo: yo.codigo,
+        p_pin: yo.pin,
         p_sala: salaId,
         p_texto: texto || null,
         p_archivo_ruta: archivo ? archivo.ruta : null,
@@ -410,6 +481,14 @@ window.DB = (function () {
     },
     borrar: function (id) {
       return exigir().from('chat_mensajes').delete().eq('id', id).then(function (r) { if (r.error) throw r.error; return true; });
+    },
+    /* Todos los PDF compartidos en cualquier sala, del más nuevo al más viejo. */
+    archivos: function () {
+      return exigir().from('chat_mensajes').select('id, sala_id, codigo, nombre, archivo_ruta, archivo_nombre, archivo_tamano, creado_en')
+        .not('archivo_ruta', 'is', null)
+        .order('creado_en', { ascending: false })
+        .limit(500)
+        .then(revisar);
     },
     escuchar: function (salaId, fn) {
       if (!hayConexion()) return null;
@@ -485,6 +564,8 @@ window.DB = (function () {
     hayConexion:  hayConexion,
     probar:       probar,
     sesion:       sesion,
+    staff:        staff,
+    pines:        pines,
     delegados:    delegados,
     dieta:        dieta,
     comidas:      comidas,

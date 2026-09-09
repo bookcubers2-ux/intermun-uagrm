@@ -140,10 +140,49 @@ window.CONTENIDO = {
      COMITES
      ============================================================ */
   comites: [
-    { n: 'Consejo de Seguridad',    t: '15 miembros, 5 con veto', d: 'El más prestigioso de casi cualquier conferencia. Los cinco permanentes (China, Francia, Rusia, Reino Unido y Estados Unidos) tienen derecho a veto, así que ninguna resolución pasa sin negociar con ellos. Reservado por convención a los delegados más experimentados.', nivel: 'Avanzado' },
-    { n: 'Comités de crisis',       t: '15 a 30 delegados',       d: 'Los delegados representan personas, no países. Se dividen en front room (debate público) y back room (notas privadas de crisis que un Director de Crisis resuelve en tiempo real). Rápido e impredecible.', nivel: 'Experto' },
-    { n: 'Comités especializados',  t: '20 a 40 delegados',       d: 'DISEC (desarme), ECOFIN (economía), SOCHUM (asuntos sociales y humanitarios), SPECPOL (política especial), Consejo de Derechos Humanos. Enfocados y de tamaño manejable.', nivel: 'Intermedio' },
-    { n: 'Asamblea General',        t: '100 a 400 delegados',     d: 'El punto de entrada recomendado para quien nunca participó. Más estructurado y predecible, aunque exige paciencia: al ser tantos, cada delegado habla menos veces.', nivel: 'Inicial' }
+    /* Los diez foros oficiales de InterMUN 2026, con sus tópicos, tal
+       como figuran en la Convocatoria oficial. "en" marca el comité que
+       sesiona íntegramente en inglés. */
+    { seccion: 'Órganos de las Naciones Unidas', sigla: 'CSI', n: 'Consejo de Seguridad Internacional',
+      topicos: ['Haití: entre el crimen y la crisis humanitaria, un desafío para la seguridad internacional.',
+                'Una guerra sin fronteras: ciberataques, infraestructura crítica y nuevos desafíos para la seguridad internacional.'],
+      nivel: 'Avanzado', d: 'Quince miembros, cinco con derecho a veto. Ninguna resolución pasa sin negociar con los permanentes.' },
+    { seccion: 'Órganos de las Naciones Unidas', sigla: 'DISEC', n: 'First Committee on Disarmament and International Security', en: true,
+      idioma: 'Este comité sesiona íntegramente en inglés: debates, mociones, documento de posición y resoluciones.',
+      topicos: ['Single topic: Nuclear non-proliferation: rebuilding the multilateral consensus following the failure of the 2026 NPT Review Conference.'],
+      nivel: 'Avanzado', d: 'Primera Comisión de la Asamblea General (desarme y seguridad internacional). Tópico único.' },
+    { seccion: 'Órganos de las Naciones Unidas', sigla: 'ECOFIN', n: 'Segunda Comisión de Asuntos Económicos y Financieros',
+      topicos: ['Un comercio sin rumbo: impacto económico de la inestabilidad en Medio Oriente y resiliencia del transporte marítimo.',
+                'Nuevas guerras comerciales: aranceles, proteccionismo y desigualdad en la economía global.'],
+      nivel: 'Intermedio', d: 'Segunda Comisión de la Asamblea General.' },
+    { seccion: 'Órganos de las Naciones Unidas', sigla: 'SOCHUM', n: 'Tercera Comisión de Asuntos Sociales, Humanitarios y Culturales',
+      topicos: ['Sudán al límite: hambre, desplazamiento y crisis humanitaria en medio del conflicto.',
+                'Fronteras en crisis: protección de refugiados, inclusión social y responsabilidad compartida.'],
+      nivel: 'Intermedio', d: 'Tercera Comisión de la Asamblea General.' },
+    { seccion: 'Órganos de las Naciones Unidas', sigla: 'CSTD', n: 'Comisión de Ciencia y Tecnología para el Desarrollo',
+      topicos: ['Gobernanza global de la inteligencia artificial: hacia un marco de cooperación en el nuevo diálogo global sobre gobernanza de la IA.',
+                'Gobernanza tecnológica y empleo en la era digital: hacia una transición laboral inclusiva y equitativa.'],
+      nivel: 'Intermedio', d: 'Comisión orgánica del Consejo Económico y Social.' },
+    { seccion: 'Organismos especializados, fondos y programas', sigla: 'UNEA', n: 'Asamblea de las Naciones Unidas sobre el Medio Ambiente',
+      topicos: ['Explotación responsable de litio, cobre y minerales estratégicos: hacia una transición energética sostenible.',
+                'Frente a un clima extremo: cooperación internacional para la adaptación y resiliencia de los países más vulnerables.'],
+      nivel: 'Intermedio', d: 'Máximo órgano ambiental del sistema de las Naciones Unidas.' },
+    { seccion: 'Organismos especializados, fondos y programas', sigla: 'CSW', n: 'Comisión de la Condición Jurídica y Social de la Mujer',
+      topicos: ['Derechos de la mujer y niñas en Afganistán: hacia una respuesta multilateral para la protección y la igualdad de género.',
+                'Mujeres en la guerra: erradicación de la violencia sexual y acceso igualitario a la protección humana.'],
+      nivel: 'Intermedio', d: 'Comisión orgánica del Consejo Económico y Social dedicada a la igualdad de género.' },
+    { seccion: 'Organismos especializados, fondos y programas', sigla: 'CND', n: 'Comisión de Estupefacientes',
+      topicos: ['La nueva era del narcotráfico: drogas sintéticas, opioides y expansión del mercado ilícito digital.',
+                '¿Guerra contra las drogas o protección de la salud? Hacia un nuevo enfoque internacional.'],
+      nivel: 'Intermedio', d: 'Órgano rector de las políticas de drogas de las Naciones Unidas.' },
+    { seccion: 'Agenda nacional', sigla: 'Foro Nacional', n: 'Foro Nacional',
+      topicos: ['Paros prolongados y derechos humanos: entre el derecho a la protesta y la protección de la población.',
+                'El Trópico boliviano: ¿ausencia del Estado o autonomía de facto?'],
+      nivel: 'Inicial', d: 'Simulación de la deliberación política boliviana, con actores nacionales.' },
+    { seccion: 'Agenda nacional', sigla: 'Foro Municipal', n: 'Foro Municipal',
+      topicos: ['Viaducto inconcluso y gasto municipal: ¿dónde queda el dinero de los cruceños?',
+                '¿Dónde está el dinero? Transparencia, fiscalización y control de la gestión municipal.'],
+      nivel: 'Inicial', d: 'Simulación del Concejo Municipal de Santa Cruz de la Sierra.' }
   ],
 
 

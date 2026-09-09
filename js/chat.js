@@ -33,7 +33,8 @@ window.CHAT = (function () {
       IDENT.pedir({
         titulo: 'Chat de InterMUN',
         intro: '<p>Un espacio para conversar con las demás delegaciones: una sala general y una sala por ' +
-               'comité. Puedes compartir archivos PDF para que los demás los lean.</p>',
+               'comité. Puedes compartir archivos PDF para que los demás los lean. Cada mensaje sale con tu ' +
+               'nombre y tu código, por eso se pide el PIN: nadie puede escribir por ti.</p>',
         boton: 'Entrar al chat',
         alListo: function () { vista(claveSala); }
       });
@@ -119,7 +120,8 @@ window.CHAT = (function () {
 
 
     function pintar() {
-      var esStaff = !!APP.usuarioActual();
+      /* Retirar mensajes es tarea del administrador; el operador lee. */
+      var esStaff = APP.esAdmin();
       UI.pintar(
         '<h1>' + UI.esc(s.nombre) + '</h1>' +
         '<p><a href="#/chat">Volver a la lista de salas</a></p>' +
@@ -220,7 +222,7 @@ window.CHAT = (function () {
       if (p.eventType === 'INSERT' && p.new) {
         if (UI.q('[data-msg="' + p.new.id + '"]')) return;
         mensajes.push(p.new);
-        var art = agregar(p.new, !!APP.usuarioActual());
+        var art = agregar(p.new, APP.esAdmin());
         actualizarConteo();
         if (art && p.new.codigo !== yo.codigo && window.A11Y) {
           window.A11Y.anunciar('Nuevo mensaje de ' + p.new.nombre + '.');
@@ -248,13 +250,13 @@ window.CHAT = (function () {
       }
       paso.then(function (archivo) {
         estado.textContent = 'Enviando.';
-        return DB.chat.enviar(yo.codigo, s.id, texto, archivo);
+        return DB.chat.enviar(yo, s.id, texto, archivo);
       }).then(function (m) {
         estado.textContent = '';
         UI.q('#chTexto').value = '';
         UI.q('#chArchivo').value = '';
         archivoElegido = null;
-        if (m && !UI.q('[data-msg="' + m.id + '"]')) { mensajes.push(m); agregar(m, !!APP.usuarioActual()); actualizarConteo(); }
+        if (m && !UI.q('[data-msg="' + m.id + '"]')) { mensajes.push(m); agregar(m, APP.esAdmin()); actualizarConteo(); }
         UI.tostada('Mensaje enviado.', 'ok');
       }).catch(function (e) {
         estado.textContent = '';

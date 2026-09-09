@@ -13,6 +13,7 @@ window.APP = (function () {
   'use strict';
 
   var usuario = null;
+  var rol = null;          /* 'admin' | 'operador' | null, lo decide la base */
   var canalVivo = null;
   var primeraCarga = true;
 
@@ -26,6 +27,8 @@ window.APP = (function () {
     'datos':         { nav: 'Curiosidades',     titulo: 'Curiosidades',                ver: function () { VISTAS.curiosidades(); } },
     'buscar':        { nav: 'Mi credencial',    titulo: 'Mi credencial',               ver: function () { VISTAS.buscarCredencial(); } },
     'c':             { nav: null,               titulo: 'Credencial',                  ver: function (p) { VISTAS.credencial(p); } },
+    'mis-comidas':   { nav: null,               titulo: 'Mis comidas',                 ver: function () { VISTAS.misComidas(); } },
+    'mi-desempeno':  { nav: null,               titulo: 'Mi desempeño',                ver: function () { VISTAS.miDesempeno(); } },
     'accesibilidad': { nav: 'Accesibilidad',    titulo: 'Mi perfil de accesibilidad',  ver: function () { VISTAS.accesibilidad(); } },
     'interbot':      { nav: 'InterBot',         titulo: 'InterBot',                    ver: function () { INTERBOT.vista(); } },
     'chat':          { nav: 'Chat',             titulo: 'Chat de InterMUN',            ver: function (p) { CHAT.vista(p); } },
@@ -34,11 +37,13 @@ window.APP = (function () {
     'staff':         { nav: 'Control',          titulo: 'Control de InterMUN',         ver: function () { ADMIN.panel(); } },
     'escanear':      { nav: null,               titulo: 'Escanear credencial',         ver: function () { ADMIN.escanear(); },  staff: true },
     'tablero':       { nav: null,               titulo: 'Tablero en vivo',             ver: function () { ADMIN.tablero(); },   staff: true },
-    'delegados':     { nav: null,               titulo: 'Delegados',                   ver: function () { ADMIN.delegados(); }, staff: true },
-    'comidas':       { nav: null,               titulo: 'Comidas del evento',          ver: function () { ADMIN.comidas(); },   staff: true },
-    'qr':            { nav: null,               titulo: 'Generar los códigos QR',      ver: function () { ADMIN.qr(); },        staff: true },
-    'salas':         { nav: null,               titulo: 'Salas de chat',               ver: function () { ADMIN.salas(); },     staff: true },
     'puntuar':       { nav: null,               titulo: 'Puntuar a los delegados',     ver: function (p) { PUNTOS.panel(p); },  staff: true },
+    'archivos':      { nav: null,               titulo: 'Archivos compartidos',        ver: function () { ADMIN.archivos(); },  staff: true },
+    'delegados':     { nav: null,               titulo: 'Delegados',                   ver: function () { ADMIN.delegados(); }, staff: true, admin: true },
+    'comidas':       { nav: null,               titulo: 'Comidas del evento',          ver: function () { ADMIN.comidas(); },   staff: true, admin: true },
+    'qr':            { nav: null,               titulo: 'Generar los códigos QR',      ver: function () { ADMIN.qr(); },        staff: true, admin: true },
+    'salas':         { nav: null,               titulo: 'Salas de chat',               ver: function () { ADMIN.salas(); },     staff: true, admin: true },
+    'cuentas':       { nav: null,               titulo: 'Cuentas del staff',           ver: function () { ADMIN.cuentas(); },   staff: true, admin: true },
     'ajustes':       { nav: null,               titulo: 'Ajustes y estado',            ver: function () { ADMIN.ajustes(); } }
   };
 
@@ -97,6 +102,17 @@ window.APP = (function () {
       return;
     }
 
+    if (def.admin === true && rol !== 'admin') {
+      UI.esperarFoco('Solo para el administrador');
+      UI.pintar('<h1>Solo para el administrador</h1>' +
+        UI.aviso('warn', 'Tu cuenta es de operador',
+          'Puedes escanear credenciales, marcar comidas, puntuar, leer los chats y descargar los archivos. ' +
+          'Cambiar delegados, comidas, salas o cuentas es tarea del administrador.') +
+        '<p><a class="btn" href="#/staff">Volver al panel de control</a></p>');
+      primeraCarga = false;
+      return;
+    }
+
     /* En la primera carga (por ejemplo, alguien que llega escaneando un
        codigo QR) NO se mueve el foco: se respeta el orden completo del
        documento para que la persona pueda orientarse desde el principio. */
@@ -124,6 +140,8 @@ window.APP = (function () {
     if (canalVivo) { DB.entregas.dejarDeEscuchar(canalVivo); canalVivo = null; }
     canalesExtra.forEach(function (c) { DB.chat.dejarDeEscuchar(c); });
     canalesExtra = [];
+    limpiezas.forEach(function (fn) { try { fn(); } catch (e) {} });
+    limpiezas = [];
   }
 
   /* Canales de tiempo real de otras vistas (por ejemplo, una sala de
@@ -131,13 +149,18 @@ window.APP = (function () {
   var canalesExtra = [];
   function registrarCanal(c) { if (c) canalesExtra.push(c); }
 
+  /* Cualquier otra cosa que una vista deba apagar al salir (por
+     ejemplo, un temporizador de actualización). */
+  var limpiezas = [];
+  function registrarLimpieza(fn) { if (typeof fn === 'function') limpiezas.push(fn); }
+
 
   /* ---------- Sesion ---------- */
   function pintarSesion() {
     var chip = document.getElementById('chipSesion');
     var btn = document.getElementById('btnSalir');
     if (usuario) {
-      chip.textContent = 'Sesión de staff: ' + usuario.email;
+      chip.textContent = (rol === 'admin' ? 'Administrador: ' : 'Operador: ') + usuario.email;
       chip.classList.remove('oculto');
       btn.hidden = false;
     } else {
@@ -148,13 +171,23 @@ window.APP = (function () {
 
   function fijarUsuario(u) {
     var cambio = (!!usuario) !== (!!u);
+    /* Un refresco de token trae el mismo usuario: no se repinta nada. */
+    if (u && usuario && u.id === usuario.id && rol) { usuario = u; return; }
     usuario = u;
-    pintarSesion();
-    pintarNav();
-    if (cambio) enrutar();
+    if (!u) { rol = null; pintarSesion(); pintarNav(); if (cambio) enrutar(); return; }
+    /* El rol lo dice la base; hasta que responda se asume operador. */
+    rol = 'operador';
+    DB.sesion.rol().then(function (r) {
+      rol = r || 'operador';
+      pintarSesion();
+      pintarNav();
+      enrutar();
+    });
   }
 
   function usuarioActual() { return usuario; }
+  function rolActual() { return rol; }
+  function esAdmin() { return !!usuario && rol === 'admin'; }
 
 
   /* ---------- Pie de pagina ---------- */
@@ -206,7 +239,12 @@ window.APP = (function () {
     DB.sesion.alCambiar(function (u) { fijarUsuario(u); });
 
     DB.sesion.actual()
-      .then(function (u) { usuario = u; pintarSesion(); enrutar(); })
+      .then(function (u) {
+        usuario = u;
+        if (!u) { pintarSesion(); enrutar(); return; }
+        rol = 'operador';
+        return DB.sesion.rol().then(function (r) { rol = r || 'operador'; pintarSesion(); enrutar(); });
+      })
       .catch(function () { enrutar(); });
 
     if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
@@ -220,10 +258,13 @@ window.APP = (function () {
     enrutar: enrutar,
     rutaActual: rutaActual,
     usuarioActual: usuarioActual,
+    rolActual: rolActual,
+    esAdmin: esAdmin,
     fijarUsuario: fijarUsuario,
     abrirCanalVivo: abrirCanalVivo,
     cerrarCanalVivo: cerrarCanalVivo,
-    registrarCanal: registrarCanal
+    registrarCanal: registrarCanal,
+    registrarLimpieza: registrarLimpieza
   };
 })();
 

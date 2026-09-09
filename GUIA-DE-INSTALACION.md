@@ -324,6 +324,21 @@ sistema/
 │   └── desplegar-interbot.py    Despliegue en un solo comando
 ├── INSTALACION-INTERBOT-Y-CHAT.sql  Tablas y políticas del chat
 ├── INSTALACION-PUNTUACIONES.sql     Tabla y políticas de puntuaciones
+├── INSTALACION-IDENTIDAD-Y-ROLES.sql PIN por delegado, comidas privadas, roles admin/operador
 ```
 
 Para cambiar textos del portal (reglas, glosario, consejos, curiosidades), edita `js/contenido.js`. Está escrito para que se pueda modificar sin saber programar.
+
+
+---
+
+## PIN personal y roles del staff
+
+Se instala con `INSTALACION-IDENTIDAD-Y-ROLES.sql` en el SQL Editor de Supabase. (En el proyecto actual ya está hecho.) Hace cuatro cosas:
+
+1. Crea un PIN de cuatro dígitos para cada delegado (tabla `delegados_pin`) y lo genera solo para cada persona nueva. El administrador lo ve y lo cambia en **Delegados y PIN**, y puede imprimirlo en la hoja de códigos QR (opción "con PIN", para la copia que se entrega en mano).
+2. Verifica en la base el par código + PIN (`verificar_delegado`) y entrega las comidas de cada persona solo con ese par (`mis_entregas`). Las entregas dejan de ser públicas.
+3. Exige el PIN para escribir en el chat (`chat_enviar`).
+4. Crea la tabla `staff` con dos roles. **admin**: todo. **operador**: escanear y marcar comidas, puntuar, leer chats y descargar archivos. Una cuenta que no figure en la tabla entra como operador.
+
+Para dar acceso a alguien: panel de control, **Cuentas del staff**, correo, contraseña inicial y nivel. La persona recibe un correo de confirmación de Supabase y recién después puede iniciar sesión. Si el correo no llega, se confirma desde Supabase, en **Authentication**, botón "Confirm email".

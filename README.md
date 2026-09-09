@@ -8,11 +8,20 @@ Portal y sistema de acreditación de **InterMUN**, el Modelo de Naciones Unidas 
 
 ## Qué hace
 
-**Para los delegados.** Escanean el código QR del reverso de su credencial y acceden a su credencial digital, donde ven sus datos y qué refrigerios y almuerzos ya recibieron. Sin contraseña y sin instalar nada. El portal incluye además las reglas de procedimiento, el flujo de una sesión de comité, un glosario de términos, la guía de protocolo y consejos prácticos.
+**Para los delegados.** Escanean el código QR del reverso de su credencial y acceden a su credencial digital, con sus datos de acreditación. Todo lo personal (sus comidas, su desempeño, el chat) vive en módulos aparte que piden dos cosas: el **código de credencial** (público, impreso bajo el QR) y el **PIN personal** de cuatro dígitos, que se entrega en acreditación. Así nadie consulta ni escribe con una credencial ajena. Sin contraseña de correo y sin instalar nada. El portal incluye además las reglas de procedimiento, el flujo de una sesión de comité, un glosario de términos, la guía de protocolo y consejos prácticos.
 
 **Para el staff.** Escáner de credenciales con la cámara del celular para registrar entregas de comida en la fila, con confirmación por sonido y vibración. Tablero en vivo que se actualiza solo entre estaciones, gestión de delegados con carga masiva, generador de códigos QR imprimibles y exportación de todo a Excel.
 
-El mismo código QR sirve para las dos cosas: si lo abre un delegado ve su estado en modo lectura, y si lo abre alguien del staff con sesión iniciada aparecen los botones para marcar la entrega.
+El mismo código QR sirve para las dos cosas: si lo abre un delegado ve su credencial y los accesos a sus módulos privados, y si lo abre alguien del staff con sesión iniciada aparecen las comidas de esa persona con los botones para marcar la entrega.
+
+## Roles del staff
+
+Dos niveles, decididos por la base de datos (tabla `staff`), no por el navegador:
+
+- **Operador**: escanear credenciales y marcar comidas, puntuar, leer los chats y descargar los archivos compartidos.
+- **Administrador**: todo lo anterior y además delegados y sus PIN, comidas del evento, salas de chat, códigos QR y cuentas del staff.
+
+Las cuentas se crean desde el propio panel (**Cuentas del staff**); la persona recibe un correo de confirmación. Nadie puede ver ni modificar el código de la plataforma desde el panel. La instalación de PIN y roles está en `INSTALACION-IDENTIDAD-Y-ROLES.sql`.
 
 ---
 
@@ -42,13 +51,13 @@ Verificado con axe-core (0 violaciones en 10 rutas) y 20 pruebas de comportamien
 
 **InterBot** es un asistente con inteligencia artificial, solo de texto, que responde dudas de procedimiento, redacción, estrategia y uso de la plataforma con el reglamento y las fórmulas exactas de InterMUN como base. La clave del proveedor (Gemini, nivel gratuito) nunca está en el sitio: vive como secreto en una función de Supabase (`funciones/interbot/index.ts`) que además limita el uso por credencial y por día para proteger la cuota.
 
-**El chat** ofrece una sala general y una por comité. La identidad es el código de credencial, verificado contra la base; los mensajes solo se escriben a través de una función de base de datos que valida el código y limita el ritmo. Se pueden compartir archivos PDF (hasta 10 MB, solo PDF, en una carpeta con el nombre de la credencial). El staff modera y administra las salas desde el panel de control.
+**El chat** ofrece una sala general y una por cada uno de los diez foros oficiales. La identidad es el código de credencial más el PIN personal, verificados en la base; los mensajes solo se escriben a través de una función de base de datos que valida el código y limita el ritmo. Se pueden compartir archivos PDF (hasta 10 MB, solo PDF, en una carpeta con el nombre de la credencial). El staff modera y administra las salas desde el panel de control.
 
 Ambos módulos siguen el mismo estándar de accesibilidad del resto del sitio: regiones en vivo para que el lector de pantalla anuncie cada respuesta y cada mensaje nuevo, estados en texto (nunca un indicador giratorio), y mensajes propios marcados con la palabra "Tú" y no solo con color.
 
 ## Puntuaciones en vivo por foro
 
-Los chairs puntúan a cada delegación durante las sesiones desde el celular, con sesión de staff: eligen el foro, tocan la delegación, el criterio (discursos, mociones y procedimiento, negociación, documento de posición, redacción de resoluciones, protocolo y conducta) y los puntos. Cada puntuación se publica al instante: el ranking del foro (**Puntuaciones** en el menú) y la sección "Mis puntuaciones" de cada credencial se actualizan solos, sin recargar. Las puntuaciones son públicas por diseño y quedan registradas con sesión, nota y quién las otorgó; el staff puede quitar una puntuación equivocada. Los criterios y los botones rápidos se ajustan en `js/config.js`; la tabla y sus políticas están en `INSTALACION-PUNTUACIONES.sql`.
+Los chairs puntúan a cada delegación durante las sesiones desde el celular, con sesión de staff: eligen el foro, tocan la delegación, el criterio (discursos, mociones y procedimiento, negociación, documento de posición, redacción de resoluciones, protocolo y conducta) y los puntos. Cada puntuación se publica al instante: el ranking del foro (**Puntuaciones** en el menú) y el módulo "Mi desempeño" de cada delegado (con código y PIN) se actualizan solos, sin recargar. Las puntuaciones son públicas por diseño y quedan registradas con sesión, nota y quién las otorgó; el staff puede quitar una puntuación equivocada. Los criterios y los botones rápidos se ajustan en `js/config.js`; la tabla y sus políticas están en `INSTALACION-PUNTUACIONES.sql`.
 
 ## Instalable en el teléfono
 
@@ -67,8 +76,9 @@ La base de datos es PostgreSQL en Supabase, con las políticas de seguridad a ni
 | `js/config.js` | Configuración del evento y conexión |
 | `js/contenido.js` | Reglas, glosario y consejos (editable sin programar) |
 | `js/db.js` | Capa de acceso a datos |
-| `js/vistas-publicas.js` | Portal y credenciales |
-| `js/vistas-admin.js` | Control de comidas |
+| `js/vistas-publicas.js` | Portal, credencial, Mis comidas, Mi desempeño y comités |
+| `js/identidad.js` | Formulario de código + PIN compartido por los módulos privados |
+| `js/vistas-admin.js` | Panel del staff por rol: comidas, delegados y PIN, archivos, cuentas |
 | `js/puntuaciones.js` | Puntuaciones por foro: ranking público, panel de los chairs y sección en la credencial |
 | `js/vendor/` | Librerías incluidas |
 
@@ -88,6 +98,7 @@ La base de datos es PostgreSQL en Supabase, con las políticas de seguridad a ni
 
 - `GUIA-DE-INSTALACION.md`, instalación, operación durante el evento y solución de problemas
 - `INSTALACION-SUPABASE.sql`, esquema de la base de datos y políticas de seguridad
+- `INSTALACION-IDENTIDAD-Y-ROLES.sql`, PIN personal por delegado, comidas privadas y roles admin / operador
 
 ---
 
