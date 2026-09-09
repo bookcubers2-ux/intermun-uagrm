@@ -29,7 +29,10 @@ window.CHAT = (function () {
       return;
     }
     var yo = DB.identidad.obtener();
-    if (!yo) {
+    /* El staff con sesión entra a leer y moderar sin necesidad de una
+       credencial de delegado. Para escribir sí hace falta una: los
+       mensajes siempre salen a nombre de una delegación. */
+    if (!yo && !APP.usuarioActual()) {
       IDENT.pedir({
         titulo: 'Chat de InterMUN',
         intro: '<p>Un espacio para conversar con las demás delegaciones: una sala general y una sala por ' +
@@ -50,12 +53,12 @@ window.CHAT = (function () {
   function listaSalas(yo) {
     UI.cargando('Cargando las salas');
     DB.chat.salasActivas().then(function (salas) {
-      var html = '<h1>Chat de InterMUN</h1>' + IDENT.lineaIdentidad(yo, 'chCambiar');
+      var html = '<h1>Chat de InterMUN</h1>' + encabezado(yo);
 
       if (!salas.length) {
         html += UI.vacio('&#128172;', 'Todavía no hay salas abiertas. El Secretariado las habilita desde el panel de control.');
       } else {
-        var propia = salas.filter(function (s) { return esMiForo(s, yo.comite); })[0];
+        var propia = yo ? salas.filter(function (s) { return esMiForo(s, yo.comite); })[0] : null;
         html += '<h2>Salas disponibles</h2><ul class="rejilla" role="list">';
         salas.forEach(function (s) {
           var esPropia = propia && propia.id === s.id;
@@ -73,10 +76,7 @@ window.CHAT = (function () {
         'El Secretariado puede retirar mensajes que falten a las normas. Solo se pueden adjuntar archivos PDF de hasta 10 MB.');
 
       UI.pintar(html);
-      UI.q('#chCambiar').addEventListener('click', function () {
-        DB.identidad.limpiar(); vista();
-        if (window.A11Y) window.A11Y.enfocarTitulo();
-      });
+      enlazarCambiar(function () { vista(); });
     }).catch(function (e) {
       var m = (e && e.message) || '';
       if (/does not exist|42P01|schema cache/i.test(m)) {
@@ -125,7 +125,7 @@ window.CHAT = (function () {
       UI.pintar(
         '<h1>' + UI.esc(s.nombre) + '</h1>' +
         '<p><a href="#/chat">Volver a la lista de salas</a></p>' +
-        IDENT.lineaIdentidad(yo, 'chCambiar') +
+        encabezado(yo) +
 
         '<section aria-labelledby="t-ch-msgs">' +
           '<h2 id="t-ch-msgs">Mensajes</h2>' +
@@ -133,19 +133,24 @@ window.CHAT = (function () {
           '<div class="ch-log" id="chLog" role="log" aria-live="polite" aria-relevant="additions" aria-label="Mensajes de la sala"></div>' +
         '</section>' +
 
-        '<section aria-labelledby="t-ch-escribir">' +
-          '<h2 id="t-ch-escribir">Escribir</h2>' +
-          '<label class="campo" for="chTexto"><span>Tu mensaje</span>' +
-            '<textarea id="chTexto" rows="3" aria-describedby="ch-ayuda"></textarea></label>' +
-          '<p class="ayuda-campo" id="ch-ayuda">Enter envía. Shift más Enter hace un salto de línea. Máximo 2000 caracteres.</p>' +
-          '<label class="campo" for="chArchivo"><span>Adjuntar un PDF (opcional)</span>' +
-            '<input type="file" id="chArchivo" accept="application/pdf,.pdf" aria-describedby="ch-ayuda-pdf"></label>' +
-          '<p class="ayuda-campo" id="ch-ayuda-pdf">Solo archivos PDF, hasta 10 MB. Se comparten con toda la sala.</p>' +
-          '<p role="status" aria-live="polite" id="chEstado" class="silencio"></p>' +
-          '<div class="fila-btn">' +
-            '<button type="button" class="btn" id="chEnviar">Enviar</button>' +
-          '</div>' +
-        '</section>'
+        (yo
+          ? '<section aria-labelledby="t-ch-escribir">' +
+              '<h2 id="t-ch-escribir">Escribir</h2>' +
+              '<label class="campo" for="chTexto"><span>Tu mensaje</span>' +
+                '<textarea id="chTexto" rows="3" aria-describedby="ch-ayuda"></textarea></label>' +
+              '<p class="ayuda-campo" id="ch-ayuda">Enter envía. Shift más Enter hace un salto de línea. Máximo 2000 caracteres.</p>' +
+              '<label class="campo" for="chArchivo"><span>Adjuntar un PDF (opcional)</span>' +
+                '<input type="file" id="chArchivo" accept="application/pdf,.pdf" aria-describedby="ch-ayuda-pdf"></label>' +
+              '<p class="ayuda-campo" id="ch-ayuda-pdf">Solo archivos PDF, hasta 10 MB. Se comparten con toda la sala.</p>' +
+              '<p role="status" aria-live="polite" id="chEstado" class="silencio"></p>' +
+              '<div class="fila-btn">' +
+                '<button type="button" class="btn" id="chEnviar">Enviar</button>' +
+              '</div>' +
+            '</section>'
+          : UI.aviso('info', 'Estás leyendo como staff',
+              'Con sesión del equipo organizador puedes leer todas las salas' +
+              (APP.esAdmin() ? ' y retirar mensajes que falten a las normas.' : '.') +
+              ' Para escribir hace falta una credencial de delegación, porque cada mensaje sale a nombre de un país.'))
       );
 
       var log = UI.q('#chLog');
@@ -153,10 +158,9 @@ window.CHAT = (function () {
       mensajes.forEach(function (m) { agregar(m, esStaff); });
       actualizarConteo();
 
-      UI.q('#chCambiar').addEventListener('click', function () {
-        DB.identidad.limpiar(); vista(clave);
-        if (window.A11Y) window.A11Y.enfocarTitulo();
-      });
+      enlazarCambiar(function () { vista(clave); });
+      if (!yo) return;
+
       UI.q('#chArchivo').addEventListener('change', function () {
         var f = this.files && this.files[0];
         archivoElegido = null;
@@ -187,7 +191,7 @@ window.CHAT = (function () {
     function agregar(m, esStaff) {
       var log = UI.q('#chLog');
       if (!log || UI.q('[data-msg="' + m.id + '"]')) return;
-      var mio = m.codigo === yo.codigo;
+      var mio = !!yo && m.codigo === yo.codigo;
       var art = document.createElement('article');
       art.className = 'ch-msg' + (mio ? ' ch-mio' : '');
       art.setAttribute('data-msg', m.id);
@@ -224,7 +228,7 @@ window.CHAT = (function () {
         mensajes.push(p.new);
         var art = agregar(p.new, APP.esAdmin());
         actualizarConteo();
-        if (art && p.new.codigo !== yo.codigo && window.A11Y) {
+        if (art && (!yo || p.new.codigo !== yo.codigo) && window.A11Y) {
           window.A11Y.anunciar('Nuevo mensaje de ' + p.new.nombre + '.');
         }
       } else if (p.eventType === 'DELETE' && p.old) {
@@ -266,6 +270,30 @@ window.CHAT = (function () {
         UI.q('#chTexto').focus();
       });
     }
+  }
+
+  /* Cabecera de la vista: quién está mirando el chat. */
+  function encabezado(yo) {
+    if (yo) return IDENT.lineaIdentidad(yo, 'chCambiar');
+    var u = APP.usuarioActual();
+    return '<p class="silencio">Lees como <strong>staff</strong>' + (u ? ', ' + UI.esc(u.email) : '') + '. ' +
+      '<button type="button" class="btn sec chico" id="chCambiar">Entrar con una credencial de delegación</button></p>';
+  }
+
+  function enlazarCambiar(alVolver) {
+    var b = UI.q('#chCambiar');
+    if (!b) return;
+    b.addEventListener('click', function () {
+      DB.identidad.limpiar();
+      IDENT.pedir({
+        titulo: 'Chat de InterMUN',
+        intro: '<p>Identifícate con la credencial con la que quieres participar. Cada mensaje sale con ese ' +
+               'nombre y ese código.</p>',
+        boton: 'Entrar al chat',
+        alListo: function () { alVolver(); }
+      });
+      if (window.A11Y) window.A11Y.enfocarTitulo();
+    });
   }
 
   /* Reconoce la sala del propio comité aunque el nombre registrado en la
