@@ -203,7 +203,7 @@ window.CONTENIDO = {
      PDF a docs/ con este nombre exacto y subir el cambio. */
   reglamento: {
     pdf: 'docs/reglamento-intermun.pdf',
-    publicado: false
+    publicado: true
   },
 
   /* Capacitaciones para delegados. Para cada clase nueva: llenar fecha
