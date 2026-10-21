@@ -22,6 +22,8 @@ window.APP = (function () {
   var RUTAS = {
     '':              { nav: 'Inicio',           titulo: 'Inicio',                      ver: function () { VISTAS.inicio(); } },
     'reglas':        { nav: 'Reglas',           titulo: 'Reglas de procedimiento',     ver: function () { VISTAS.reglas(); } },
+    'reglamento':    { nav: 'Reglamento',       titulo: 'Reglamento oficial',          ver: function () { VISTAS.reglamento(); } },
+    'capacitaciones':{ nav: 'Capacitaciones',   titulo: 'Capacitaciones para delegados', ver: function () { VISTAS.capacitaciones(); } },
     'guia':          { nav: 'Guía',             titulo: 'Guía del delegado',           ver: function () { VISTAS.guia(); } },
     'comites':       { nav: 'Comités',          titulo: 'Los comités',                 ver: function () { VISTAS.comites(); } },
     'datos':         { nav: 'Curiosidades',     titulo: 'Curiosidades',                ver: function () { VISTAS.curiosidades(); } },

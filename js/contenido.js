@@ -197,5 +197,25 @@ window.CONTENIDO = {
     { t: 'Del delegado al chair',              c: 'Existe una progresión informal llamada chairing circuit: veteranos que dejan de competir y se vuelven presidentes itinerantes de múltiples conferencias, formando una clase de organizadores experimentados.' },
     { t: 'Bolivia y el Silala en un MUN',      c: 'En 2018, LexMun, un modelo previo de la misma facultad de la UAGRM, simuló en su Corte Internacional de Justicia la demanda entre Bolivia y Chile por las aguas del Silala, un caso real que se litigaba en La Haya en esos mismos años.' },
     { t: 'La regla ética del circuito',        c: 'Frente a las críticas por competitividad excesiva, la comunidad MUN se autorregula con un principio simple y repetido: ser una buena persona viene antes que ser un buen delegado.' }
+  ],
+
+  /* Reglamento oficial de InterMUN. Para publicarlo basta con copiar el
+     PDF a docs/ con este nombre exacto y subir el cambio. */
+  reglamento: {
+    pdf: 'docs/reglamento-intermun.pdf',
+    publicado: false
+  },
+
+  /* Capacitaciones para delegados. Para cada clase nueva: llenar fecha
+     y pegar el enlace del video (YouTube, Drive o Meet grabado). Si el
+     campo video esta vacio, la clase aparece como "Próximamente". */
+  capacitaciones: [
+    { t: 'Qué es un MUN y cómo funciona InterMUN', d: 'Los foros, los roles en sala (chairs, delegados, staff) y qué se espera de ti desde el primer minuto.', fecha: '', video: '' },
+    { t: 'El reglamento en la práctica',           d: 'Mociones, puntos, lista de oradores, caucus moderado y no moderado, votaciones. Lo que dice el reglamento, actuado en sala.', fecha: '', video: '' },
+    { t: 'Cómo investigar a tu país',              d: 'Fuentes oficiales, votaciones previas en la ONU y cómo encontrar la postura real de tu delegación.', fecha: '', video: '' },
+    { t: 'El documento de posición',               d: 'Estructura, extensión, errores frecuentes y ejemplos de documentos que ganan.', fecha: '', video: '' },
+    { t: 'Oratoria diplomática',                   d: 'Discurso de apertura, derecho a réplica y cómo hablar con autoridad en 60 segundos.', fecha: '', video: '' },
+    { t: 'Negociación, bloques y caucus',          d: 'Cómo armar un bloque, negociar cláusulas y sumar firmantes sin perder tu postura.', fecha: '', video: '' },
+    { t: 'Redacción de resoluciones y enmiendas',  d: 'Cláusulas preambulatorias y operativas, verbos correctos, sponsors, signatarios y enmiendas.', fecha: '', video: '' }
   ]
 };

@@ -62,6 +62,10 @@ window.VISTAS = (function () {
           d: 'Desayuno, almuerzo y meriendas de cada día: cuáles ya recibiste. Pide tu código y tu PIN.' },
         { href: '#/mi-desempeno',  ico: '&#127942;', t: 'Mi desempeño',
           d: 'Tus puntos por criterio, tu puesto en el foro y el detalle de cada puntuación. Pide tu código y tu PIN.' },
+        { href: '#/reglamento',    ico: '&#128220;', t: 'Reglamento oficial (nuevo)',
+          d: 'El reglamento de InterMUN. Todos los delegados deben estudiarlo y dominarlo a la perfección antes del evento.' },
+        { href: '#/capacitaciones', ico: '&#127909;', t: 'Capacitaciones (nuevo)',
+          d: 'Las clases de preparación para delegados inscritos, con el enlace a cada video.' },
         { href: '#/reglas',        ico: '&#9878;',   t: 'Reglas de procedimiento',
           d: 'Los sistemas de reglas, el flujo de una sesión y el glosario completo.' },
         { href: '#/guia',          ico: '&#128218;', t: 'Guía del delegado',
@@ -231,6 +235,48 @@ window.VISTAS = (function () {
     html += UI.aviso('info', 'Cómo se asigna el foro',
       'Se toma como prioritaria la primera opción marcada en el formulario de inscripción. Si ese foro ya está completo, ' +
       'se asigna la segunda opción u otro foro. El país se asigna según la experiencia previa en modelos y no se cambia.');
+    UI.pintar(html);
+  }
+
+
+  /* ================================================================
+     REGLAMENTO OFICIAL
+     ================================================================ */
+  function reglamento() {
+    var r = C.reglamento;
+    var html = '<h1>Reglamento oficial de InterMUN</h1>' +
+      '<p>El reglamento es la ley de la sala. Define cómo se pide la palabra, qué mociones existen, cómo se vota y qué conducta se espera de cada delegación. ' +
+      'Los chairs lo aplican al pie de la letra y no se acepta desconocerlo como excusa.</p>' +
+      UI.aviso('warn', 'Lectura obligatoria para todos los delegados',
+        'Todos los delegados inscritos deben estudiar el reglamento y saberlo a la perfección antes del evento. Quien lo domina gana tiempo, mociones y votos en sala.');
+    if (r.publicado) {
+      html += '<p><a class="btn" href="' + UI.esc(r.pdf) + '" target="_blank" rel="noopener">Abrir el reglamento en PDF</a> ' +
+              '<a class="btn sec" href="' + UI.esc(r.pdf) + '" download>Descargar</a></p>' +
+              '<iframe class="visor-pdf" src="' + UI.esc(r.pdf) + '" title="Reglamento oficial de InterMUN" ' +
+              'style="width:100%;height:80vh;border:1px solid currentColor;border-radius:8px"></iframe>';
+    } else {
+      html += UI.aviso('info', 'El reglamento se publica muy pronto', 'El documento oficial aparecerá en esta pestaña en cuanto la organización lo suba.');
+    }
+    html += '<p>¿Dudas sobre un artículo? Pregúntale a <a href="#/interbot">InterBot</a> o revisa las <a href="#/reglas">reglas de procedimiento</a> resumidas.</p>';
+    UI.pintar(html);
+  }
+
+
+  /* ================================================================
+     CAPACITACIONES PARA DELEGADOS
+     ================================================================ */
+  function capacitaciones() {
+    var html = '<h1>Capacitaciones para delegados</h1>' +
+      '<p>Las clases de preparación para los delegados inscritos en InterMUN. Cada clase queda grabada: entra al enlace para ver el video cuando quieras.</p>';
+    C.capacitaciones.forEach(function (c, i) {
+      html += '<section class="tarjeta" aria-labelledby="cap-' + i + '">' +
+                '<h2 id="cap-' + i + '">Clase ' + (i + 1) + ': ' + UI.esc(c.t) + '</h2>' +
+                (c.fecha ? '<p class="sello">' + UI.esc(c.fecha) + '</p>' : '') +
+                '<p>' + UI.esc(c.d) + '</p>' +
+                (c.video ? '<p><a class="btn" href="' + UI.esc(c.video) + '" target="_blank" rel="noopener">Ver el video de la clase ' + (i + 1) + '</a></p>'
+                         : '<p><strong>Próximamente.</strong> El enlace al video se publicará aquí.</p>') +
+              '</section>';
+    });
     UI.pintar(html);
   }
 
@@ -744,6 +790,8 @@ window.VISTAS = (function () {
   return {
     inicio: inicio,
     reglas: reglas,
+    reglamento: reglamento,
+    capacitaciones: capacitaciones,
     guia: guia,
     comites: comites,
     curiosidades: curiosidades,

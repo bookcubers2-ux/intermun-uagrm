@@ -8,7 +8,7 @@
    comidas siempre tiene que trabajar con datos frescos.
    ==================================================================== */
 
-var CACHE = 'intermun-v9-pin-roles';
+var CACHE = 'intermun-v10-reglamento-capacitaciones';
 
 var ARCHIVOS = [
   './',
