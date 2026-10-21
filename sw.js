@@ -8,7 +8,7 @@
    comidas siempre tiene que trabajar con datos frescos.
    ==================================================================== */
 
-var CACHE = 'intermun-v11-reglamento-pdf';
+var CACHE = 'intermun-v12-sin-cache-viejo';
 
 var ARCHIVOS = [
   './',
@@ -101,7 +101,7 @@ self.addEventListener('fetch', function (ev) {
   }
 
   ev.respondWith(
-    fetch(req).then(function (resp) {
+    fetch(req, { cache: 'no-cache' }).then(function (resp) {
       if (resp && resp.status === 200 && resp.type === 'basic') {
         var copia = resp.clone();
         caches.open(CACHE).then(function (c) { c.put(req, copia); });
