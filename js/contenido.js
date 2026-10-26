@@ -199,12 +199,27 @@ window.CONTENIDO = {
     { t: 'La regla ética del circuito',        c: 'Frente a las críticas por competitividad excesiva, la comunidad MUN se autorregula con un principio simple y repetido: ser una buena persona viene antes que ser un buen delegado.' }
   ],
 
-  /* Reglamento oficial de InterMUN. Para publicarlo basta con copiar el
-     PDF a docs/ con este nombre exacto y subir el cambio. */
-  reglamento: {
-    pdf: 'docs/reglamento-intermun.pdf',
-    publicado: true
-  },
+  /* Material para delegados: los PDF que cada delegado debe tener a mano.
+     Para agregar uno basta con copiar el PDF a docs/ y sumar un bloque
+     aqui. "d" explica para que sirve; "obligatorio" lo marca de lectura
+     obligatoria; "archivo" es el nombre con que se descarga. */
+  material: [
+    { t: 'Reglamento interno de InterMUN-UAGRM 2026',
+      pdf: 'docs/reglamento-intermun.pdf', archivo: 'Reglamento interno InterMUN-UAGRM 2026.pdf', paginas: 20, obligatorio: true,
+      d: 'Es la ley de la sala. Dice quiénes son las autoridades del modelo, cómo empieza y se desarrolla el debate, cuándo se usan los caucus, cómo se vota un anteproyecto de resolución, qué vestimenta se exige y qué conducta se espera de cada delegación, con las faltas que se sancionan. Los chairs lo aplican al pie de la letra: léelo completo antes del evento.' },
+    { t: 'Modelo de posición oficial',
+      pdf: 'docs/modelo-posicion-oficial.pdf', archivo: 'Modelo de posicion oficial InterMUN-UAGRM 2026.pdf', paginas: 1,
+      d: 'La plantilla de lo que se te pide entregar. Explica cómo debe ser la portada (nombre oficial del país, bandera, escudo, tu nombre, foro y tópico) y qué debe decir el cuerpo del documento: el interés de tu país en el tema, las políticas que ya aplicó y las que propone. Se entrega una posición por cada tópico de tu foro, de mínimo cuatro planas contando la portada. Léelo antes de empezar a escribir.' },
+    { t: 'Posición oficial de ejemplo',
+      pdf: 'docs/posicion-oficial.pdf', archivo: 'Posicion oficial de ejemplo InterMUN-UAGRM 2026.pdf', paginas: 5,
+      d: 'Un ejemplo ya terminado: la posición oficial de la República de la India en el Consejo de Seguridad Internacional. Sirve para ver cómo se escribe cada sección (intereses, políticas llevadas a cabo y políticas de resolución), cómo se respalda con datos y fuentes y cómo se cierra con la firma del delegado. Úsalo como guía de estilo y de nivel; tu posición debe salir de la investigación de tu propio país.' },
+    { t: 'Resolución de ejemplo',
+      pdf: 'docs/resolucion.pdf', archivo: 'Resolucion de ejemplo InterMUN-UAGRM 2026.pdf', paginas: 6,
+      d: 'Una resolución completa tal como la presenta un bloque al final del debate: encabezado de Naciones Unidas con número de resolución, tópico y patrocinadores, cláusulas preambulatorias, cláusulas operativas con las líneas numeradas y la página de países firmantes. Es el modelo de formato para tu anteproyecto de resolución. Fíjate en el formato y en cómo abre cada cláusula, no en el contenido.' },
+    { t: 'Vocabulario protocolar',
+      pdf: 'docs/vocabulario-protocolar.pdf', archivo: 'Vocabulario protocolar InterMUN-UAGRM 2026.pdf', paginas: 3,
+      d: 'Las palabras con que se abre cada cláusula preambulatoria (como Recordando o Reafirmando) y cada cláusula operativa (como Exhorta o Condena), más una lista de eufemismos: cómo se dice en lenguaje diplomático lo que en la calle se diría guerra, robo o dinero. Tenlo a mano al redactar tu posición oficial, tus discursos y tu resolución.' }
+  ],
 
   /* Capacitaciones para delegados. Para cada clase nueva: llenar fecha
      y pegar el enlace del video (YouTube, Drive o Meet grabado). Si el

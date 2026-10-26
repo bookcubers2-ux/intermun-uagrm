@@ -62,8 +62,8 @@ window.VISTAS = (function () {
           d: 'Desayuno, almuerzo y meriendas de cada día: cuáles ya recibiste. Pide tu código y tu PIN.' },
         { href: '#/mi-desempeno',  ico: '&#127942;', t: 'Mi desempeño',
           d: 'Tus puntos por criterio, tu puesto en el foro y el detalle de cada puntuación. Pide tu código y tu PIN.' },
-        { href: '#/reglamento',    ico: '&#128220;', t: 'Reglamento oficial (nuevo)',
-          d: 'El reglamento de InterMUN. Todos los delegados deben estudiarlo y dominarlo a la perfección antes del evento.' },
+        { href: '#/material',      ico: '&#128220;', t: 'Material para delegados (nuevo)',
+          d: 'El reglamento, el modelo y un ejemplo de posición oficial, una resolución de ejemplo y el vocabulario protocolar, todo en PDF.' },
         { href: '#/capacitaciones', ico: '&#127909;', t: 'Capacitaciones (nuevo)',
           d: 'Las clases de preparación para delegados inscritos, con el enlace a cada video.' },
         { href: '#/reglas',        ico: '&#9878;',   t: 'Reglas de procedimiento',
@@ -240,24 +240,24 @@ window.VISTAS = (function () {
 
 
   /* ================================================================
-     REGLAMENTO OFICIAL
+     MATERIAL PARA DELEGADOS
      ================================================================ */
-  function reglamento() {
-    var r = C.reglamento;
-    var html = '<h1>Reglamento oficial de InterMUN</h1>' +
-      '<p>El reglamento es la ley de la sala. Define cómo se pide la palabra, qué mociones existen, cómo se vota y qué conducta se espera de cada delegación. ' +
-      'Los chairs lo aplican al pie de la letra y no se acepta desconocerlo como excusa.</p>' +
+  function material() {
+    var html = '<h1>Material para delegados</h1>' +
+      '<p>Todo lo que necesitas para prepararte, en PDF: el reglamento, el modelo y un ejemplo de posición oficial, una resolución de ejemplo y el vocabulario protocolar. ' +
+      'Cada documento se puede abrir en una pestaña nueva o descargar para leerlo sin conexión.</p>' +
       UI.aviso('warn', 'Lectura obligatoria para todos los delegados',
         'Todos los delegados inscritos deben estudiar el reglamento y saberlo a la perfección antes del evento. Quien lo domina gana tiempo, mociones y votos en sala.');
-    if (r.publicado) {
-      html += '<p><a class="btn" href="' + UI.esc(r.pdf) + '" target="_blank" rel="noopener">Abrir el reglamento en PDF</a> ' +
-              '<a class="btn sec" href="' + UI.esc(r.pdf) + '" download>Descargar</a></p>' +
-              '<iframe class="visor-pdf" src="' + UI.esc(r.pdf) + '" title="Reglamento oficial de InterMUN" ' +
-              'style="width:100%;height:80vh;border:1px solid currentColor;border-radius:8px"></iframe>';
-    } else {
-      html += UI.aviso('info', 'El reglamento se publica muy pronto', 'El documento oficial aparecerá en esta pestaña en cuanto la organización lo suba.');
-    }
-    html += '<p>¿Dudas sobre un artículo? Pregúntale a <a href="#/interbot">InterBot</a> o revisa las <a href="#/reglas">reglas de procedimiento</a> resumidas.</p>';
+    C.material.forEach(function (m, i) {
+      html += '<section class="tarjeta" aria-labelledby="mat-' + i + '">' +
+                '<h2 id="mat-' + i + '">' + UI.esc(m.t) + '</h2>' +
+                '<p class="sello">PDF, ' + m.paginas + (m.paginas === 1 ? ' página' : ' páginas') + (m.obligatorio ? ', lectura obligatoria' : '') + '</p>' +
+                '<p><strong>Para qué sirve.</strong> ' + UI.esc(m.d) + '</p>' +
+                '<p><a class="btn" href="' + UI.esc(m.pdf) + '" target="_blank" rel="noopener" aria-label="Abrir ' + UI.esc(m.t) + ' en PDF, se abre en una pestaña nueva">Abrir en PDF</a> ' +
+                '<a class="btn sec" href="' + UI.esc(m.pdf) + '" download="' + UI.esc(m.archivo) + '" aria-label="Descargar ' + UI.esc(m.t) + ' en PDF">Descargar PDF</a></p>' +
+              '</section>';
+    });
+    html += '<p>¿Dudas sobre un artículo o sobre cómo redactar? Pregúntale a <a href="#/interbot">InterBot</a>, revisa las <a href="#/reglas">reglas de procedimiento</a> resumidas o mira las <a href="#/capacitaciones">capacitaciones</a>.</p>';
     UI.pintar(html);
   }
 
@@ -790,7 +790,7 @@ window.VISTAS = (function () {
   return {
     inicio: inicio,
     reglas: reglas,
-    reglamento: reglamento,
+    material: material,
     capacitaciones: capacitaciones,
     guia: guia,
     comites: comites,

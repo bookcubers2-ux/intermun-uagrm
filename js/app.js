@@ -22,7 +22,9 @@ window.APP = (function () {
   var RUTAS = {
     '':              { nav: 'Inicio',           titulo: 'Inicio',                      ver: function () { VISTAS.inicio(); } },
     'reglas':        { nav: 'Reglas',           titulo: 'Reglas de procedimiento',     ver: function () { VISTAS.reglas(); } },
-    'reglamento':    { nav: 'Reglamento',       titulo: 'Reglamento oficial',          ver: function () { VISTAS.reglamento(); } },
+    'material':      { nav: 'Material',         titulo: 'Material para delegados',     ver: function () { VISTAS.material(); } },
+    /* Alias: los enlaces viejos a #/reglamento siguen abriendo el material. */
+    'reglamento':    { nav: null,               titulo: 'Material para delegados',     ver: function () { VISTAS.material(); } },
     'capacitaciones':{ nav: 'Capacitaciones',   titulo: 'Capacitaciones para delegados', ver: function () { VISTAS.capacitaciones(); } },
     'guia':          { nav: 'Guía',             titulo: 'Guía del delegado',           ver: function () { VISTAS.guia(); } },
     'comites':       { nav: 'Comités',          titulo: 'Los comités',                 ver: function () { VISTAS.comites(); } },
