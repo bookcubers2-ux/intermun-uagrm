@@ -43,10 +43,10 @@ window.ADMIN = (function () {
       '<h1>Acceso del staff</h1>' +
       (motivo ? UI.aviso('info', null, motivo) : '') +
       '<div class="tarjeta angosto">' +
-        '<label class="campo" for="correo"><span>Correo</span>' +
-          '<input type="email" id="correo" autocomplete="username" ' +
-            'aria-describedby="ayuda-correo"></label>' +
-        '<p class="ayuda-campo" id="ayuda-correo">El correo con el que el Secretariado creo tu cuenta.</p>' +
+        '<label class="campo" for="correo"><span>Código de entrada o correo</span>' +
+          '<input type="text" id="correo" inputmode="email" autocomplete="username" autocapitalize="none" ' +
+            'spellcheck="false" aria-describedby="ayuda-correo"></label>' +
+        '<p class="ayuda-campo" id="ayuda-correo">El código de entrada del Secretariado, o el correo con el que se creó tu cuenta.</p>' +
         '<label class="campo" for="clave"><span>Contraseña</span>' +
           '<input type="password" id="clave" autocomplete="current-password"></label>' +
         '<button type="button" class="btn bloque" id="btnEntrar">Iniciar sesión</button>' +
@@ -55,13 +55,15 @@ window.ADMIN = (function () {
     );
 
     function entrar() {
-      var c = UI.q('#correo').value.trim();
+      var c = UI.q('#correo').value.trim().toLowerCase();
       var k = UI.q('#clave').value;
       if (!c || !k) {
-        UI.tostada('Completa el correo y la contraseña para continuar.', 'err');
+        UI.tostada('Completa el código o correo y la contraseña para continuar.', 'err');
         UI.q(c ? '#clave' : '#correo').focus();
         return;
       }
+      /* Un código sin arroba es una cuenta del dominio de InterMUN: "secretariado-im26" entra igual que el correo completo. */
+      if (c.indexOf('@') < 0) c += '@intermun.uagrm.edu.bo';
       var b = UI.q('#btnEntrar');
       b.disabled = true;
       b.textContent = 'Verificando, un momento';
