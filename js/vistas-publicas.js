@@ -542,7 +542,7 @@ window.VISTAS = (function () {
                   htmlComidas(listaComidas, entregas, true) +
                 '</section>' +
                 '<div class="fila-btn no-imprimir">' +
-                  '<a class="btn" href="#/escanear">Escanear la siguiente credencial</a>' +
+                  '<a class="btn" href="#/escanear">Ir al servicio de comidas</a>' +
                   '<a class="btn sec" href="#/tablero">Ver el tablero en vivo</a>' +
                   '<a class="btn sec" href="#/puntuar">Puntuar</a>' +
                 '</div>';
@@ -616,7 +616,8 @@ window.VISTAS = (function () {
         var e = mapa[c.id];
         var estado = e ? 'Ya entregado' : 'Pendiente';
         var detalle = e
-          ? 'Entregado a las ' + UI.hora(e.entregado_en) + (e.estacion ? ', en ' + UI.esc(e.estacion) : '')
+          ? (!botones && Date.now() - new Date(e.entregado_en).getTime() < 180000 ? 'Recién entregado. ' : '') +
+            'Entregado a las ' + UI.hora(e.entregado_en) + (e.estacion ? ', en ' + UI.esc(e.estacion) : '')
           : 'Todavía no lo recibes';
         html +=
           '<li class="comida-fila">' +
@@ -644,7 +645,7 @@ window.VISTAS = (function () {
       b.addEventListener('click', function () {
         b.disabled = true;
         var u = APP.usuarioActual();
-        DB.entregas.marcar(delegado.id, b.dataset.marcar, u ? u.email : null, estacionGuardada())
+        DB.entregas.marcar(delegado.id, b.dataset.marcar, u ? u.email : null, estacionGuardada(), delegado.codigo)
           .then(function (r) {
             UI.tostada(r.duplicado ? 'Esa comida ya había sido entregada antes.' : 'Entrega registrada.', r.duplicado ? 'err' : 'ok');
             return DB.entregas.deDelegado(delegado.id);
@@ -657,7 +658,7 @@ window.VISTAS = (function () {
       b.addEventListener('click', function () {
         if (!UI.confirmar('Vas a deshacer esta entrega. Se usa solo si fue marcada por error. Confirmas?')) return;
         b.disabled = true;
-        DB.entregas.desmarcar(delegado.id, b.dataset.quitar)
+        DB.entregas.desmarcar(delegado.id, b.dataset.quitar, delegado.codigo)
           .then(function () { UI.tostada('Entrega deshecha.', 'ok'); return DB.entregas.deDelegado(delegado.id); })
           .then(alCambiar)
           .catch(function (err) { UI.tostada(UI.explicarError(err), 'err'); b.disabled = false; });
@@ -701,33 +702,83 @@ window.VISTAS = (function () {
           .then(function (r) { listaComidas = r[0]; entregas = r[1]; });
       }
 
+      var revisadaA = null;
+
+      /* Vuelve a pedir las entregas y, si cambiaron, lo dice: con un aviso, una vibración
+         y la comida marcada. Si no cambió nada, solo actualiza la hora de la última revisión. */
+      function refrescar() {
+        var antes = {};
+        entregas.forEach(function (e) { antes[e.id] = true; });
+        return traer().then(function () {
+          revisadaA = new Date();
+          var nuevas = entregas.filter(function (e) { return !antes[e.id]; });
+          var ahora = {};
+          entregas.forEach(function (e) { ahora[e.id] = true; });
+          var quitadas = Object.keys(antes).filter(function (id) { return !ahora[id]; });
+          if (nuevas.length || quitadas.length) {
+            pintar(true);
+            if (nuevas.length) {
+              var nombres = nuevas.map(function (e) {
+                var c = listaComidas.filter(function (x) { return x.id === e.comida_id; })[0];
+                return c ? c.nombre + ' del día ' + c.dia : 'una comida';
+              }).join(' y ');
+              UI.tostada('Recibiste: ' + nombres + '.', 'ok');
+              if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
+            } else {
+              UI.tostada('Se corrigió una entrega: una comida volvió a figurar como pendiente.', 'ok');
+            }
+          } else {
+            var v = UI.q('#mcVivo');
+            if (v) v.textContent = textoVivo();
+          }
+        }).catch(function () {});
+      }
+
+      function textoVivo() {
+        return 'Esta pantalla se actualiza sola, en el momento en que el personal te entrega una comida.' +
+          (revisadaA ? ' Última revisión: ' + revisadaA.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + '.' : '');
+      }
+
       traer().then(function () {
+        revisadaA = new Date();
         pintar();
-        /* Las entregas son privadas, así que el navegador no recibe avisos
-           en vivo: se consulta cada 20 segundos mientras la pantalla esté abierta. */
-        var reloj = setInterval(function () {
-          var antes = entregas.length;
-          traer().then(function () {
-            if (entregas.length !== antes) { pintar(true); UI.tostada('Se registró una entrega nueva.', 'ok'); }
-          }).catch(function () {});
-        }, 20000);
-        APP.registrarLimpieza(function () { clearInterval(reloj); });
+        /* Aviso al instante: el personal avisa por el canal de este código cada vez que registra
+           o corrige una entrega. Las entregas son privadas, así que el aviso no trae datos:
+           este teléfono se las vuelve a pedir a la base con su contraseña. */
+        APP.registrarCanal(DB.entregas.escucharMias(yo.codigo, refrescar));
+        /* Respaldo por si el aviso se pierde (mala señal, pantalla dormida): cada 10 segundos
+           y apenas la pantalla vuelve a estar a la vista. */
+        var reloj = setInterval(refrescar, 10000);
+        function alVolver() { if (!document.hidden) refrescar(); }
+        document.addEventListener('visibilitychange', alVolver);
+        APP.registrarLimpieza(function () { clearInterval(reloj); document.removeEventListener('visibilitychange', alVolver); });
       }).catch(function (e) {
         if (pinRechazado(e, misComidas)) return;
         UI.pintar('<h1>Mis comidas</h1>' + UI.aviso('err', 'No se pudieron cargar', UI.explicarError(e)));
       });
 
+      function ultimaRecibida() {
+        var e = entregas.slice().sort(function (a, b) { return a.entregado_en < b.entregado_en ? 1 : -1; })[0];
+        if (!e) return UI.aviso('info', 'Todavía no recibiste ninguna comida. ', 'Cuando el personal te entregue una, aparece aquí al instante.');
+        var c = listaComidas.filter(function (x) { return x.id === e.comida_id; })[0];
+        return '<div class="aviso ok svc-grande"><b><span aria-hidden="true">&#10003;</span> Última comida que recibiste</b>' +
+          '<span class="svc-nombre">' + UI.esc(c ? c.nombre + ', día ' + c.dia : 'Comida') + '</span>' +
+          '<span class="svc-detalle">A las ' + UI.hora(e.entregado_en) + (e.estacion ? ', en ' + UI.esc(e.estacion) : '') + '.</span></div>';
+      }
+
       function pintar(transitorio) {
         UI.pintar(
           '<h1>Mis comidas</h1>' +
           IDENT.lineaIdentidad(yo, 'mcCambiar') +
-          '<section aria-labelledby="t-mc"><h2 id="t-mc">Refrigerios y almuerzos</h2>' +
+          ultimaRecibida() +
+          '<section aria-labelledby="t-mc"><h2 id="t-mc">Todas tus comidas</h2>' +
             htmlComidas(listaComidas, entregas, false) +
           '</section>' +
+          '<p class="silencio" id="mcVivo" role="status">' + UI.esc(textoVivo()) + '</p>' +
           UI.aviso('info', 'Cómo funciona',
-            'En la fila, muestra el código QR de tu credencial. El personal lo escanea y esta pantalla se actualiza sola en menos de un minuto. ' +
-            'Cada comida se entrega una sola vez por persona.') +
-          '<div class="fila-btn"><a class="btn sec" href="#/mi-desempeno">Ver mi desempeño</a><a class="btn sec" href="#/">Inicio</a></div>',
+            'En la fila, muestra el código QR de tu credencial, el de "Mi cuenta". El personal lo escanea o te busca en su lista, ' +
+            'y esta pantalla marca la comida como recibida en ese momento. Cada comida se entrega una sola vez por persona.') +
+          '<div class="fila-btn"><a class="btn sec" href="#/mi-cuenta">Mi cuenta y mi QR</a><a class="btn sec" href="#/mi-desempeno">Ver mi desempeño</a></div>',
           { transitorio: !!transitorio });
         UI.q('#mcCambiar').addEventListener('click', function () { DB.identidad.limpiar(); misComidas(); });
       }

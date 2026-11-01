@@ -371,3 +371,14 @@ La carga de las personas desde los Excel de inscripción se hace desde la carpet
 ### El Secretariado escribe en los foros
 
 `INSTALACION-SECRETARIADO-CHAT.sql` agrega la función `chat_enviar_secretariado`. Un **administrador** con sesión de staff (por ejemplo la cuenta compartida del Secretariado) abre cualquier sala del chat y escribe o comparte un PDF; el mensaje sale como **Secretariado**, con el código `SECRETARIADO` y un borde propio para que los delegados lo reconozcan. Los operadores siguen solo leyendo. Los PDF van a la carpeta `SECRETARIADO` del bucket `chat-archivos`, y hay un límite de 60 mensajes por minuto en total, porque varios dispositivos comparten la cuenta.
+
+## Servicio de comidas (entrega y aviso al instante)
+
+La pantalla **Servicio de comidas** (`#/escanear`, administradores y operadores) reemplaza al escáner anterior:
+
+- **Qué se entrega:** botones por día y por comida, con cuántas personas ya la recibieron (por ejemplo "Almuerzo, 23 de 59"). Abre sola en la comida de hoy según su fecha, y cada dispositivo recuerda la que eligió.
+- **Dos formas de registrar:** con la cámara (QR, un solo paso) o por lista (se toca *Entregar* junto al nombre; hay buscador y filtro por foro). Con la lista también se puede **entregar a todas las personas que faltan** de un foro, por ejemplo cuando el refrigerio se lleva a la sala.
+- **Resultado grande:** verde "Entregado", amarillo "Ya recibió" (con la hora y la estación, para no darle otra), rojo si la credencial no existe o está de baja. Si la persona tiene alergia, avisa antes de entregar.
+- **Deshacer con un toque**, desde la lista o desde el historial del dispositivo.
+- **En vivo entre dispositivos:** lo que entrega un teléfono aparece solo en los demás.
+- **En vivo para el delegado:** al registrar o deshacer una entrega, el servicio manda un aviso por el canal `entrega-<código>` (Realtime Broadcast, sin datos personales) y el teléfono del delegado vuelve a pedir sus comidas a la base. Si el aviso se pierde, su pantalla se actualiza sola cada 10 segundos. Las entregas siguen siendo privadas.

@@ -42,7 +42,7 @@ window.APP = (function () {
     'puntuaciones':  { nav: 'Puntuaciones',     titulo: 'Puntuaciones en vivo',        ver: function (p) { PUNTOS.vista(p); } },
 
     'staff':         { nav: 'Control',          titulo: 'Control de InterMUN',         ver: function () { ADMIN.panel(); } },
-    'escanear':      { nav: null,               titulo: 'Escanear credencial',         ver: function () { ADMIN.escanear(); },  staff: true },
+    'escanear':      { nav: null,               titulo: 'Servicio de comidas',         ver: function () { ADMIN.escanear(); },  staff: true },
     'tablero':       { nav: null,               titulo: 'Tablero en vivo',             ver: function () { ADMIN.tablero(); },   staff: true },
     'puntuar':       { nav: null,               titulo: 'Puntuar a los delegados',     ver: function (p) { PUNTOS.panel(p); },  staff: true },
     'archivos':      { nav: null,               titulo: 'Archivos compartidos',        ver: function () { ADMIN.archivos(); },  staff: true },

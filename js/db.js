@@ -314,8 +314,9 @@ window.DB = (function () {
 
     /* Registra la entrega. Si ya existia, la base la rechaza por
        la restriccion UNIQUE y devolvemos un aviso claro en vez
-       de un error tecnico. */
-    marcar: function (delegadoId, comidaId, quien, estacion) {
+       de un error tecnico. El codigo de la persona sirve para avisarle
+       al instante a su telefono (ver "avisar"). */
+    marcar: function (delegadoId, comidaId, quien, estacion, codigo) {
       return exigir()
         .from('entregas')
         .insert({
@@ -332,11 +333,32 @@ window.DB = (function () {
             }
             throw r.error;
           }
+          entregas.avisar([codigo]);
           return { ok: true, fila: r.data[0] };
         });
     },
 
-    desmarcar: function (delegadoId, comidaId) {
+    /* La misma comida para muchas personas de una vez (por ejemplo, un
+       refrigerio que se lleva a la sala de un foro). Quien ya la tenia se
+       salta sin error. Devuelve solo las entregas nuevas. */
+    marcarVarios: function (personas, comidaId, quien, estacion) {
+      var filas = personas.map(function (p) {
+        return { delegado_id: p.id, comida_id: comidaId, entregado_por: quien || null, estacion: estacion || null };
+      });
+      return exigir()
+        .from('entregas')
+        .upsert(filas, { onConflict: 'delegado_id,comida_id', ignoreDuplicates: true })
+        .select()
+        .then(function (r) {
+          if (r.error) throw r.error;
+          var nuevas = r.data || [], nuevasIds = {};
+          nuevas.forEach(function (x) { nuevasIds[x.delegado_id] = true; });
+          entregas.avisar(personas.filter(function (p) { return nuevasIds[p.id]; }).map(function (p) { return p.codigo; }));
+          return nuevas;
+        });
+    },
+
+    desmarcar: function (delegadoId, comidaId, codigo) {
       return exigir()
         .from('entregas')
         .delete()
@@ -344,8 +366,40 @@ window.DB = (function () {
         .eq('comida_id', comidaId)
         .then(function (r) {
           if (r.error) throw r.error;
+          entregas.avisar([codigo]);
           return true;
         });
+    },
+
+    /* Aviso en vivo al telefono del delegado. Las entregas son privadas, asi que
+       no viaja ningun dato: solo "algo cambio en tus comidas, consultalas". El
+       telefono, que escucha el canal de su propio codigo, vuelve a pedirselas a la
+       base con su contrasena. Si el aviso se pierde, el telefono igual se
+       actualiza solo cada pocos segundos. */
+    avisar: function (codigos) {
+      var lista = (codigos || []).filter(Boolean);
+      if (!lista.length) return;
+      try {
+        fetch(window.CONFIG.SUPABASE_URL + '/realtime/v1/api/broadcast', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': window.CONFIG.SUPABASE_ANON,
+            'Authorization': 'Bearer ' + window.CONFIG.SUPABASE_ANON
+          },
+          body: JSON.stringify({ messages: lista.map(function (c) {
+            return { topic: 'entrega-' + c, event: 'entrega', payload: {}, private: false };
+          }) })
+        }).catch(function () {});
+      } catch (e) {}
+    },
+
+    /* El delegado escucha el canal de su propio codigo. */
+    escucharMias: function (codigo, fn) {
+      if (!hayConexion()) return null;
+      return cliente.channel('entrega-' + codigo)
+        .on('broadcast', { event: 'entrega' }, function () { fn(); })
+        .subscribe();
     },
 
     /* Escucha cambios en vivo desde otras estaciones */

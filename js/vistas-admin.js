@@ -97,8 +97,8 @@ window.ADMIN = (function () {
     var admin = APP.esAdmin();
 
     var operacion = [
-      { href: '#/escanear',  ico: '&#128247;', t: 'Escanear credencial',
-        d: 'Modo rápido para la fila: escanea el QR y marca desayuno, almuerzo o merienda al instante.' },
+      { href: '#/escanear',  ico: '&#127869;', t: 'Servicio de comidas',
+        d: 'Entregar cada comida: escanea el QR o toca el nombre en una lista. Queda registrado al instante y el delegado lo ve en su teléfono.' },
       { href: '#/tablero',   ico: '&#128202;', t: 'Tablero en vivo',
         d: 'Cuántos recibieron cada comida, quién falta, y descarga para Excel.' },
       { href: '#/puntuar',   ico: '&#127942;', t: 'Puntuar a los delegados',
@@ -142,221 +142,510 @@ window.ADMIN = (function () {
 
 
   /* ================================================================
-     ESCANER
+     SERVICIO DE COMIDAS
+     Una sola pantalla para entregar: arriba qué comida se entrega y
+     cuántas personas faltan; luego, o se escanea el QR con la cámara, o se
+     toca el nombre en una lista. Cada entrega queda registrada al instante,
+     la ven los demás dispositivos del staff y le llega al teléfono del
+     delegado en el momento. Un error se deshace con un toque.
      ================================================================ */
   function escanear() {
     detenerEscaner();
-    UI.cargando('Preparando el escáner');
+    UI.cargando('Preparando el servicio de comidas');
 
-    Promise.all([DB.comidas.activas(), DB.dieta.listar()]).then(function (previo) {
-      var comidas = previo[0];
-      /* Alergias y restricciones por persona: se avisa en el momento exacto de entregar. */
-      var dietaDe = {};
-      previo[1].forEach(function (x) { if (x.restriccion) dietaDe[x.delegado_id] = x.restriccion; });
+    var u = APP.usuarioActual();
+    var est = {
+      comidas: [], delegados: [], entregas: [], dietaDe: {},
+      comida: null, dia: null,
+      modo: guardado('intermun_modo_servicio') === 'lista' ? 'lista' : 'camara',
+      filtro: 'faltan', texto: '', foro: '', recientes: [],
+      ultimoOk: { codigo: '', t: 0 }   /* la ultima entrega correcta, para no pisarla si el QR sigue frente a la camara */
+    };
 
-      if (!comidas.length) {
-        UI.pintar('<h1>Escanear credencial</h1>' +
+    function guardado(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+    function guardar(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+    function hoyISO() {
+      var d = new Date();
+      return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+    }
+    function sigla(t) { var m = /\(([^)]+)\)/.exec(t || ''); return m ? m[1] : (t || ''); }
+    function norm(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
+    function etiquetaComida(c) { return 'Día ' + c.dia + ', ' + c.nombre; }
+
+    Promise.all([DB.comidas.activas(), DB.delegados.listar(), DB.entregas.listar(), DB.dieta.listar()]).then(function (r) {
+      est.comidas = r[0].sort(function (a, b) { return (a.dia - b.dia) || (a.orden - b.orden); });
+      est.delegados = r[1].filter(function (d) { return d.activo; })
+        .sort(function (a, b) { return a.nombre.localeCompare(b.nombre, 'es'); });
+      est.entregas = r[2];
+      r[3].forEach(function (x) { if (x.restriccion) est.dietaDe[x.delegado_id] = x.restriccion; });
+
+      if (!est.comidas.length) {
+        UI.pintar('<h1>Servicio de comidas</h1>' +
           UI.aviso('warn', 'Todavía no hay comidas cargadas',
             'Primero define los refrigerios y almuerzos del evento para poder marcarlos.') +
           '<p><a class="btn" href="#/comidas">Ir a definir las comidas</a></p>');
         return;
       }
+      est.comida = comidaInicial();
+      est.dia = est.comida.dia;
+      armar();
+    }).catch(function (e) {
+      UI.pintar('<h1>Servicio de comidas</h1>' + UI.aviso('err', 'No se pudo preparar la pantalla', UI.explicarError(e)));
+    });
 
-      var guardada = null;
-      try { guardada = localStorage.getItem('intermun_comida_activa'); } catch (e) {}
-      var elegida = comidas.filter(function (c) { return c.id === guardada; })[0] || comidas[0];
 
-      var opciones = comidas.map(function (c) {
-        return '<option value="' + c.id + '"' + (c.id === elegida.id ? ' selected' : '') + '>' +
-               'Día ' + c.dia + ', ' + UI.esc(c.nombre) + '</option>';
-      }).join('');
+    /* La comida que se ofrece al abrir: la que este dispositivo ya venia entregando hoy;
+       si no, la que tuvo la entrega mas reciente hoy; si nadie ha entregado, la primera de hoy.
+       Un dia que no es del evento abre la primera comida del proximo dia. */
+    function comidaInicial() {
+      var hoy = hoyISO(), porId = function (id) { return est.comidas.filter(function (c) { return c.id === id; })[0]; };
+      var g = null;
+      try { g = JSON.parse(guardado('intermun_servicio') || 'null'); } catch (e) {}
+      if (g && g.fecha === hoy && porId(g.id)) return porId(g.id);
+
+      var deHoy = est.comidas.filter(function (c) { return c.fecha === hoy; });
+      if (deHoy.length) {
+        var idsHoy = {}; deHoy.forEach(function (c) { idsHoy[c.id] = true; });
+        var ult = est.entregas.filter(function (e) { return idsHoy[e.comida_id]; })
+          .sort(function (a, b) { return a.entregado_en < b.entregado_en ? 1 : -1; })[0];
+        return (ult && porId(ult.comida_id)) || deHoy[0];
+      }
+      var proximas = est.comidas.filter(function (c) { return c.fecha && c.fecha >= hoy; });
+      var hayFechas = est.comidas.some(function (c) { return c.fecha; });
+      return proximas[0] || (hayFechas ? est.comidas[est.comidas.length - 1] : est.comidas[0]);
+    }
+
+    function entregaDe(d, comida) {
+      var c = comida || est.comida;
+      return est.entregas.filter(function (e) { return e.delegado_id === d.id && e.comida_id === c.id; })[0] || null;
+    }
+    function recibieron(comida) {
+      var activos = {}; est.delegados.forEach(function (d) { activos[d.id] = true; });
+      return est.entregas.filter(function (e) { return e.comida_id === comida.id && activos[e.delegado_id]; }).length;
+    }
+
+
+    function armar() {
+      var dias = [];
+      est.comidas.forEach(function (c) { if (dias.indexOf(c.dia) < 0) dias.push(c.dia); });
+      var foros = [];
+      est.delegados.forEach(function (d) { if (d.comite && foros.indexOf(d.comite) < 0) foros.push(d.comite); });
 
       UI.pintar(
-        '<h1>Escanear credencial</h1>' +
+        '<h1>Servicio de comidas</h1>' +
 
-        '<section class="tarjeta" aria-labelledby="t-que-comida">' +
-          '<h2 id="t-que-comida">Qué estás entregando</h2>' +
-          '<label class="campo" for="selComida"><span>Comida que se entrega ahora</span>' +
-            '<select id="selComida" aria-describedby="ayuda-comida">' + opciones + '</select></label>' +
-          '<p class="ayuda-campo" id="ayuda-comida">Todo lo que escanees se registrará como esta comida ' +
-            'hasta que la cambies aquí.</p>' +
-        '</section>' +
-
-        '<section class="tarjeta" aria-labelledby="t-camara">' +
-          '<h2 id="t-camara">Con la cámara</h2>' +
-          '<div class="fila-btn">' +
-            '<button type="button" class="btn verde" id="btnCam">Encender la cámara</button>' +
-            '<button type="button" class="btn sec" id="btnApagar" disabled>Apagar la cámara</button>' +
-          '</div>' +
-          '<div id="lector"></div>' +
-        '</section>' +
-
-        '<section class="tarjeta" aria-labelledby="t-mano">' +
-          '<h2 id="t-mano">O escribiendo el código</h2>' +
-          '<p>Sirve si la cámara falla o el código QR está dañado.</p>' +
-          '<label class="campo" for="codManual"><span>Código de credencial</span>' +
-            '<input type="text" id="codManual" autocomplete="off" autocapitalize="characters" ' +
-              'placeholder="' + UI.esc(window.CONFIG.PREFIJO_CODIGO) + '-0001"></label>' +
-          '<button type="button" class="btn bloque" id="btnManual">Registrar la entrega</button>' +
+        '<section aria-labelledby="t-que-comida">' +
+          '<h2 id="t-que-comida">Qué se entrega ahora</h2>' +
+          (dias.length > 1 ? '<div class="svc-chips" id="svcDias" role="group" aria-label="Día del evento"></div>' : '') +
+          '<div class="svc-chips" id="svcComidas" role="group" aria-label="Comida que se entrega"></div>' +
+          '<div class="svc-banner" id="svcBanner"></div>' +
+          '<div id="svcAlergias"></div>' +
         '</section>' +
 
         '<section aria-labelledby="t-resultado">' +
           '<h2 id="t-resultado">Resultado</h2>' +
-          '<div id="resultado" role="status" aria-live="assertive" aria-atomic="true">' +
-            '<p class="silencio">Aquí aparece que paso con cada credencial que escanees.</p>' +
+          '<div id="resultado" class="svc-resultado" role="status" aria-live="assertive" aria-atomic="true">' +
+            '<p class="silencio">Aquí aparece qué pasó con cada persona.</p>' +
+          '</div>' +
+        '</section>' +
+
+        '<section aria-labelledby="t-como">' +
+          '<h2 id="t-como">Cómo registrar</h2>' +
+          '<div class="fila-btn" role="group" aria-label="Forma de registrar">' +
+            '<button type="button" class="btn sec svc-modo" id="modoCamara" aria-pressed="false">Con la cámara (QR)</button>' +
+            '<button type="button" class="btn sec svc-modo" id="modoLista" aria-pressed="false">Por lista (tocar el nombre)</button>' +
+          '</div>' +
+
+          '<div id="panelCamara">' +
+            '<div class="fila-btn">' +
+              '<button type="button" class="btn verde" id="btnCam">Encender la cámara</button>' +
+              '<button type="button" class="btn sec" id="btnApagar" disabled>Apagar la cámara</button>' +
+            '</div>' +
+            '<div id="lector"></div>' +
+            '<p class="ayuda-campo">Apunta al código QR de la credencial. Se registra solo, sin tocar nada más.</p>' +
+          '</div>' +
+
+          '<div id="panelLista">' +
+            '<label class="campo" for="svcBuscar"><span>Buscar por nombre o código</span>' +
+              '<input type="search" id="svcBuscar" autocomplete="off" aria-describedby="svcBuscarAyuda"></label>' +
+            '<p class="ayuda-campo" id="svcBuscarAyuda">Si escribes un código completo (por ejemplo IM-0007) y pulsas Enter, se entrega a esa persona.</p>' +
+            '<label class="campo" for="svcForo"><span>Foro</span><select id="svcForo">' +
+              '<option value="">Todos los foros</option>' +
+              foros.map(function (f) { return '<option value="' + UI.esc(f) + '">' + UI.esc(sigla(f)) + '</option>'; }).join('') +
+              '<option value="__sin__">Sin foro asignado</option>' +
+            '</select></label>' +
+            '<div class="fila-btn" role="group" aria-label="Qué personas mostrar">' +
+              '<button type="button" class="btn sec svc-filtro" data-filtro="faltan" aria-pressed="true">Faltan</button>' +
+              '<button type="button" class="btn sec svc-filtro" data-filtro="entregadas" aria-pressed="false">Ya recibieron</button>' +
+              '<button type="button" class="btn sec svc-filtro" data-filtro="todas" aria-pressed="false">Todas</button>' +
+            '</div>' +
+            '<p class="solo-lector" role="status" aria-live="polite" id="svcConteo"></p>' +
+            '<ul class="svc-lista" id="svcLista" role="list"></ul>' +
+            '<div id="svcTodos"></div>' +
           '</div>' +
         '</section>' +
 
         '<section aria-labelledby="t-historial">' +
-          '<h2 id="t-historial">Entregas de esta sesión</h2>' +
+          '<h2 id="t-historial">Entregas de este dispositivo</h2>' +
           '<p id="contador" role="status" aria-live="polite">Todavía no registraste ninguna entrega.</p>' +
           '<div id="historial"></div>' +
         '</section>'
       );
 
-      var historial = [];
-
-      UI.q('#selComida').addEventListener('change', function () {
-        try { localStorage.setItem('intermun_comida_activa', this.value); } catch (e) {}
-        var txt = this.options[this.selectedIndex].textContent;
-        if (window.A11Y) window.A11Y.anunciar('Ahora se registrará: ' + txt + '.');
-      });
-
+      UI.q('#modoCamara').addEventListener('click', function () { cambiarModo('camara'); });
+      UI.q('#modoLista').addEventListener('click', function () { cambiarModo('lista'); });
       UI.q('#btnCam').addEventListener('click', encenderCamara);
-      UI.q('#btnApagar').addEventListener('click', function () {
-        detenerEscaner();
-        UI.q('#btnCam').disabled = false;
-        UI.q('#btnApagar').disabled = true;
-        if (window.A11Y) window.A11Y.anunciar('Cámara apagada.');
+      UI.q('#btnApagar').addEventListener('click', function () { apagarCamara(true); });
+
+      UI.q('#svcBuscar').addEventListener('input', function () { est.texto = this.value; pintarLista(); });
+      UI.q('#svcBuscar').addEventListener('keydown', function (ev) {
+        if (ev.key !== 'Enter') return;
+        var cod = this.value.trim().toUpperCase();
+        var d = est.delegados.filter(function (x) { return x.codigo === cod; })[0];
+        if (d) { entregar(d); this.value = ''; est.texto = ''; pintarLista(); }
+        else UI.tostada('No hay nadie con ese código. Escribe el nombre para buscarlo.', 'err');
+      });
+      UI.q('#svcForo').addEventListener('change', function () { est.foro = this.value; pintarLista(); });
+      UI.qq('.svc-filtro').forEach(function (b) {
+        b.addEventListener('click', function () { est.filtro = b.dataset.filtro; pintarLista(); });
       });
 
-      UI.q('#btnManual').addEventListener('click', function () {
-        var v = UI.q('#codManual').value.trim().toUpperCase();
-        if (!v) {
-          UI.tostada('Escribe un código de credencial.', 'err');
-          UI.q('#codManual').focus();
+      cambiarModo(est.modo, true);
+      pintarTodo();
+
+      /* Lo que entreguen otros dispositivos del staff aparece aqui solo. */
+      var pendiente = null;
+      APP.abrirCanalVivo(function () {
+        clearTimeout(pendiente);
+        pendiente = setTimeout(function () {
+          DB.entregas.listar().then(function (l) { est.entregas = l; pintarTodo(); }).catch(function () {});
+        }, 250);
+      });
+      APP.registrarLimpieza(function () { clearTimeout(pendiente); detenerEscaner(); });
+    }
+
+
+    /* ---------- Pintado ---------- */
+    function pintarTodo() {
+      pintarChips(); pintarBanner(); pintarLista(); pintarHistorial();
+    }
+
+    function pintarChips() {
+      var dias = UI.q('#svcDias');
+      if (dias) {
+        var lista = [];
+        est.comidas.forEach(function (c) { if (lista.indexOf(c.dia) < 0) lista.push(c.dia); });
+        dias.innerHTML = lista.map(function (d) {
+          var fecha = est.comidas.filter(function (c) { return c.dia === d && c.fecha; })[0];
+          var activo = d === est.dia;
+          return '<button type="button" class="btn sec svc-chip" data-dia="' + d + '" aria-pressed="' + activo + '">' +
+                 (activo ? '&#10003; ' : '') + 'Día ' + d + (fecha ? ' <small>' + fechaCorta(fecha.fecha) + '</small>' : '') + '</button>';
+        }).join('');
+        UI.qq('[data-dia]', dias).forEach(function (b) {
+          b.addEventListener('click', function () {
+            est.dia = parseInt(b.dataset.dia, 10);
+            var primera = est.comidas.filter(function (c) { return c.dia === est.dia; })[0];
+            elegirComida(primera);
+          });
+        });
+      }
+      var cont = UI.q('#svcComidas');
+      cont.innerHTML = est.comidas.filter(function (c) { return c.dia === est.dia; }).map(function (c) {
+        var activa = c.id === est.comida.id;
+        return '<button type="button" class="btn sec svc-chip" data-comida="' + c.id + '" aria-pressed="' + activa + '">' +
+               (activa ? '&#10003; ' : '') + UI.esc(c.nombre) + ' <small>' + recibieron(c) + ' de ' + est.delegados.length + '</small></button>';
+      }).join('');
+      UI.qq('[data-comida]', cont).forEach(function (b) {
+        b.addEventListener('click', function () {
+          elegirComida(est.comidas.filter(function (c) { return c.id === b.dataset.comida; })[0]);
+        });
+      });
+    }
+
+    function fechaCorta(iso) {
+      var p = String(iso).split('-');
+      return p.length === 3 ? p[2] + '/' + p[1] : iso;
+    }
+
+    function elegirComida(c) {
+      est.comida = c; est.dia = c.dia;
+      guardar('intermun_servicio', JSON.stringify({ id: c.id, fecha: hoyISO() }));
+      pintarTodo();
+      if (window.A11Y) window.A11Y.anunciar('Ahora se entrega: ' + etiquetaComida(c) + '.');
+    }
+
+    function pintarBanner() {
+      var n = recibieron(est.comida), total = est.delegados.length;
+      var pct = total ? Math.round(n * 100 / total) : 0;
+      UI.q('#svcBanner').innerHTML =
+        '<p class="svc-banner-t">Entregando ahora</p>' +
+        '<p class="svc-banner-n">' + UI.esc(etiquetaComida(est.comida)) + '</p>' +
+        '<p><strong>' + n + ' de ' + total + '</strong> ya la recibieron. ' +
+          (total - n === 1 ? 'Falta 1 persona.' : 'Faltan ' + (total - n) + ' personas.') + '</p>' +
+        '<div class="progreso" role="img" aria-label="' + pct + ' por ciento entregado"><i style="width:' + pct + '%"></i></div>';
+
+      var ale = est.delegados.filter(function (d) { return est.dietaDe[d.id]; });
+      UI.q('#svcAlergias').innerHTML = ale.length
+        ? '<details class="acordeon"><summary>Alergias y restricciones (' + ale.length + ')</summary><div class="cuerpo"><ul>' +
+          ale.map(function (d) {
+            var ya = entregaDe(d);
+            return '<li><strong>' + UI.esc(d.nombre) + '</strong> <span class="mono">' + UI.esc(d.codigo) + '</span>: ' +
+                   UI.esc(est.dietaDe[d.id]) + (ya ? ' (ya recibió esta comida)' : '') + '</li>';
+          }).join('') + '</ul></div></details>'
+        : '';
+    }
+
+    function visibles() {
+      var t = norm(est.texto);
+      return est.delegados.filter(function (d) {
+        var ya = !!entregaDe(d);
+        if (est.filtro === 'faltan' && ya) return false;
+        if (est.filtro === 'entregadas' && !ya) return false;
+        if (est.foro === '__sin__' && d.comite) return false;
+        if (est.foro && est.foro !== '__sin__' && d.comite !== est.foro) return false;
+        if (t && norm(d.nombre + ' ' + d.codigo).indexOf(t) < 0) return false;
+        return true;
+      });
+    }
+
+    function pintarLista() {
+      UI.qq('.svc-filtro').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.filtro === est.filtro)); });
+      var lista = visibles();
+      UI.q('#svcConteo').textContent = lista.length + (lista.length === 1 ? ' persona en la lista.' : ' personas en la lista.');
+      var ul = UI.q('#svcLista');
+      if (!lista.length) {
+        ul.innerHTML = '<li class="svc-vacia">' + (est.filtro === 'faltan'
+          ? 'No falta nadie con este filtro. Todas las personas de la lista ya recibieron esta comida.'
+          : 'No hay nadie con este filtro.') + '</li>';
+      } else {
+        ul.innerHTML = lista.map(function (d) {
+          var e = entregaDe(d);
+          return '<li class="svc-fila' + (e ? ' svc-hecha' : '') + '">' +
+            '<span class="svc-quien"><strong>' + UI.esc(d.nombre) + '</strong> ' +
+              '<span class="mono">' + UI.esc(d.codigo) + '</span>' +
+              (d.comite ? ' <small>' + UI.esc(sigla(d.comite)) + '</small>' : '') +
+              (est.dietaDe[d.id] ? ' <span class="chip ojo">Alergia: ' + UI.esc(est.dietaDe[d.id]) + '</span>' : '') + '</span>' +
+            (e
+              ? '<span class="svc-estado"><span class="chip si">Recibió a las ' + UI.hora(e.entregado_en) + '</span> ' +
+                '<button type="button" class="btn sec chico" data-deshacer="' + d.id + '">Deshacer<span class="solo-lector"> la entrega de ' + UI.esc(d.nombre) + '</span></button></span>'
+              : '<button type="button" class="btn verde svc-dar" data-dar="' + d.id + '">Entregar<span class="solo-lector"> a ' + UI.esc(d.nombre) + '</span></button>') +
+            '</li>';
+        }).join('');
+        UI.qq('[data-dar]', ul).forEach(function (b) {
+          b.addEventListener('click', function () {
+            b.disabled = true;
+            entregar(est.delegados.filter(function (d) { return d.id === b.dataset.dar; })[0]);
+          });
+        });
+        UI.qq('[data-deshacer]', ul).forEach(function (b) {
+          b.addEventListener('click', function () {
+            deshacer(est.delegados.filter(function (d) { return d.id === b.dataset.deshacer; })[0]);
+          });
+        });
+      }
+
+      /* Entregar a todas las personas que faltan en la lista que se ve (un foro, una sala). */
+      var faltan = lista.filter(function (d) { return !entregaDe(d); });
+      UI.q('#svcTodos').innerHTML = (est.filtro !== 'entregadas' && faltan.length > 1)
+        ? '<button type="button" class="btn oro bloque" id="btnTodos">Entregar a las ' + faltan.length + ' personas que faltan en esta lista</button>'
+        : '';
+      var bt = UI.q('#btnTodos');
+      if (bt) bt.addEventListener('click', function () { entregarATodos(faltan); });
+    }
+
+    function pintarHistorial() {
+      var h = est.recientes;
+      UI.q('#contador').textContent = h.length === 0 ? 'Todavía no registraste ninguna entrega.'
+        : (h.length === 1 ? 'Registraste 1 entrega en este dispositivo.' : 'Registraste ' + h.length + ' entregas en este dispositivo.');
+      UI.q('#historial').innerHTML = h.length
+        ? '<div class="tabla-env"><table class="datos"><caption class="solo-lector">Entregas registradas en este dispositivo, de la más reciente a la más antigua</caption>' +
+          '<thead><tr><th scope="col">Hora</th><th scope="col">Nombre</th><th scope="col">Comida</th><th scope="col">Corregir</th></tr></thead><tbody>' +
+          h.slice(0, 15).map(function (x, i) {
+            var vigente = est.entregas.some(function (e) { return e.delegado_id === x.d.id && e.comida_id === x.comida.id; });
+            return '<tr><td class="mono">' + UI.hora(x.hora) + '</td><td>' + UI.esc(x.d.nombre) + ' <span class="mono">' + UI.esc(x.d.codigo) + '</span></td>' +
+                   '<td>' + UI.esc(etiquetaComida(x.comida)) + '</td><td>' +
+                   (vigente ? '<button type="button" class="btn sec chico" data-rehacer="' + i + '">Deshacer<span class="solo-lector"> la entrega a ' + UI.esc(x.d.nombre) + '</span></button>' : 'Deshecha') +
+                   '</td></tr>';
+          }).join('') + '</tbody></table></div>'
+        : '';
+      UI.qq('[data-rehacer]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var x = est.recientes[parseInt(b.dataset.rehacer, 10)];
+          deshacer(x.d, x.comida);
+        });
+      });
+    }
+
+
+    /* ---------- Resultado grande: se lee de lejos y no depende del color ---------- */
+    function resultado(tipo, titulo, nombre, detalle, extra) {
+      var caja = UI.q('#resultado');
+      if (!caja) return;   /* se cambio de pantalla mientras se registraba */
+      var icono = { ok: '&#10003;', warn: '&#9888;', err: '&#10007;' }[tipo] || '';
+      caja.innerHTML = '<div class="aviso ' + tipo + ' svc-grande"><b><span aria-hidden="true">' + icono + '</span> ' + UI.esc(titulo) + '</b>' +
+        (nombre ? '<span class="svc-nombre">' + UI.esc(nombre) + '</span>' : '') +
+        (detalle ? '<span class="svc-detalle">' + UI.esc(detalle) + '</span>' : '') + (extra || '') + '</div>';
+    }
+
+    function alertaAlergia(d) {
+      return est.dietaDe[d.id]
+        ? '<span class="svc-alergia"><strong>ATENCIÓN, alergia o restricción: ' + UI.esc(est.dietaDe[d.id]) + '.</strong> Confirma con la persona antes de entregar.</span>'
+        : '';
+    }
+
+
+    /* ---------- Acciones ---------- */
+    function entregar(d) {
+      var c = est.comida;
+      if (!d.activo) {
+        pitar(false);
+        resultado('err', 'Credencial dada de baja', d.nombre, 'Tiene la credencial desactivada. No corresponde entregar.');
+        return Promise.resolve();
+      }
+      return DB.entregas.marcar(d.id, c.id, u ? u.email : null, VISTAS.estacionGuardada(), d.codigo).then(function (r) {
+        if (r.duplicado) {
+          return DB.entregas.deDelegado(d.id).then(function (es) {
+            es.forEach(function (e) {
+              if (!est.entregas.some(function (x) { return x.id === e.id; })) est.entregas.push(e);
+            });
+            var e = entregaDe(d);
+            pitar(false);
+            resultado('warn', 'Ya recibió esta comida', d.nombre,
+              'Recibió ' + etiquetaComida(c) + (e ? ' a las ' + UI.hora(e.entregado_en) + (e.estacion ? ', en ' + e.estacion : '') : '') + '. No le des otra.');
+            pintarTodo();
+          });
+        }
+        est.entregas.push(r.fila);
+        est.ultimoOk = { codigo: d.codigo, t: Date.now() };
+        est.recientes.unshift({ d: d, comida: c, hora: r.fila.entregado_en || new Date().toISOString() });
+        pitar(true);
+        var ale = alertaAlergia(d);
+        resultado(ale ? 'warn' : 'ok', 'Entregado', d.nombre,
+          etiquetaComida(c) + '. Van ' + recibieron(c) + ' de ' + est.delegados.length + '.', ale);
+        pintarTodo();
+      }).catch(function (err) {
+        pitar(false);
+        resultado('err', 'No se pudo registrar', d.nombre, UI.explicarError(err));
+        pintarLista();
+      });
+    }
+
+    function deshacer(d, comida) {
+      var c = comida || est.comida;
+      if (!UI.confirmar('Vas a deshacer la entrega de ' + etiquetaComida(c) + ' a ' + d.nombre + '. Se usa solo si fue un error. Confirmas?')) return;
+      DB.entregas.desmarcar(d.id, c.id, d.codigo).then(function () {
+        est.entregas = est.entregas.filter(function (e) { return !(e.delegado_id === d.id && e.comida_id === c.id); });
+        resultado('warn', 'Entrega deshecha', d.nombre, etiquetaComida(c) + '. Vuelve a figurar como pendiente.');
+        pintarTodo();
+      }).catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); });
+    }
+
+    function entregarATodos(lista) {
+      var c = est.comida, n = lista.length;
+      var conAlergia = lista.filter(function (d) { return est.dietaDe[d.id]; });
+      var aviso = conAlergia.length
+        ? '\n\nATENCIÓN: ' + conAlergia.length + (conAlergia.length === 1 ? ' persona tiene' : ' personas tienen') + ' alergia: ' +
+          conAlergia.map(function (d) { return d.nombre + ' (' + est.dietaDe[d.id] + ')'; }).join('; ') + '.'
+        : '';
+      if (!UI.confirmar('Vas a registrar ' + etiquetaComida(c) + ' como entregada a estas ' + n + ' personas, todas a la vez.' + aviso +
+                        '\n\nUsa esto solo si de verdad se les entregó a todas. Confirmas?')) return;
+      var b = UI.q('#btnTodos');
+      if (b) { b.disabled = true; b.textContent = 'Registrando, un momento'; }
+      DB.entregas.marcarVarios(lista, c.id, u ? u.email : null, VISTAS.estacionGuardada()).then(function (nuevas) {
+        return DB.entregas.listar().then(function (l) {
+          est.entregas = l;
+          lista.forEach(function (d) {
+            var e = entregaDe(d);
+            if (e && nuevas.some(function (x) { return x.id === e.id; })) est.recientes.unshift({ d: d, comida: c, hora: e.entregado_en });
+          });
+          pitar(true);
+          resultado('ok', nuevas.length + (nuevas.length === 1 ? ' entrega registrada' : ' entregas registradas'), '',
+            etiquetaComida(c) + '. Van ' + recibieron(c) + ' de ' + est.delegados.length + '.');
+          pintarTodo();
+        });
+      }).catch(function (e) {
+        resultado('err', 'No se pudo registrar', '', UI.explicarError(e));
+        pintarLista();
+      });
+    }
+
+
+    /* ---------- Cámara ---------- */
+    function cambiarModo(modo, inicial) {
+      est.modo = modo;
+      guardar('intermun_modo_servicio', modo);
+      UI.q('#panelCamara').hidden = modo !== 'camara';
+      UI.q('#panelLista').hidden = modo !== 'lista';
+      UI.q('#modoCamara').setAttribute('aria-pressed', String(modo === 'camara'));
+      UI.q('#modoLista').setAttribute('aria-pressed', String(modo === 'lista'));
+      if (modo !== 'camara') apagarCamara(false);
+      else if (guardado('intermun_camara_auto') === '1') encenderCamara();   /* si ya la usaba, arranca sola */
+      if (!inicial && window.A11Y) window.A11Y.anunciar(modo === 'camara' ? 'Modo cámara.' : 'Modo lista.');
+    }
+
+    function apagarCamara(aviso) {
+      detenerEscaner();
+      var a = UI.q('#btnCam'), b = UI.q('#btnApagar');
+      if (a) a.disabled = false;
+      if (b) b.disabled = true;
+      if (aviso) {
+        guardar('intermun_camara_auto', '0');
+        if (window.A11Y) window.A11Y.anunciar('Cámara apagada.');
+      }
+    }
+
+    function encenderCamara() {
+      UI.q('#btnCam').disabled = true;
+      if (window.A11Y) window.A11Y.anunciar('Encendiendo la cámara.');
+      cargarLibreriaEscaner().then(function () {
+        try {
+          escanerActivo = new Html5Qrcode('lector', { verbose: false });
+          escanerActivo.start(
+            { facingMode: 'environment' },
+            { fps: 10, qrbox: { width: 240, height: 240 } },
+            function (texto) { procesar(texto); },
+            function () {}
+          ).then(function () {
+            var ap = UI.q('#btnApagar'); if (ap) ap.disabled = false;
+            guardar('intermun_camara_auto', '1');   /* la proxima vez arranca sola */
+            UI.tostada('Cámara lista. Apunta al código QR de la credencial.', 'ok');
+          }).catch(function (e) {
+            var b = UI.q('#btnCam'); if (b) b.disabled = false;
+            UI.tostada('No se pudo abrir la cámara. ' + (e.message || '') + ' Puedes usar la lista.', 'err');
+          });
+        } catch (e) {
+          UI.q('#btnCam').disabled = false;
+          UI.tostada('Este navegador no permite usar la cámara aquí. Usa la lista.', 'err');
+        }
+      }).catch(function () {
+        UI.q('#btnCam').disabled = false;
+        UI.tostada('No se pudo cargar el escáner. Usa la lista.', 'err');
+      });
+    }
+
+    var ultimo = '', ultimoMomento = 0;
+    function procesar(texto) {
+      var codigo = extraerCodigo(texto);
+      var ahora = Date.now();
+      if (codigo === ultimo && ahora - ultimoMomento < 2500) return;
+      /* Si acaba de quedar entregado, el mismo QR delante de la camara no cambia el resultado verde. */
+      if (codigo === est.ultimoOk.codigo && ahora - est.ultimoOk.t < 10000) return;
+      ultimo = codigo; ultimoMomento = ahora;
+
+      var d = est.delegados.filter(function (x) { return x.codigo === codigo; })[0];
+      var buscar = d ? Promise.resolve(d) : DB.delegados.porCodigo(codigo);   /* alguien acreditado despues de abrir la pantalla */
+      buscar.then(function (p) {
+        if (!p) {
+          pitar(false);
+          resultado('err', 'Credencial desconocida', '', 'El código ' + codigo + ' no está en la lista de acreditados.');
           return;
         }
-        procesar(v);
-        UI.q('#codManual').value = '';
-        UI.q('#codManual').focus();
+        return entregar(p);
+      }).catch(function (e) {
+        pitar(false);
+        resultado('err', 'No se pudo registrar', '', UI.explicarError(e));
       });
-      UI.q('#codManual').addEventListener('keydown', function (ev) {
-        if (ev.key === 'Enter') UI.q('#btnManual').click();
-      });
-
-
-      function encenderCamara() {
-        UI.q('#btnCam').disabled = true;
-        if (window.A11Y) window.A11Y.anunciar('Encendiendo la cámara.');
-        cargarLibreriaEscaner().then(function () {
-          try {
-            escanerActivo = new Html5Qrcode('lector', { verbose: false });
-            escanerActivo.start(
-              { facingMode: 'environment' },
-              { fps: 10, qrbox: { width: 240, height: 240 } },
-              function (texto) { procesar(texto); },
-              function () {}
-            ).then(function () {
-              UI.q('#btnApagar').disabled = false;
-              UI.tostada('Cámara lista. Apunta al código QR de la credencial.', 'ok');
-            }).catch(function (e) {
-              UI.q('#btnCam').disabled = false;
-              UI.tostada('No se pudo abrir la cámara. ' + (e.message || '') +
-                ' Puedes escribir el código a mano más abajo.', 'err');
-            });
-          } catch (e) {
-            UI.q('#btnCam').disabled = false;
-            UI.tostada('Este navegador no permite usar la cámara aquí. Escribe el código a mano.', 'err');
-          }
-        }).catch(function () {
-          UI.q('#btnCam').disabled = false;
-          UI.tostada('No se pudo cargar el escáner. Escribe el código a mano.', 'err');
-        });
-      }
-
-
-      var ultimo = '', ultimoMomento = 0;
-
-      function procesar(texto) {
-        var codigo = extraerCodigo(texto);
-        var ahora = Date.now();
-        if (codigo === ultimo && ahora - ultimoMomento < 2500) return;
-        ultimo = codigo; ultimoMomento = ahora;
-
-        var comidaId = UI.q('#selComida').value;
-        var comida = comidas.filter(function (c) { return c.id === comidaId; })[0];
-        var u = APP.usuarioActual();
-
-        DB.delegados.porCodigo(codigo).then(function (d) {
-          if (!d) {
-            pitar(false);
-            mostrar('err', 'Credencial desconocida',
-              'El código ' + codigo + ' no está en la lista de acreditados.');
-            return;
-          }
-          if (!d.activo) {
-            pitar(false);
-            mostrar('err', 'Credencial dada de baja',
-              d.nombre + ' tiene la credencial desactivada. No corresponde entregar.');
-            return;
-          }
-          return DB.entregas.marcar(d.id, comidaId, u ? u.email : null, VISTAS.estacionGuardada())
-            .then(function (r) {
-              if (r.duplicado) {
-                pitar(false);
-                mostrar('warn', 'Ya había recibido esta comida',
-                  d.nombre + ' ya tiene registrado el ' + comida.nombre + ' del día ' + comida.dia + '.', d);
-              } else {
-                pitar(true);
-                mostrar('ok', 'Entrega registrada',
-                  d.nombre + '. ' + comida.nombre + ' del día ' + comida.dia + '.', d);
-                historial.unshift({ nombre: d.nombre, codigo: d.codigo, hora: new Date().toISOString() });
-                pintarHistorial();
-              }
-            });
-        }).catch(function (e) {
-          pitar(false);
-          mostrar('err', 'No se pudo registrar', UI.explicarError(e));
-        });
-      }
-
-      function mostrar(tipo, titulo, texto, d) {
-        var extra = d
-          ? '<p><a class="btn sec chico" href="#/c/' + encodeURIComponent(d.codigo) + '">' +
-            'Ver la credencial completa de ' + UI.esc(d.nombre) + '</a></p>'
-          : '';
-        /* Con alergia, el aviso pasa a amarillo y la dice en texto: nunca solo con color. */
-        var alergia = d && dietaDe[d.id]
-          ? '<p><strong>ATENCIÓN, alergia o restricción alimentaria: ' + UI.esc(dietaDe[d.id]) + '.</strong> ' +
-            'Confirma con la persona antes de entregar.</p>'
-          : '';
-        if (alergia && tipo === 'ok') tipo = 'warn';
-        var caja = UI.q('#resultado');
-        if (!caja) return;   /* se cambió de pantalla mientras se registraba la entrega */
-        caja.innerHTML =
-          '<div class="aviso ' + tipo + '"><b>' + UI.esc(titulo) + '</b>' + UI.esc(texto) + alergia + extra + '</div>';
-      }
-
-      function pintarHistorial() {
-        if (!UI.q('#contador')) return;
-        UI.q('#contador').textContent = historial.length === 1
-          ? 'Registraste 1 entrega en esta sesión.'
-          : 'Registraste ' + historial.length + ' entregas en esta sesión.';
-
-        UI.q('#historial').innerHTML =
-          '<div class="tabla-env"><table class="datos">' +
-          '<caption class="solo-lector">Entregas registradas en esta sesión, de la más reciente a la más antigua</caption>' +
-          '<thead><tr><th scope="col">Hora</th><th scope="col">Código</th><th scope="col">Nombre</th></tr></thead><tbody>' +
-          historial.slice(0, 40).map(function (h) {
-            return '<tr><td class="mono">' + UI.hora(h.hora) + '</td>' +
-                   '<td class="mono">' + UI.esc(h.codigo) + '</td>' +
-                   '<td>' + UI.esc(h.nombre) + '</td></tr>';
-          }).join('') + '</tbody></table></div>';
-      }
-    }).catch(function (e) {
-      UI.pintar('<h1>Escanear credencial</h1>' + UI.aviso('err', 'No se pudo preparar el escáner', UI.explicarError(e)));
-    });
+    }
   }
 
 
