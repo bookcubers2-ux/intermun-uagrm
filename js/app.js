@@ -21,6 +21,9 @@ window.APP = (function () {
      persona al llegar, y si exige sesion de staff. */
   var RUTAS = {
     '':              { nav: 'Inicio',           titulo: 'Inicio',                      ver: function () { VISTAS.inicio(); } },
+    /* El rótulo cambia solo: "Ingresar" antes de entrar, "Mi cuenta" después. */
+    'mi-cuenta':     { nav: function () { return DB.identidad.obtener() ? 'Mi cuenta' : 'Ingresar'; },
+                       titulo: 'Mi cuenta',     ver: function () { CUENTA.vista(); } },
     'reglas':        { nav: 'Reglas',           titulo: 'Reglas de procedimiento',     ver: function () { VISTAS.reglas(); } },
     'material':      { nav: 'Material',         titulo: 'Material para delegados',     ver: function () { VISTAS.material(); } },
     /* Alias: los enlaces viejos a #/reglamento siguen abriendo el material. */
@@ -45,6 +48,7 @@ window.APP = (function () {
     'archivos':      { nav: null,               titulo: 'Archivos compartidos',        ver: function () { ADMIN.archivos(); },  staff: true },
     'delegados':     { nav: null,               titulo: 'Delegados',                   ver: function () { ADMIN.delegados(); }, staff: true, admin: true },
     'comidas':       { nav: null,               titulo: 'Comidas del evento',          ver: function () { ADMIN.comidas(); },   staff: true, admin: true },
+    'foros':         { nav: null,               titulo: 'Asignar foros',               ver: function () { ADMIN.foros(); },     staff: true, admin: true },
     'qr':            { nav: null,               titulo: 'Generar los códigos QR',      ver: function () { ADMIN.qr(); },        staff: true, admin: true },
     'salas':         { nav: null,               titulo: 'Salas de chat',               ver: function () { ADMIN.salas(); },     staff: true, admin: true },
     'cuentas':       { nav: null,               titulo: 'Cuentas del staff',           ver: function () { ADMIN.cuentas(); },   staff: true, admin: true },
@@ -68,10 +72,11 @@ window.APP = (function () {
     var html = '';
     Object.keys(RUTAS).forEach(function (k) {
       var r = RUTAS[k];
-      if (!r.nav) return;
+      var etiqueta = (typeof r.nav === 'function') ? r.nav() : r.nav;
+      if (!etiqueta) return;
       var esActual = (k === actual);
       html += '<a href="#/' + k + '"' + (esActual ? ' aria-current="page"' : '') + '>' +
-                UI.esc(r.nav) +
+                UI.esc(etiqueta) +
                 (k === 'staff' ? '<span class="marca-staff">staff</span>' : '') +
               '</a>';
     });
@@ -163,8 +168,13 @@ window.APP = (function () {
   function pintarSesion() {
     var chip = document.getElementById('chipSesion');
     var btn = document.getElementById('btnSalir');
+    var yo = DB.identidad.obtener();
     if (usuario) {
       chip.textContent = (rol === 'admin' ? 'Administrador: ' : 'Operador: ') + usuario.email;
+      chip.classList.remove('oculto');
+      btn.hidden = false;
+    } else if (yo) {
+      chip.textContent = 'Delegado: ' + yo.nombre + ' (' + yo.codigo + ')';
       chip.classList.remove('oculto');
       btn.hidden = false;
     } else {
@@ -228,6 +238,15 @@ window.APP = (function () {
     if (window.INSTALAR) window.INSTALAR.construir();
 
     document.getElementById('btnSalir').addEventListener('click', function () {
+      if (!usuario) {
+        /* Sin sesión de staff, el botón cierra la cuenta de delegado. */
+        if (!UI.confirmar('Vas a cerrar tu sesión en este dispositivo. Confirmas?')) return;
+        DB.identidad.limpiar();
+        UI.tostada('Sesión cerrada.', 'ok');
+        /* Si ya está en el inicio, el cambio de dirección no dispara nada: se repinta a mano. */
+        if (rutaActual().nombre === '') enrutar(); else location.hash = '#/';
+        return;
+      }
       if (!UI.confirmar('Vas a cerrar la sesión de staff en este dispositivo. Confirmas?')) return;
       DB.sesion.salir().then(function () {
         fijarUsuario(null);
@@ -237,6 +256,9 @@ window.APP = (function () {
     });
 
     window.addEventListener('hashchange', enrutar);
+
+    /* Alguien entró o salió con su cuenta de delegado: el encabezado y el menú se ajustan. */
+    window.addEventListener('intermun-identidad', function () { pintarSesion(); pintarNav(); });
 
     if (!DB.iniciar()) { enrutar(); return; }
 

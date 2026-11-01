@@ -94,11 +94,11 @@ window.INTERBOT = (function () {
       '<h1>InterBot</h1>' +
       (yo.invitado
         ? '<p class="silencio">Conversas como <strong>invitado</strong>. Puedes preguntar sin credencial. ' +
-          'Si te identificas, InterBot responde con ejemplos de tu país y tu comité. ' +
-          '<button type="button" class="btn sec chico" id="ibCambiar">Identificarme con mi credencial</button></p>'
+          'Si entras con tu cuenta, InterBot responde con ejemplos de tu país y tu comité. ' +
+          '<button type="button" class="btn sec chico" id="ibCambiar">Entrar con mi cuenta</button></p>'
         : '<p class="silencio">Conversas como <strong>' + UI.esc(yo.nombre) + '</strong>' +
           (yo.pais ? ', ' + UI.esc(yo.pais) : '') + (yo.comite ? ', ' + UI.esc(yo.comite) : '') +
-          '. <button type="button" class="btn sec chico" id="ibCambiar">Cambiar de credencial</button></p>') +
+          '. <button type="button" class="btn sec chico" id="ibCambiar">Entrar con otra cuenta</button></p>') +
 
       '<section aria-labelledby="t-ib-conv">' +
         '<h2 id="t-ib-conv">Conversación</h2>' +

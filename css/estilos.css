@@ -895,3 +895,12 @@ table.ranking tr.elegida td { outline: 3px solid var(--azul); outline-offset: -3
 .tarjeta.comite h4 { margin-bottom: .25rem; }
 .tarjeta.comite-en { border-left: 6px solid var(--rojo); }
 .chip strong { font-weight: 700; }
+
+/* ---------- Mi cuenta: el código QR propio ---------- */
+.qr-cuenta {
+  margin: 0.8rem 0 1.2rem; padding: 0.8rem; max-width: 17rem;
+  background: #ffffff; color: #000000; text-align: center;
+  border: 3px solid var(--linea-fuerte); border-radius: var(--radio);
+}
+.qr-cuenta svg { width: 100%; height: auto; display: block; }
+.qr-cuenta figcaption { margin-top: 0.5rem; line-height: 1.35; }

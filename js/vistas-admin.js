@@ -107,8 +107,10 @@ window.ADMIN = (function () {
         d: 'Todos los PDF que subieron los delegados, por sala y por persona, listos para descargar.' }
     ];
     var administracion = [
-      { href: '#/delegados', ico: '&#128100;', t: 'Delegados y PIN',
-        d: 'Cargar la lista, editar datos, ver y cambiar el PIN de cada persona, dar de baja credenciales.' },
+      { href: '#/delegados', ico: '&#128100;', t: 'Delegados y contraseñas',
+        d: 'La lista de acreditados con su cuenta, su alergia y su contraseña (el carnet). Cambiar datos, dar de baja credenciales.' },
+      { href: '#/foros',     ico: '&#127760;', t: 'Asignar foros',
+        d: 'Ver qué foros pidió cada delegado y asignarles su foro y su país. Los chairs puntúan a quien esté asignado.' },
       { href: '#/comidas',   ico: '&#127869;', t: 'Comidas del evento',
         d: 'Definir desayuno, almuerzo y las cuatro meriendas de cada día.' },
       { href: '#/salas',     ico: '&#128172;', t: 'Salas de chat',
@@ -144,7 +146,12 @@ window.ADMIN = (function () {
     detenerEscaner();
     UI.cargando('Preparando el escáner');
 
-    DB.comidas.activas().then(function (comidas) {
+    Promise.all([DB.comidas.activas(), DB.dieta.listar()]).then(function (previo) {
+      var comidas = previo[0];
+      /* Alergias y restricciones por persona: se avisa en el momento exacto de entregar. */
+      var dietaDe = {};
+      previo[1].forEach(function (x) { if (x.restriccion) dietaDe[x.delegado_id] = x.restriccion; });
+
       if (!comidas.length) {
         UI.pintar('<h1>Escanear credencial</h1>' +
           UI.aviso('warn', 'Todavía no hay comidas cargadas',
@@ -317,11 +324,20 @@ window.ADMIN = (function () {
           ? '<p><a class="btn sec chico" href="#/c/' + encodeURIComponent(d.codigo) + '">' +
             'Ver la credencial completa de ' + UI.esc(d.nombre) + '</a></p>'
           : '';
-        UI.q('#resultado').innerHTML =
-          '<div class="aviso ' + tipo + '"><b>' + UI.esc(titulo) + '</b>' + UI.esc(texto) + extra + '</div>';
+        /* Con alergia, el aviso pasa a amarillo y la dice en texto: nunca solo con color. */
+        var alergia = d && dietaDe[d.id]
+          ? '<p><strong>ATENCIÓN, alergia o restricción alimentaria: ' + UI.esc(dietaDe[d.id]) + '.</strong> ' +
+            'Confirma con la persona antes de entregar.</p>'
+          : '';
+        if (alergia && tipo === 'ok') tipo = 'warn';
+        var caja = UI.q('#resultado');
+        if (!caja) return;   /* se cambió de pantalla mientras se registraba la entrega */
+        caja.innerHTML =
+          '<div class="aviso ' + tipo + '"><b>' + UI.esc(titulo) + '</b>' + UI.esc(texto) + alergia + extra + '</div>';
       }
 
       function pintarHistorial() {
+        if (!UI.q('#contador')) return;
         UI.q('#contador').textContent = historial.length === 1
           ? 'Registraste 1 entrega en esta sesión.'
           : 'Registraste ' + historial.length + ' entregas en esta sesión.';
@@ -392,11 +408,15 @@ window.ADMIN = (function () {
   function tablero() {
     UI.cargando('Cargando el tablero');
 
-    var delegados = [], comidas = [], entregas = [];
+    var delegados = [], comidas = [], entregas = [], dietaDe = {};
 
     function traer() {
-      return Promise.all([DB.delegados.listar(), DB.comidas.activas(), DB.entregas.listar()])
-        .then(function (r) { delegados = r[0]; comidas = r[1]; entregas = r[2]; });
+      return Promise.all([DB.delegados.listar(), DB.comidas.activas(), DB.entregas.listar(), DB.dieta.listar()])
+        .then(function (r) {
+          delegados = r[0]; comidas = r[1]; entregas = r[2];
+          dietaDe = {};
+          r[3].forEach(function (x) { if (x.restriccion) dietaDe[x.delegado_id] = x.restriccion; });
+        });
     }
 
     traer().then(function () {
@@ -438,6 +458,25 @@ window.ADMIN = (function () {
       });
       html += '</section>';
 
+      /* Para quien reparte la comida: quién no puede comer qué. */
+      var conAlergia = activos.filter(function (d) { return dietaDe[d.id]; });
+      if (conAlergia.length) {
+        html += '<section aria-labelledby="t-alergias">' +
+                  '<h2 id="t-alergias">Alergias y restricciones alimentarias</h2>' +
+                  '<p>' + (conAlergia.length === 1 ? 'Hay 1 persona' : 'Hay ' + conAlergia.length + ' personas') +
+                    ' con una alergia o restricción declarada. Avísale a quien reparte.</p>' +
+                  '<div class="tabla-env"><table class="datos">' +
+                  '<caption class="solo-lector">Personas con alergias o restricciones alimentarias</caption>' +
+                  '<thead><tr><th scope="col">Código</th><th scope="col">Nombre</th>' +
+                  '<th scope="col">Alergia o restricción</th><th scope="col">Comité</th></tr></thead><tbody>' +
+                  conAlergia.map(function (d) {
+                    return '<tr><td class="mono"><a href="#/c/' + encodeURIComponent(d.codigo) + '">' + UI.esc(d.codigo) + '</a></td>' +
+                           '<td>' + UI.esc(d.nombre) + '</td><td><strong>' + UI.esc(dietaDe[d.id]) + '</strong></td>' +
+                           '<td>' + UI.esc(d.comite || 'sin comité') + '</td></tr>';
+                  }).join('') + '</tbody></table></div>' +
+                '</section>';
+      }
+
       html += '<section aria-labelledby="t-falta">' +
                 '<h2 id="t-falta">Quién falta</h2>' +
                 '<label class="campo" for="selFalta"><span>Elige la comida</span>' +
@@ -476,16 +515,17 @@ window.ADMIN = (function () {
           '<div class="tabla-env"><table class="datos">' +
           '<caption class="solo-lector">Personas que todavía no reciben la comida seleccionada</caption>' +
           '<thead><tr><th scope="col">Código</th><th scope="col">Nombre</th>' +
-          '<th scope="col">Comité</th><th scope="col">Institución</th></tr></thead><tbody>' +
+          '<th scope="col">Comité</th><th scope="col">Institución</th><th scope="col">Alergia</th></tr></thead><tbody>' +
           faltan.map(function (d) {
             return '<tr><td class="mono"><a href="#/c/' + encodeURIComponent(d.codigo) + '">' + UI.esc(d.codigo) + '</a></td>' +
                    '<td>' + UI.esc(d.nombre) + '</td><td>' + UI.esc(d.comite || 'sin comité') + '</td>' +
-                   '<td>' + UI.esc(d.institucion || 'sin institución') + '</td></tr>';
+                   '<td>' + UI.esc(d.institucion || 'sin institución') + '</td>' +
+                   '<td>' + (dietaDe[d.id] ? '<strong>' + UI.esc(dietaDe[d.id]) + '</strong>' : 'ninguna') + '</td></tr>';
           }).join('') + '</tbody></table></div>';
       }
 
       UI.q('#btnCSV').addEventListener('click', function () {
-        var enc = ['Código', 'Nombre', 'País', 'Comité', 'Institución', 'Rol', 'Activo'];
+        var enc = ['Código', 'Nombre', 'País', 'Comité', 'Institución', 'Rol', 'Activo', 'Alergia o restricción'];
         comidas.forEach(function (c) { enc.push('D' + c.dia + ' ' + c.nombre); });
         enc.push('Total recibidas');
 
@@ -496,7 +536,7 @@ window.ADMIN = (function () {
         });
 
         var filas = delegados.map(function (d) {
-          var f = [d.codigo, d.nombre, d.pais || '', d.comite || '', d.institucion || '', d.rol || '', d.activo ? 'sí' : 'no'];
+          var f = [d.codigo, d.nombre, d.pais || '', d.comite || '', d.institucion || '', d.rol || '', d.activo ? 'sí' : 'no', dietaDe[d.id] || ''];
           var total = 0;
           comidas.forEach(function (c) {
             var e = mapa[d.id] && mapa[d.id][c.id];
@@ -526,17 +566,19 @@ window.ADMIN = (function () {
   function delegados() {
     UI.cargando('Cargando delegados');
 
-    Promise.all([DB.delegados.listar(), DB.pines.listar()]).then(function (r) {
+    Promise.all([DB.delegados.listar(), DB.pines.listar(), DB.privado.listar(), DB.dieta.listar()]).then(function (r) {
       var lista = r[0];
-      var pinDe = {};
+      var pinDe = {}, privDe = {}, dietaDe = {};
       r[1].forEach(function (x) { pinDe[x.delegado_id] = x.pin; });
+      r[2].forEach(function (x) { privDe[x.delegado_id] = x; });
+      r[3].forEach(function (x) { if (x.restriccion) dietaDe[x.delegado_id] = x.restriccion; });
 
-      var html = '<h1>Delegados</h1>' +
+      var html = '<h1>Delegados y contraseñas</h1>' +
         '<p>' + (lista.length === 1 ? 'Hay 1 persona acreditada.' : 'Hay ' + lista.length + ' personas acreditadas.') + '</p>' +
-        UI.aviso('info', 'El PIN personal',
-          'A cada persona se le genera un PIN de cuatro dígitos al crearla. Es lo que le permite ver sus comidas, su desempeño y ' +
-          'escribir en el chat. Se lo entregas en acreditación (o lo imprimes en la credencial desde "Generar los códigos QR"). ' +
-          'Aquí puedes verlo y cambiarlo.');
+        UI.aviso('info', 'La cuenta y la contraseña de cada delegado',
+          'La cuenta es el correo o el ID (el código bajo el QR). La contraseña es su número de carnet; a quien todavía no lo entregó ' +
+          'se le da un PIN de cuatro dígitos. Con eso ve sus comidas, su desempeño y escribe en el chat. ' +
+          'Aquí puedes ver la contraseña y cambiarla si alguien la olvida o se equivocó de carnet.');
 
       html += '<details class="acordeon"><summary>Agregar una persona</summary><div class="cuerpo">' +
                 '<div class="fila-campos">' +
@@ -582,21 +624,25 @@ window.ADMIN = (function () {
               '<div class="tabla-env"><table class="datos" id="tablaDel">' +
               '<caption class="solo-lector">Personas acreditadas en InterMUN</caption>' +
               '<thead><tr>' +
-                '<th scope="col">Código</th><th scope="col">Nombre</th><th scope="col">País</th>' +
+                '<th scope="col">Código</th><th scope="col">Nombre</th><th scope="col">Correo (cuenta)</th><th scope="col">País</th>' +
                 '<th scope="col">Comité</th><th scope="col">Institución</th><th scope="col">Rol</th>' +
-                '<th scope="col">PIN</th><th scope="col">Estado</th><th scope="col">Acciones</th>' +
+                '<th scope="col">Contraseña</th><th scope="col">Estado</th><th scope="col">Acciones</th>' +
               '</tr></thead><tbody>';
 
       lista.forEach(function (d) {
+        var pv = privDe[d.id] || {};
         html += '<tr>' +
           '<td class="mono"><a href="#/c/' + encodeURIComponent(d.codigo) + '">' + UI.esc(d.codigo) + '</a></td>' +
-          '<td>' + UI.esc(d.nombre) + '</td>' +
+          '<td>' + UI.esc(d.nombre) +
+            (pv.tipo === 'externo' ? ' <span class="chip rol">externo</span>' : '') +
+            (dietaDe[d.id] ? ' <span class="chip ojo">Alergia: ' + UI.esc(dietaDe[d.id]) + '</span>' : '') + '</td>' +
+          '<td>' + (pv.correo ? UI.esc(pv.correo) : '<span class="silencio">sin correo, entra con el ID</span>') + '</td>' +
           '<td>' + UI.esc(d.pais || '') + '</td>' +
           '<td>' + UI.esc(d.comite || '') + '</td>' +
           '<td>' + UI.esc(d.institucion || '') + '</td>' +
           '<td>' + UI.esc(d.rol || '') + '</td>' +
           '<td class="mono">' + (pinDe[d.id] ? UI.esc(pinDe[d.id]) : '<span class="chip ojo">sin PIN</span>') +
-            ' <button type="button" class="btn sec chico" data-pin="' + d.id + '" data-nom="' + UI.esc(d.nombre) + '">Cambiar<span class="solo-lector"> el PIN de ' + UI.esc(d.nombre) + '</span></button></td>' +
+            ' <button type="button" class="btn sec chico" data-pin="' + d.id + '" data-nom="' + UI.esc(d.nombre) + '">Cambiar<span class="solo-lector"> la contraseña de ' + UI.esc(d.nombre) + '</span></button></td>' +
           '<td><span class="chip ' + (d.activo ? 'si' : 'err') + '">' + (d.activo ? 'Activa' : 'De baja') + '</span></td>' +
           '<td>' +
             '<button type="button" class="btn sec chico" data-baja="' + d.id + '" data-est="' + (d.activo ? '1' : '0') + '">' +
@@ -609,7 +655,7 @@ window.ADMIN = (function () {
 
       html += '</tbody></table></div></section>' +
               '<div class="fila-btn"><button type="button" class="btn sec" id="btnExpDel">' +
-              'Descargar la lista con los PIN para Excel</button></div>';
+              'Descargar la lista con las contraseñas para Excel</button></div>';
 
       UI.pintar(html);
       enlazarAltas();
@@ -640,13 +686,14 @@ window.ADMIN = (function () {
 
       UI.qq('[data-pin]').forEach(function (b) {
         b.addEventListener('click', function () {
-          var nuevo = window.prompt('Nuevo PIN para ' + b.dataset.nom + ' (cuatro dígitos). Deja vacío para generar uno al azar.');
+          var nuevo = window.prompt('Nueva contraseña para ' + b.dataset.nom + ': su número de carnet, o un PIN de cuatro dígitos. ' +
+                                    'Deja vacío para generar un PIN al azar.');
           if (nuevo === null) return;
           nuevo = String(nuevo).trim();
           if (!nuevo) nuevo = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
-          if (!/^\d{4,8}$/.test(nuevo)) { UI.tostada('El PIN debe tener entre cuatro y ocho dígitos.', 'err'); return; }
+          if (!/^\d{4,12}$/.test(nuevo)) { UI.tostada('La contraseña debe tener entre cuatro y doce dígitos, sin puntos ni espacios.', 'err'); return; }
           DB.pines.cambiar(b.dataset.pin, nuevo)
-            .then(function () { UI.tostada('PIN de ' + b.dataset.nom + ' cambiado a ' + nuevo + '.', 'ok'); delegados(); })
+            .then(function () { UI.tostada('Contraseña de ' + b.dataset.nom + ' cambiada a ' + nuevo + '.', 'ok'); delegados(); })
             .catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); });
         });
       });
@@ -663,10 +710,13 @@ window.ADMIN = (function () {
 
       UI.q('#btnExpDel').addEventListener('click', function () {
         var filas = lista.map(function (d) {
-          return [d.codigo, pinDe[d.id] || '', d.nombre, d.pais || '', d.comite || '', d.institucion || '', d.rol || '', d.activo ? 'sí' : 'no'];
+          var pv = privDe[d.id] || {};
+          return [d.codigo, pinDe[d.id] || '', d.nombre, pv.tipo || '', pv.correo || '', pv.celular || '', d.pais || '', d.comite || '',
+                  d.institucion || '', pv.foro_1 || '', pv.foro_2 || '', dietaDe[d.id] || '', d.rol || '', d.activo ? 'sí' : 'no'];
         });
-        UI.descargar('intermun-delegados-con-pin.csv',
-          UI.aCSV(['Código', 'PIN', 'Nombre', 'País', 'Comité', 'Institución', 'Rol', 'Activo'], filas));
+        UI.descargar('intermun-delegados-con-contrasena.csv',
+          UI.aCSV(['Código', 'Contraseña', 'Nombre', 'Tipo', 'Correo', 'Celular', 'País', 'Comité', 'Institución',
+                   'Foro 1ª opción', 'Foro 2ª opción', 'Alergia', 'Rol', 'Activo'], filas));
         UI.tostada('Lista descargada.', 'ok');
       });
     }).catch(function (e) {
@@ -746,6 +796,169 @@ window.ADMIN = (function () {
         });
       });
     }
+  }
+
+
+  /* ================================================================
+     ASIGNAR FOROS
+     Cada delegado pidió dos foros al inscribirse. Aquí el administrador
+     ve la demanda de cada foro y decide a quién va dónde. La asignación
+     es lo que abre la sala de chat de su foro y lo que hace que los
+     chairs lo vean al puntuar.
+     ================================================================ */
+  function foros() {
+    UI.cargando('Cargando los foros');
+
+    Promise.all([DB.delegados.listar(), DB.privado.listar(), DB.chat.salasActivas()]).then(function (r) {
+      var lista = r[0].filter(function (d) { return d.activo; });
+      var privDe = {};
+      r[1].forEach(function (x) { privDe[x.delegado_id] = x; });
+      var salas = PUNTOS.soloForos(r[2]);
+
+      function nombreForo(s) { return s.comite || s.nombre; }
+      function sigla(t) { var m = /\(([^)]+)\)/.exec(t || ''); return m ? m[1] : (t || ''); }
+      function norm(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
+      /* ¿El texto (foro pedido) se refiere a este foro? Por nombre exacto o por sigla. */
+      function esEse(texto, sala) {
+        if (!texto) return false;
+        var a = norm(texto), b = norm(nombreForo(sala));
+        return a === b || norm(sigla(texto)) === norm(sigla(nombreForo(sala)));
+      }
+      function foroAsignado(d) { return d.comite ? PUNTOS.foroDelDelegado(d, salas) : null; }
+
+      var html = '<h1>Asignar foros</h1>' +
+        UI.aviso('info', 'Cómo funciona',
+          'Elige el foro de cada delegado en su fila y se guarda al instante. Quien tenga foro asignado ve ' +
+          'desde su cuenta el chat de su foro y los chairs lo ven al puntuar. También puedes asignar de una vez ' +
+          'la primera opción a todos los que todavía no tienen foro y corregir después a mano.') +
+        '<section aria-labelledby="t-resumen-foros"><h2 id="t-resumen-foros">Resumen por foro</h2>' +
+          '<div id="resumenForos"></div></section>' +
+        '<div class="fila-btn">' +
+          '<button type="button" class="btn" id="btnPrimeraOpcion">Asignar la primera opción a quienes no tienen foro</button>' +
+          '<button type="button" class="btn sec" id="btnExpForos">Descargar la asignación para Excel</button>' +
+        '</div>' +
+        '<section aria-labelledby="t-asig"><h2 id="t-asig">Asignación por persona</h2>' +
+        '<label class="campo" for="filtroForos"><span>Buscar por nombre, código o foro</span>' +
+          '<input type="search" id="filtroForos" autocomplete="off"></label>' +
+        '<p class="solo-lector" role="status" aria-live="polite" id="conteoForos"></p>' +
+        '<div class="tabla-env"><table class="datos" id="tablaForos">' +
+        '<caption class="solo-lector">Foro y país de cada delegado, con los foros que pidió</caption>' +
+        '<thead><tr><th scope="col">Código</th><th scope="col">Nombre</th><th scope="col">1ª opción</th>' +
+          '<th scope="col">2ª opción</th><th scope="col">Foro asignado</th><th scope="col">País que representa</th></tr></thead><tbody>';
+
+      lista.forEach(function (d) {
+        var pv = privDe[d.id] || {};
+        var f = foroAsignado(d);
+        html += '<tr data-id="' + d.id + '">' +
+          '<td class="mono">' + UI.esc(d.codigo) + '</td>' +
+          '<td>' + UI.esc(d.nombre) + '</td>' +
+          '<td>' + (pv.foro_1 ? UI.esc(sigla(pv.foro_1)) : '<span class="silencio">sin dato</span>') + '</td>' +
+          '<td>' + (pv.foro_2 ? UI.esc(sigla(pv.foro_2)) : '<span class="silencio">sin dato</span>') + '</td>' +
+          '<td><label class="solo-lector" for="foro-' + d.id + '">Foro de ' + UI.esc(d.nombre) + '</label>' +
+            '<select id="foro-' + d.id + '" data-foro="' + d.id + '">' +
+              '<option value="">Sin foro</option>' +
+              salas.map(function (s) {
+                return '<option value="' + UI.esc(nombreForo(s)) + '"' + (f && f.id === s.id ? ' selected' : '') + '>' +
+                       UI.esc(sigla(nombreForo(s))) + '</option>';
+              }).join('') +
+              (d.comite && !f ? '<option value="' + UI.esc(d.comite) + '" selected>Otro: ' + UI.esc(d.comite) + '</option>' : '') +
+            '</select></td>' +
+          '<td><label class="solo-lector" for="pais-' + d.id + '">País de ' + UI.esc(d.nombre) + '</label>' +
+            '<input type="text" id="pais-' + d.id + '" data-pais="' + d.id + '" value="' + UI.esc(d.pais || '') + '" autocomplete="off"></td>' +
+          '</tr>';
+      });
+      html += '</tbody></table></div></section>';
+      UI.pintar(html);
+
+      function resumen() {
+        var filas = salas.map(function (s) {
+          var asig = lista.filter(function (d) { var f = foroAsignado(d); return f && f.id === s.id; }).length;
+          var p1 = lista.filter(function (d) { return esEse((privDe[d.id] || {}).foro_1, s); }).length;
+          var p2 = lista.filter(function (d) { return esEse((privDe[d.id] || {}).foro_2, s); }).length;
+          return '<tr><th scope="row">' + UI.esc(nombreForo(s)) + '</th><td>' + p1 + '</td><td>' + p2 + '</td><td><strong>' + asig + '</strong></td></tr>';
+        });
+        var sin = lista.filter(function (d) { return !foroAsignado(d); }).length;
+        UI.q('#resumenForos').innerHTML =
+          '<div class="tabla-env"><table class="datos"><caption class="solo-lector">Cuántas personas pidieron y tienen cada foro</caption>' +
+          '<thead><tr><th scope="col">Foro</th><th scope="col">La pidieron 1ª</th><th scope="col">La pidieron 2ª</th><th scope="col">Asignadas</th></tr></thead><tbody>' +
+          filas.join('') + '</tbody></table></div>' +
+          '<p>' + (sin === 0 ? 'Todas las personas tienen foro asignado.' :
+            (sin === 1 ? 'Queda 1 persona sin foro.' : 'Quedan ' + sin + ' personas sin foro.')) + '</p>';
+      }
+      resumen();
+
+      /* Un cambio en una fila se guarda solo y se anuncia. */
+      UI.qq('[data-foro]').forEach(function (sel) {
+        sel.addEventListener('change', function () {
+          var d = lista.filter(function (x) { return x.id === sel.dataset.foro; })[0];
+          var valor = sel.value || null;
+          sel.disabled = true;
+          DB.delegados.actualizar(d.id, { comite: valor }).then(function () {
+            d.comite = valor;
+            sel.disabled = false;
+            resumen();
+            UI.tostada(valor ? d.nombre + ': ' + sigla(valor) + '.' : d.nombre + ' quedó sin foro.', 'ok');
+          }).catch(function (e) { sel.disabled = false; UI.tostada(UI.explicarError(e), 'err'); });
+        });
+      });
+      UI.qq('[data-pais]').forEach(function (inp) {
+        inp.addEventListener('change', function () {
+          var d = lista.filter(function (x) { return x.id === inp.dataset.pais; })[0];
+          var valor = inp.value.trim() || null;
+          DB.delegados.actualizar(d.id, { pais: valor }).then(function () {
+            d.pais = valor;
+            UI.tostada(valor ? d.nombre + ' representa a ' + valor + '.' : 'Se quitó el país de ' + d.nombre + '.', 'ok');
+          }).catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); });
+        });
+      });
+
+      var conteo = UI.q('#conteoForos');
+      UI.q('#filtroForos').addEventListener('input', function () {
+        var t = this.value.toLowerCase(), n = 0;
+        UI.qq('#tablaForos tbody tr').forEach(function (tr) {
+          var d = lista.filter(function (x) { return x.id === tr.dataset.id; })[0];
+          var f = d ? foroAsignado(d) : null;
+          var texto = (tr.textContent + ' ' + (f ? nombreForo(f) : '')).toLowerCase();
+          var ok = texto.indexOf(t) >= 0;
+          tr.style.display = ok ? '' : 'none';
+          if (ok) n++;
+        });
+        conteo.textContent = n + (n === 1 ? ' persona encontrada.' : ' personas encontradas.');
+      });
+
+      /* La primera opción a todos los que no tienen foro, un foro por vez. */
+      UI.q('#btnPrimeraOpcion').addEventListener('click', function () {
+        var porForo = {};
+        lista.forEach(function (d) {
+          if (foroAsignado(d)) return;
+          var pv = privDe[d.id] || {};
+          var s = salas.filter(function (x) { return esEse(pv.foro_1, x); })[0];
+          if (s) (porForo[s.id] = porForo[s.id] || { sala: s, ids: [] }).ids.push(d.id);
+        });
+        var grupos = Object.keys(porForo).map(function (k) { return porForo[k]; });
+        var total = grupos.reduce(function (n, g) { return n + g.ids.length; }, 0);
+        if (!total) { UI.tostada('No hay nadie pendiente con una primera opción registrada.', 'err'); return; }
+        if (!UI.confirmar('Vas a asignar la primera opción a ' + total + (total === 1 ? ' persona' : ' personas') +
+                          ' que todavía no tienen foro. Después puedes corregir cada caso. Confirmas?')) return;
+        var b = UI.q('#btnPrimeraOpcion');
+        b.disabled = true; b.textContent = 'Asignando, un momento';
+        Promise.all(grupos.map(function (g) { return DB.delegados.actualizarVarios(g.ids, { comite: nombreForo(g.sala) }); }))
+          .then(function () { UI.tostada(total + (total === 1 ? ' persona asignada.' : ' personas asignadas.'), 'ok'); foros(); })
+          .catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); b.disabled = false; b.textContent = 'Asignar la primera opción a quienes no tienen foro'; });
+      });
+
+      UI.q('#btnExpForos').addEventListener('click', function () {
+        var filas = lista.map(function (d) {
+          var pv = privDe[d.id] || {};
+          return [d.codigo, d.nombre, pv.tipo || '', pv.foro_1 || '', pv.foro_2 || '', d.comite || '', d.pais || ''];
+        });
+        UI.descargar('intermun-asignacion-de-foros.csv',
+          UI.aCSV(['Código', 'Nombre', 'Tipo', 'Foro 1ª opción', 'Foro 2ª opción', 'Foro asignado', 'País'], filas));
+        UI.tostada('Asignación descargada.', 'ok');
+      });
+    }).catch(function (e) {
+      UI.pintar('<h1>Asignar foros</h1>' + UI.aviso('err', 'No se pudieron cargar los foros', UI.explicarError(e)));
+    });
   }
 
 
@@ -865,15 +1078,15 @@ window.ADMIN = (function () {
               'aria-describedby="ayuda-url"></label>' +
           '<p class="ayuda-campo" id="ayuda-url">Cada código QR abre la credencial de esa persona. ' +
             'Verifica que esta sea la dirección definitiva antes de imprimir: un código QR no se puede ' +
-            'corregir después de impreso. La opción con PIN es para la copia que se entrega en mano a cada ' +
-            'persona en acreditación: el PIN es privado y no debe quedar a la vista en la credencial colgada.</p>' +
+            'corregir después de impreso. La opción con contraseña es para la copia que se entrega en mano a cada ' +
+            'persona en acreditación: la contraseña es el carnet, es privada y no debe quedar a la vista en la credencial colgada.</p>' +
           '<div class="fila-campos">' +
             '<label class="campo" for="qrTam"><span>Tamaño del código</span><select id="qrTam">' +
               '<option value="3">Chico</option><option value="4" selected>Mediano</option>' +
               '<option value="6">Grande</option></select></label>' +
             '<label class="campo" for="qrDatos"><span>Datos impresos</span><select id="qrDatos">' +
               '<option value="full" selected>Nombre, código y comité</option>' +
-              '<option value="pin">Nombre, código, comité y PIN personal</option>' +
+              '<option value="pin">Nombre, código, comité y contraseña</option>' +
               '<option value="min">Solo el código</option></select></label>' +
           '</div>' +
           '<div class="fila-btn">' +
@@ -922,7 +1135,7 @@ window.ADMIN = (function () {
               : '<p class="qr-nom">' + UI.esc(d.nombre) + '</p>' +
                 '<p class="qr-cod">' + UI.esc(d.codigo) + '</p>' +
                 '<p class="qr-meta">' + UI.esc([d.pais, d.comite].filter(Boolean).join(', ')) + '</p>' +
-                (modo === 'pin' ? '<p class="qr-cod">PIN ' + UI.esc(pinDe[d.id] || 'sin PIN') + '</p>' : ''));
+                (modo === 'pin' ? '<p class="qr-cod">Contraseña ' + UI.esc(pinDe[d.id] || 'sin contraseña') + '</p>' : ''));
           cont.appendChild(caja);
         });
 
@@ -1317,6 +1530,7 @@ window.ADMIN = (function () {
     escanear: escanear,
     tablero: tablero,
     delegados: delegados,
+    foros: foros,
     comidas: comidas,
     qr: qr,
     salas: salas,

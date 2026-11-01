@@ -128,6 +128,28 @@ window.DB = (function () {
 
 
   /* ============================================================
+     DATOS PRIVADOS DE LOS DELEGADOS (solo el administrador)
+     Correo, carnet, celular y foros que pidió cada persona. Un
+     operador recibe una lista vacía: la base se los oculta.
+     ============================================================ */
+  var privado = {
+    listar: function () {
+      return exigir().from('delegados_privado').select('*').then(function (r) {
+        if (r.error) return [];
+        return r.data || [];
+      });
+    },
+    guardar: function (delegadoId, cambios) {
+      var fila = {};
+      Object.keys(cambios).forEach(function (k) { fila[k] = cambios[k]; });
+      fila.delegado_id = delegadoId;
+      return exigir().from('delegados_privado').upsert(fila)
+        .then(function (r) { if (r.error) throw r.error; return true; });
+    }
+  };
+
+
+  /* ============================================================
      DELEGADOS
      ============================================================ */
   var delegados = {
@@ -162,6 +184,12 @@ window.DB = (function () {
 
     actualizar: function (id, cambios) {
       return exigir().from('delegados').update(cambios).eq('id', id).select().then(revisar);
+    },
+
+    /* El mismo cambio para varias personas a la vez (por ejemplo, el foro
+       de todas las que lo pidieron como primera opción). */
+    actualizarVarios: function (ids, cambios) {
+      return exigir().from('delegados').update(cambios).in('id', ids).select().then(revisar);
     },
 
     borrar: function (id) {
@@ -355,15 +383,44 @@ window.DB = (function () {
     verificar: function (codigo, pin) {
       return exigir().rpc('verificar_delegado', { p_codigo: codigo, p_pin: pin }).then(function (r) {
         if (r.error) throw r.error;
-        var d = (r.data && r.data[0]) || null;
-        if (!d) return null;
-        var yo = { id: d.id, codigo: d.codigo, pin: String(pin), nombre: d.nombre, pais: d.pais || '', comite: d.comite || '', institucion: d.institucion || '', rol: d.rol || 'delegado' };
-        try { localStorage.setItem('intermun_identidad', JSON.stringify(yo)); } catch (e) {}
-        return yo;
+        return guardarIdentidad((r.data && r.data[0]) || null, pin);
       });
     },
-    limpiar: function () { try { localStorage.removeItem('intermun_identidad'); } catch (e) {} }
+    /* Inicio de sesión de la cuenta: correo o ID + contraseña (el carnet).
+       Devuelve la identidad, o null si no coinciden. */
+    entrar: function (cuenta, clave) {
+      return exigir().rpc('login_delegado', { p_cuenta: cuenta, p_clave: clave }).then(function (r) {
+        if (r.error) throw traducirErrorChat(r.error);
+        var d = (r.data && r.data[0]) || null;
+        /* La base devuelve la contraseña en su forma exacta (sin puntos ni espacios). */
+        return guardarIdentidad(d, d ? d.pin : clave);
+      });
+    },
+    /* Lo que la persona ve de sí misma: foros que pidió, alergia, etc. */
+    miCuenta: function (yo) {
+      return exigir().rpc('mi_cuenta', { p_codigo: yo.codigo, p_pin: yo.pin }).then(function (r) {
+        if (r.error) throw traducirErrorChat(r.error);
+        return (r.data && r.data[0]) || null;
+      });
+    },
+    limpiar: function () {
+      try { localStorage.removeItem('intermun_identidad'); } catch (e) {}
+      avisarIdentidad();
+    }
   };
+
+  function guardarIdentidad(d, pin) {
+    if (!d) return null;
+    var yo = { id: d.id, codigo: d.codigo, pin: String(pin), nombre: d.nombre, pais: d.pais || '', comite: d.comite || '', institucion: d.institucion || '', rol: d.rol || 'delegado' };
+    try { localStorage.setItem('intermun_identidad', JSON.stringify(yo)); } catch (e) {}
+    avisarIdentidad();
+    return yo;
+  }
+
+  /* El encabezado y el menú se ajustan solos cuando alguien entra o sale. */
+  function avisarIdentidad() {
+    try { window.dispatchEvent(new Event('intermun-identidad')); } catch (e) {}
+  }
 
 
   /* ============================================================
@@ -406,7 +463,8 @@ window.DB = (function () {
       'SALA_INVALIDA': 'Esta sala ya no está disponible.',
       'MENSAJE_VACIO': 'Escribe un mensaje o adjunta un PDF.',
       'MENSAJE_LARGO': 'El mensaje supera los 2000 caracteres.',
-      'DEMASIADOS_MENSAJES': 'Estás enviando demasiados mensajes seguidos. Espera un minuto.'
+      'DEMASIADOS_MENSAJES': 'Estás enviando demasiados mensajes seguidos. Espera un minuto.',
+      'DEMASIADOS_INTENTOS': 'Demasiados intentos fallidos con esa cuenta. Espera diez minutos y vuelve a intentarlo, o acércate a la mesa de acreditación.'
     };
     for (var k in mapa) { if (m.indexOf(k) >= 0) return new Error(mapa[k]); }
     return err;
@@ -566,6 +624,7 @@ window.DB = (function () {
     sesion:       sesion,
     staff:        staff,
     pines:        pines,
+    privado:      privado,
     delegados:    delegados,
     dieta:        dieta,
     comidas:      comidas,

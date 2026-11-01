@@ -54,14 +54,19 @@ window.VISTAS = (function () {
         'Todavía no hay conexión con la base de datos, así que las credenciales y el control de comidas no funcionan. El contenido académico sí está disponible.');
     }
 
+    var yoInicio = DB.identidad.obtener();
     html += '<h2>Qué quieres hacer</h2>' +
       listaModulos([
+        { href: '#/mi-cuenta',     ico: '&#128100;', t: yoInicio ? 'Mi cuenta' : 'Ingresar a mi cuenta',
+          d: yoInicio
+            ? 'Tu código QR, tu foro, tus comidas, tu desempeño y el chat, todo en un solo lugar.'
+            : 'Entra con tu correo o tu ID y tu número de carnet: ahí están tu código QR, tu foro, tus comidas, tu desempeño y el chat.' },
         { href: '#/buscar',        ico: '&#127915;', t: 'Mi credencial',
           d: 'Tus datos de acreditación: nombre, país, comité e institución.' },
         { href: '#/mis-comidas',   ico: '&#127869;', t: 'Mis comidas',
-          d: 'Desayuno, almuerzo y meriendas de cada día: cuáles ya recibiste. Pide tu código y tu PIN.' },
+          d: 'Desayuno, almuerzo y meriendas de cada día: cuáles ya recibiste. Pide tu cuenta.' },
         { href: '#/mi-desempeno',  ico: '&#127942;', t: 'Mi desempeño',
-          d: 'Tus puntos por criterio, tu puesto en el foro y el detalle de cada puntuación. Pide tu código y tu PIN.' },
+          d: 'Tus puntos por criterio, tu puesto en el foro y el detalle de cada puntuación. Pide tu cuenta.' },
         { href: '#/material',      ico: '&#128220;', t: 'Material para delegados (nuevo)',
           d: 'El reglamento, el modelo y un ejemplo de posición oficial, una resolución de ejemplo y el vocabulario protocolar, todo en PDF.' },
         { href: '#/capacitaciones', ico: '&#127909;', t: 'Capacitaciones (nuevo)',
@@ -79,7 +84,7 @@ window.VISTAS = (function () {
         { href: '#/interbot',      ico: '&#129302;', t: 'InterBot',
           d: 'Pregúntale al asistente de InterMUN cómo proponer una moción, qué hacer en tu comité o cómo redactar. No necesitas credencial.' },
         { href: '#/chat',          ico: '&#128172;', t: 'Chat por comités',
-          d: 'Conversa con las demás delegaciones y comparte archivos PDF, en la sala general o en la de tu comité. Pide tu código y tu PIN.' },
+          d: 'Conversa con las demás delegaciones y comparte archivos PDF, en la sala general o en la de tu comité. Pide tu cuenta.' },
         { href: '#/accesibilidad', ico: '&#9855;',   t: 'Mi perfil de accesibilidad',
           d: 'Ajusta la letra, el contraste y la lectura en voz alta a tu medida.' },
         { href: '#/staff',         ico: '&#128274;', t: hayStaff ? 'Control de InterMUN' : 'Acceso del staff',
@@ -485,7 +490,7 @@ window.VISTAS = (function () {
 
     UI.cargando('Buscando la credencial');
 
-    var delegado = null, listaComidas = [], entregas = [];
+    var delegado = null, listaComidas = [], entregas = [], dieta = null;
     var esStaff = !!APP.usuarioActual();
 
     DB.delegados.porCodigo(codigo)
@@ -493,10 +498,13 @@ window.VISTAS = (function () {
         if (!d) throw new Error('__no_existe__');
         delegado = d;
         if (!esStaff) return null;
-        return Promise.all([DB.comidas.activas(), DB.entregas.deDelegado(d.id)]);
+        return Promise.all([DB.comidas.activas(), DB.entregas.deDelegado(d.id), DB.dieta.listar()]);
       })
       .then(function (r) {
-        if (r) { listaComidas = r[0]; entregas = r[1]; }
+        if (r) {
+          listaComidas = r[0]; entregas = r[1];
+          dieta = (r[2] || []).filter(function (x) { return x.delegado_id === delegado.id; })[0] || null;
+        }
         pintarCredencial();
         if (esStaff) {
           APP.abrirCanalVivo(function () {
@@ -523,6 +531,11 @@ window.VISTAS = (function () {
           'El Secretariado la desactivó. Acercate a la mesa de acreditación para resolverlo.');
       }
 
+      if (esStaff && dieta && dieta.restriccion) {
+        html += UI.aviso('warn', 'Atención: alergia o restricción alimentaria. ', dieta.restriccion +
+          '. Confirma con la persona antes de entregarle la comida.');
+      }
+
       if (esStaff) {
         html += '<section aria-labelledby="t-comidas">' +
                   '<h2 id="t-comidas">Comidas de esta persona</h2>' +
@@ -535,8 +548,10 @@ window.VISTAS = (function () {
                 '</div>';
       } else {
         html += '<h2>Tu información personal</h2>' +
-          '<p>Lo que sigue es privado. Cada sección te pedirá tu código y tu PIN personal, el que recibiste en acreditación.</p>' +
+          '<p>Lo que sigue es privado. Entra con tu cuenta: tu correo o tu ID, y tu número de carnet como contraseña.</p>' +
           listaModulos([
+            { href: '#/mi-cuenta',    ico: '&#128100;', t: 'Mi cuenta',
+              d: 'Tu código QR, tu foro y todo lo tuyo en un solo lugar.' },
             { href: '#/mis-comidas',  ico: '&#127869;', t: 'Mis comidas',
               d: 'Desayuno, almuerzo y meriendas de cada día: cuáles ya recibiste.' },
             { href: '#/mi-desempeno', ico: '&#127942;', t: 'Mi desempeño',
@@ -800,6 +815,10 @@ window.VISTAS = (function () {
     misComidas: misComidas,
     miDesempeno: miDesempeno,
     buscarCredencial: buscarCredencial,
-    estacionGuardada: estacionGuardada
+    estacionGuardada: estacionGuardada,
+    /* Piezas que reutilizan Mi cuenta y el panel del staff */
+    listaModulos: listaModulos,
+    tarjetaCredencial: tarjetaCredencial,
+    pinRechazado: pinRechazado
   };
 })();

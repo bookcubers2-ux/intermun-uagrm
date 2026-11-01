@@ -314,7 +314,8 @@ sistema/
     ├── app.js                   Navegación
     ├── vistas-publicas.js       Portal y credenciales
     ├── vistas-admin.js          Control de comidas y salas de chat
-    ├── identidad.js             Identificación por credencial (sin contraseña)
+    ├── identidad.js             Ingreso con correo o ID y contraseña (el carnet)
+    ├── cuenta.js                Mi cuenta: QR, foro, chat y módulos del delegado
     ├── interbot.js              Conversación con InterBot
     ├── chat.js                  Chat por comités con archivos PDF
     ├── puntuaciones.js          Puntuaciones por foro en vivo
@@ -325,6 +326,7 @@ sistema/
 ├── INSTALACION-INTERBOT-Y-CHAT.sql  Tablas y políticas del chat
 ├── INSTALACION-PUNTUACIONES.sql     Tabla y políticas de puntuaciones
 ├── INSTALACION-IDENTIDAD-Y-ROLES.sql PIN por delegado, comidas privadas, roles admin/operador
+├── INSTALACION-CUENTAS-DELEGADOS.sql Datos privados, login por correo o ID, mi cuenta
 ```
 
 Para cambiar textos del portal (reglas, glosario, consejos, curiosidades), edita `js/contenido.js`. Está escrito para que se pueda modificar sin saber programar.
@@ -342,3 +344,25 @@ Se instala con `INSTALACION-IDENTIDAD-Y-ROLES.sql` en el SQL Editor de Supabase.
 4. Crea la tabla `staff` con dos roles. **admin**: todo. **operador**: escanear y marcar comidas, puntuar, leer chats y descargar archivos. Una cuenta que no figure en la tabla entra como operador.
 
 Para dar acceso a alguien: panel de control, **Cuentas del staff**, correo, contraseña inicial y nivel. La persona recibe un correo de confirmación de Supabase y recién después puede iniciar sesión. Si el correo no llega, se confirma desde Supabase, en **Authentication**, botón "Confirm email".
+
+
+---
+
+## Cuentas de los delegados (correo o ID + carnet)
+
+Se instala con `INSTALACION-CUENTAS-DELEGADOS.sql` (requiere haber instalado antes el de identidad y roles). Cada delegado entra con:
+
+- **Cuenta:** su correo o su ID (`IM-0001`, el que va impreso debajo de su QR).
+- **Contraseña:** su número de carnet. Es el mismo PIN de siempre: el administrador lo ve y lo cambia en **Delegados y contraseñas**. Quien todavía no entregó su carnet usa un PIN de cuatro dígitos.
+
+Al entrar llegan a **Mi cuenta** (`#/mi-cuenta`): su código QR para la fila de comidas, el foro que pidió o el que se le asignó, el chat de su foro y todos los módulos personales. Comidas, desempeño, chat e InterBot reconocen esa misma sesión.
+
+Por diseño:
+
+- **Los delegados no son usuarios de Supabase Auth.** Si lo fueran tendrían el rol `authenticated`, que en este sistema significa staff. La sesión de delegado la verifica la función `login_delegado`.
+- **Correo, carnet, celular y foros pedidos viven en `delegados_privado`**, que solo el administrador lee. La tabla pública `delegados` sigue mostrando solo lo de la credencial.
+- **`login_delegado` frena** a quien falla 8 veces seguidas con la misma cuenta (10 minutos de espera) y acepta el carnet escrito con puntos o espacios.
+- **Asignar foros** (`#/foros`, solo administrador): muestra cuántos pidieron cada foro, permite asignar a mano o aplicar la primera opción a todos los que no tienen foro. Asignar el foro es lo que abre su chat y lo que hace que los chairs lo vean al puntuar.
+- **Alergias:** el escáner avisa en pantalla amarilla, y el tablero y la credencial (con sesión de staff) las muestran, para quien reparte la comida.
+
+La carga de las personas desde los Excel de inscripción se hace desde la carpeta privada `InterMUN/CARGA-DELEGADOS-2026/` (fuera de este repositorio): `python generar.py` y `python aplicar.py`. Los datos personales nunca se suben a GitHub.

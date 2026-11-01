@@ -8,7 +8,7 @@ Portal y sistema de acreditación de **InterMUN**, el Modelo de Naciones Unidas 
 
 ## Qué hace
 
-**Para los delegados.** Escanean el código QR del reverso de su credencial y acceden a su credencial digital, con sus datos de acreditación. Todo lo personal (sus comidas, su desempeño, el chat) vive en módulos aparte que piden dos cosas: el **código de credencial** (público, impreso bajo el QR) y el **PIN personal** de cuatro dígitos, que se entrega en acreditación. Así nadie consulta ni escribe con una credencial ajena. Sin contraseña de correo y sin instalar nada. El portal incluye además las reglas de procedimiento, el flujo de una sesión de comité, un glosario de términos, la guía de protocolo y consejos prácticos.
+**Para los delegados.** Cada uno tiene una **cuenta**: su correo o su ID (el código impreso bajo el QR) y, como contraseña, su número de carnet. Con ella entra a **Mi cuenta**: su código QR para la fila de comidas, su foro, el chat de su foro y todos los módulos personales (comidas, desempeño, InterBot). También pueden escanear el código QR de su credencial para ver sus datos de acreditación. Así nadie consulta ni escribe con una credencial ajena. El portal incluye además las reglas de procedimiento, el flujo de una sesión de comité, un glosario de términos, la guía de protocolo y consejos prácticos.
 
 **Para el staff.** Escáner de credenciales con la cámara del celular para registrar entregas de comida en la fila, con confirmación por sonido y vibración. Tablero en vivo que se actualiza solo entre estaciones, gestión de delegados con carga masiva, generador de códigos QR imprimibles y exportación de todo a Excel.
 
@@ -21,7 +21,7 @@ Dos niveles, decididos por la base de datos (tabla `staff`), no por el navegador
 - **Operador**: escanear credenciales y marcar comidas, puntuar, leer los chats y descargar los archivos compartidos.
 - **Administrador**: todo lo anterior y además delegados y sus PIN, comidas del evento, salas de chat, códigos QR y cuentas del staff.
 
-Las cuentas se crean desde el propio panel (**Cuentas del staff**); la persona recibe un correo de confirmación. Nadie puede ver ni modificar el código de la plataforma desde el panel. La instalación de PIN y roles está en `INSTALACION-IDENTIDAD-Y-ROLES.sql`.
+**Asignar foros** (solo administrador) muestra qué foros pidió cada delegado y permite asignarlos de a uno o aplicando la primera opción a todos; las alergias avisan en el escáner y aparecen en el tablero. Las cuentas se crean desde el propio panel (**Cuentas del staff**); la persona recibe un correo de confirmación. Nadie puede ver ni modificar el código de la plataforma desde el panel. La instalación de PIN y roles está en `INSTALACION-IDENTIDAD-Y-ROLES.sql`.
 
 ---
 
@@ -77,7 +77,8 @@ La base de datos es PostgreSQL en Supabase, con las políticas de seguridad a ni
 | `js/contenido.js` | Reglas, glosario y consejos (editable sin programar) |
 | `js/db.js` | Capa de acceso a datos |
 | `js/vistas-publicas.js` | Portal, credencial, Mis comidas, Mi desempeño y comités |
-| `js/identidad.js` | Formulario de código + PIN compartido por los módulos privados |
+| `js/identidad.js` | Formulario de correo o ID + contraseña, compartido por los módulos privados |
+| `js/cuenta.js` | Mi cuenta: QR, foro, chat y módulos del delegado |
 | `js/vistas-admin.js` | Panel del staff por rol: comidas, delegados y PIN, archivos, cuentas |
 | `js/puntuaciones.js` | Puntuaciones por foro: ranking público, panel de los chairs y sección en la credencial |
 | `js/vendor/` | Librerías incluidas |
@@ -99,6 +100,7 @@ La base de datos es PostgreSQL en Supabase, con las políticas de seguridad a ni
 - `GUIA-DE-INSTALACION.md`, instalación, operación durante el evento y solución de problemas
 - `INSTALACION-SUPABASE.sql`, esquema de la base de datos y políticas de seguridad
 - `INSTALACION-IDENTIDAD-Y-ROLES.sql`, PIN personal por delegado, comidas privadas y roles admin / operador
+- `INSTALACION-CUENTAS-DELEGADOS.sql`, datos privados de cada delegado, ingreso con correo o ID y la vista Mi cuenta
 
 ---
 

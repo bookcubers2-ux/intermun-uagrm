@@ -37,7 +37,7 @@ window.CHAT = (function () {
         titulo: 'Chat de InterMUN',
         intro: '<p>Un espacio para conversar con las demás delegaciones: una sala general y una sala por ' +
                'comité. Puedes compartir archivos PDF para que los demás los lean. Cada mensaje sale con tu ' +
-               'nombre y tu código, por eso se pide el PIN: nadie puede escribir por ti.</p>',
+               'nombre y tu código, por eso se pide tu cuenta: nadie puede escribir por ti.</p>',
         boton: 'Entrar al chat',
         alListo: function () { vista(claveSala); }
       });
@@ -277,7 +277,7 @@ window.CHAT = (function () {
     if (yo) return IDENT.lineaIdentidad(yo, 'chCambiar');
     var u = APP.usuarioActual();
     return '<p class="silencio">Lees como <strong>staff</strong>' + (u ? ', ' + UI.esc(u.email) : '') + '. ' +
-      '<button type="button" class="btn sec chico" id="chCambiar">Entrar con una credencial de delegación</button></p>';
+      '<button type="button" class="btn sec chico" id="chCambiar">Entrar con una cuenta de delegado</button></p>';
   }
 
   function enlazarCambiar(alVolver) {
@@ -287,7 +287,7 @@ window.CHAT = (function () {
       DB.identidad.limpiar();
       IDENT.pedir({
         titulo: 'Chat de InterMUN',
-        intro: '<p>Identifícate con la credencial con la que quieres participar. Cada mensaje sale con ese ' +
+        intro: '<p>Entra con la cuenta con la que quieres participar. Cada mensaje sale con ese ' +
                'nombre y ese código.</p>',
         boton: 'Entrar al chat',
         alListo: function () { alVolver(); }
