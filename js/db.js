@@ -464,6 +464,8 @@ window.DB = (function () {
       'MENSAJE_VACIO': 'Escribe un mensaje o adjunta un PDF.',
       'MENSAJE_LARGO': 'El mensaje supera los 2000 caracteres.',
       'DEMASIADOS_MENSAJES': 'Estás enviando demasiados mensajes seguidos. Espera un minuto.',
+      'SOLO_ADMIN': 'Solo el administrador puede escribir como Secretariado. Vuelve a iniciar sesión como administrador.',
+      'ARCHIVO_INVALIDO': 'El archivo no se subió a la carpeta del Secretariado. Vuelve a intentarlo.',
       'DEMASIADOS_INTENTOS': 'Demasiados intentos fallidos con esa cuenta. Espera diez minutos y vuelve a intentarlo, o acércate a la mesa de acreditación.'
     };
     for (var k in mapa) { if (m.indexOf(k) >= 0) return new Error(mapa[k]); }
@@ -509,6 +511,20 @@ window.DB = (function () {
       return exigir().rpc('chat_enviar', {
         p_codigo: yo.codigo,
         p_pin: yo.pin,
+        p_sala: salaId,
+        p_texto: texto || null,
+        p_archivo_ruta: archivo ? archivo.ruta : null,
+        p_archivo_nombre: archivo ? archivo.nombre : null,
+        p_archivo_tamano: archivo ? archivo.tamano : null
+      }).then(function (r) {
+        if (r.error) throw traducirErrorChat(r.error);
+        return r.data;
+      });
+    },
+    /* El administrador escribe como "Secretariado": no lleva credencial de delegado,
+       la base comprueba que la sesión sea de un administrador. */
+    enviarSecretariado: function (salaId, texto, archivo) {
+      return exigir().rpc('chat_enviar_secretariado', {
         p_sala: salaId,
         p_texto: texto || null,
         p_archivo_ruta: archivo ? archivo.ruta : null,

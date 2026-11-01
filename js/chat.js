@@ -18,6 +18,9 @@ window.CHAT = (function () {
 
   var MAX_PDF = 10 * 1024 * 1024;
 
+  /* Quien escribe cuando es el administrador: el Secretariado, no una delegación. */
+  var AUTOR_SECRETARIADO = { secretariado: true, codigo: 'SECRETARIADO', nombre: 'Secretariado', pais: '', comite: '' };
+
   /* ================================================================
      ENTRADA: lista de salas o una sala concreta
      ================================================================ */
@@ -29,9 +32,9 @@ window.CHAT = (function () {
       return;
     }
     var yo = DB.identidad.obtener();
-    /* El staff con sesión entra a leer y moderar sin necesidad de una
-       credencial de delegado. Para escribir sí hace falta una: los
-       mensajes siempre salen a nombre de una delegación. */
+    /* El administrador sin credencial de delegado escribe como "Secretariado".
+       Un operador entra a leer; para escribir necesita una credencial de delegado. */
+    if (!yo && APP.esAdmin()) yo = AUTOR_SECRETARIADO;
     if (!yo && !APP.usuarioActual()) {
       IDENT.pedir({
         titulo: 'Chat de InterMUN',
@@ -148,9 +151,8 @@ window.CHAT = (function () {
               '</div>' +
             '</section>'
           : UI.aviso('info', 'Estás leyendo como staff',
-              'Con sesión del equipo organizador puedes leer todas las salas' +
-              (APP.esAdmin() ? ' y retirar mensajes que falten a las normas.' : '.') +
-              ' Para escribir hace falta una credencial de delegación, porque cada mensaje sale a nombre de un país.'))
+              'Con sesión de operador puedes leer todas las salas. Escribir como Secretariado es tarea del administrador; ' +
+              'para escribir con tu cuenta hace falta una credencial de delegado.'))
       );
 
       var log = UI.q('#chLog');
@@ -192,11 +194,14 @@ window.CHAT = (function () {
       var log = UI.q('#chLog');
       if (!log || UI.q('[data-msg="' + m.id + '"]')) return;
       var mio = !!yo && m.codigo === yo.codigo;
+      var delSecretariado = m.codigo === 'SECRETARIADO';
       var art = document.createElement('article');
-      art.className = 'ch-msg' + (mio ? ' ch-mio' : '');
+      art.className = 'ch-msg' + (mio ? ' ch-mio' : '') + (delSecretariado ? ' ch-sec' : '');
       art.setAttribute('data-msg', m.id);
 
-      var cab = '<p class="ch-cab"><strong>' + UI.esc(mio ? 'Tú' : m.nombre) + '</strong> ' +
+      /* La cuenta del Secretariado la usan varias personas a la vez: se llama
+         "Secretariado" también para quien escribe, no "Tú". */
+      var cab = '<p class="ch-cab"><strong>' + UI.esc(mio && !delSecretariado ? 'Tú' : m.nombre) + '</strong> ' +
                 '<span class="ch-cod mono">' + UI.esc(m.codigo) + '</span> ' +
                 '<time datetime="' + UI.esc(m.creado_en) + '">' + UI.hora(m.creado_en) + '</time>' +
                 (esStaff ? ' <button type="button" class="btn rojo chico" data-borrar-msg="' + m.id + '">Retirar<span class="solo-lector"> el mensaje de ' + UI.esc(m.nombre) + '</span></button>' : '') +
@@ -254,7 +259,9 @@ window.CHAT = (function () {
       }
       paso.then(function (archivo) {
         estado.textContent = 'Enviando.';
-        return DB.chat.enviar(yo, s.id, texto, archivo);
+        return yo.secretariado
+          ? DB.chat.enviarSecretariado(s.id, texto, archivo)
+          : DB.chat.enviar(yo, s.id, texto, archivo);
       }).then(function (m) {
         estado.textContent = '';
         UI.q('#chTexto').value = '';
@@ -274,6 +281,11 @@ window.CHAT = (function () {
 
   /* Cabecera de la vista: quién está mirando el chat. */
   function encabezado(yo) {
+    if (yo && yo.secretariado) {
+      return '<p class="silencio">Escribes como <strong>Secretariado</strong>, con la cuenta de administrador. ' +
+        'Tus mensajes salen con ese nombre y los ve toda la sala. ' +
+        '<button type="button" class="btn sec chico" id="chCambiar">Escribir como delegado</button></p>';
+    }
     if (yo) return IDENT.lineaIdentidad(yo, 'chCambiar');
     var u = APP.usuarioActual();
     return '<p class="silencio">Lees como <strong>staff</strong>' + (u ? ', ' + UI.esc(u.email) : '') + '. ' +

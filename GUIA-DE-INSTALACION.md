@@ -327,6 +327,7 @@ sistema/
 ├── INSTALACION-PUNTUACIONES.sql     Tabla y políticas de puntuaciones
 ├── INSTALACION-IDENTIDAD-Y-ROLES.sql PIN por delegado, comidas privadas, roles admin/operador
 ├── INSTALACION-CUENTAS-DELEGADOS.sql Datos privados, login por correo o ID, mi cuenta
+├── INSTALACION-SECRETARIADO-CHAT.sql El administrador escribe en los foros como Secretariado
 ```
 
 Para cambiar textos del portal (reglas, glosario, consejos, curiosidades), edita `js/contenido.js`. Está escrito para que se pueda modificar sin saber programar.
@@ -366,3 +367,7 @@ Por diseño:
 - **Alergias:** el escáner avisa en pantalla amarilla, y el tablero y la credencial (con sesión de staff) las muestran, para quien reparte la comida.
 
 La carga de las personas desde los Excel de inscripción se hace desde la carpeta privada `InterMUN/CARGA-DELEGADOS-2026/` (fuera de este repositorio): `python generar.py` y `python aplicar.py`. Los datos personales nunca se suben a GitHub.
+
+### El Secretariado escribe en los foros
+
+`INSTALACION-SECRETARIADO-CHAT.sql` agrega la función `chat_enviar_secretariado`. Un **administrador** con sesión de staff (por ejemplo la cuenta compartida del Secretariado) abre cualquier sala del chat y escribe o comparte un PDF; el mensaje sale como **Secretariado**, con el código `SECRETARIADO` y un borde propio para que los delegados lo reconozcan. Los operadores siguen solo leyendo. Los PDF van a la carpeta `SECRETARIADO` del bucket `chat-archivos`, y hay un límite de 60 mensajes por minuto en total, porque varios dispositivos comparten la cuenta.

@@ -51,7 +51,7 @@ Verificado con axe-core (0 violaciones en 10 rutas) y 20 pruebas de comportamien
 
 **InterBot** es un asistente con inteligencia artificial, solo de texto, que responde dudas de procedimiento, redacción, estrategia y uso de la plataforma con el reglamento y las fórmulas exactas de InterMUN como base. La clave del proveedor (Gemini, nivel gratuito) nunca está en el sitio: vive como secreto en una función de Supabase (`funciones/interbot/index.ts`) que además limita el uso por credencial y por día para proteger la cuota.
 
-**El chat** ofrece una sala general y una por cada uno de los diez foros oficiales. La identidad es el código de credencial más el PIN personal, verificados en la base; los mensajes solo se escriben a través de una función de base de datos que valida el código y limita el ritmo. Se pueden compartir archivos PDF (hasta 10 MB, solo PDF, en una carpeta con el nombre de la credencial). El staff modera y administra las salas desde el panel de control.
+**El chat** ofrece una sala general y una por cada uno de los diez foros oficiales. La identidad es el código de credencial más el PIN personal, verificados en la base; los mensajes solo se escriben a través de una función de base de datos que valida el código y limita el ritmo. Se pueden compartir archivos PDF (hasta 10 MB, solo PDF, en una carpeta con el nombre de la credencial). El staff modera y administra las salas desde el panel de control, y el administrador puede escribir y compartir PDF como **Secretariado** (`INSTALACION-SECRETARIADO-CHAT.sql`).
 
 Ambos módulos siguen el mismo estándar de accesibilidad del resto del sitio: regiones en vivo para que el lector de pantalla anuncie cada respuesta y cada mensaje nuevo, estados en texto (nunca un indicador giratorio), y mensajes propios marcados con la palabra "Tú" y no solo con color.
 
@@ -101,6 +101,7 @@ La base de datos es PostgreSQL en Supabase, con las políticas de seguridad a ni
 - `INSTALACION-SUPABASE.sql`, esquema de la base de datos y políticas de seguridad
 - `INSTALACION-IDENTIDAD-Y-ROLES.sql`, PIN personal por delegado, comidas privadas y roles admin / operador
 - `INSTALACION-CUENTAS-DELEGADOS.sql`, datos privados de cada delegado, ingreso con correo o ID y la vista Mi cuenta
+- `INSTALACION-SECRETARIADO-CHAT.sql`, el administrador escribe en los foros como Secretariado
 
 ---
 
