@@ -114,7 +114,7 @@ window.ADMIN = (function () {
       { href: '#/foros',     ico: '&#127760;', t: 'Asignar foros',
         d: 'Ver qué foros pidió cada delegado y asignarles su foro y su país. Los chairs puntúan a quien esté asignado.' },
       { href: '#/comidas',   ico: '&#127869;', t: 'Comidas del evento',
-        d: 'Definir desayuno, almuerzo y las cuatro meriendas de cada día.' },
+        d: 'Ver o cambiar las comidas de cada día y su hora: Merienda 1, Almuerzo y Merienda 2.' },
       { href: '#/salas',     ico: '&#128172;', t: 'Salas de chat',
         d: 'Abrir o cerrar la sala general y la de cada foro.' },
       { href: '#/qr',        ico: '&#128290;', t: 'Generar los códigos QR',
@@ -164,10 +164,7 @@ window.ADMIN = (function () {
 
     function guardado(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
     function guardar(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
-    function hoyISO() {
-      var d = new Date();
-      return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
-    }
+    var hoyISO = UI.hoyISO;
     function sigla(t) { var m = /\(([^)]+)\)/.exec(t || ''); return m ? m[1] : (t || ''); }
     function norm(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
     function etiquetaComida(c) { return 'Día ' + c.dia + ', ' + c.nombre; }
@@ -194,16 +191,25 @@ window.ADMIN = (function () {
     });
 
 
-    /* La comida que se ofrece al abrir: la que este dispositivo ya venia entregando hoy;
-       si no, la que tuvo la entrega mas reciente hoy; si nadie ha entregado, la primera de hoy.
-       Un dia que no es del evento abre la primera comida del proximo dia. */
+    /* La comida que se ofrece al abrir:
+       1. la que este dispositivo venia entregando hace menos de 20 minutos (para no perderla al recargar);
+       2. si no, la que toca segun el reloj: la ultima que ya empezo (se abre 30 minutos antes de su hora);
+       3. sin horas cargadas, la que tuvo la entrega mas reciente hoy, o la primera de hoy.
+       Un dia sin comidas abre la primera comida del proximo dia con comidas. */
     function comidaInicial() {
       var hoy = hoyISO(), porId = function (id) { return est.comidas.filter(function (c) { return c.id === id; })[0]; };
       var g = null;
       try { g = JSON.parse(guardado('intermun_servicio') || 'null'); } catch (e) {}
-      if (g && g.fecha === hoy && porId(g.id)) return porId(g.id);
+      if (g && g.fecha === hoy && (Date.now() - (g.t || 0)) < 20 * 60000 && porId(g.id)) return porId(g.id);
 
       var deHoy = est.comidas.filter(function (c) { return c.fecha === hoy; });
+      var conHora = deHoy.filter(function (c) { return c.hora; });
+      if (conHora.length) {
+        var ahora = new Date(), min = ahora.getHours() * 60 + ahora.getMinutes();
+        var minDe = function (c) { var p = String(c.hora).split(':'); return parseInt(p[0], 10) * 60 + parseInt(p[1], 10); };
+        var yaEmpezo = conHora.filter(function (c) { return minDe(c) - 30 <= min; });
+        return yaEmpezo.length ? yaEmpezo[yaEmpezo.length - 1] : conHora[0];
+      }
       if (deHoy.length) {
         var idsHoy = {}; deHoy.forEach(function (c) { idsHoy[c.id] = true; });
         var ult = est.entregas.filter(function (e) { return idsHoy[e.comida_id]; })
@@ -353,7 +359,8 @@ window.ADMIN = (function () {
       cont.innerHTML = est.comidas.filter(function (c) { return c.dia === est.dia; }).map(function (c) {
         var activa = c.id === est.comida.id;
         return '<button type="button" class="btn sec svc-chip" data-comida="' + c.id + '" aria-pressed="' + activa + '">' +
-               (activa ? '&#10003; ' : '') + UI.esc(c.nombre) + ' <small>' + recibieron(c) + ' de ' + est.delegados.length + '</small></button>';
+               (activa ? '&#10003; ' : '') + UI.esc(c.nombre) + ' <small>' + (c.hora ? UI.horaCorta(c.hora) + ' &middot; ' : '') +
+               recibieron(c) + ' de ' + est.delegados.length + '</small></button>';
       }).join('');
       UI.qq('[data-comida]', cont).forEach(function (b) {
         b.addEventListener('click', function () {
@@ -369,7 +376,7 @@ window.ADMIN = (function () {
 
     function elegirComida(c) {
       est.comida = c; est.dia = c.dia;
-      guardar('intermun_servicio', JSON.stringify({ id: c.id, fecha: hoyISO() }));
+      guardar('intermun_servicio', JSON.stringify({ id: c.id, fecha: hoyISO(), t: Date.now() }));
       pintarTodo();
       if (window.A11Y) window.A11Y.anunciar('Ahora se entrega: ' + etiquetaComida(c) + '.');
     }
@@ -380,6 +387,8 @@ window.ADMIN = (function () {
       UI.q('#svcBanner').innerHTML =
         '<p class="svc-banner-t">Entregando ahora</p>' +
         '<p class="svc-banner-n">' + UI.esc(etiquetaComida(est.comida)) + '</p>' +
+        ((est.comida.fecha || est.comida.hora)
+          ? '<p>' + UI.esc([est.comida.fecha ? UI.fechaLarga(est.comida.fecha) : '', est.comida.hora ? UI.horaCorta(est.comida.hora) : ''].filter(Boolean).join(', ')) + '</p>' : '') +
         '<p><strong>' + n + ' de ' + total + '</strong> ya la recibieron. ' +
           (total - n === 1 ? 'Falta 1 persona.' : 'Faltan ' + (total - n) + ' personas.') + '</p>' +
         '<div class="progreso" role="img" aria-label="' + pct + ' por ciento entregado"><i style="width:' + pct + '%"></i></div>';
@@ -517,6 +526,7 @@ window.ADMIN = (function () {
         }
         est.entregas.push(r.fila);
         est.ultimoOk = { codigo: d.codigo, t: Date.now() };
+        guardar('intermun_servicio', JSON.stringify({ id: c.id, fecha: hoyISO(), t: Date.now() }));   /* sigue en esta comida mientras se entrega */
         est.recientes.unshift({ d: d, comida: c, hora: r.fila.entregado_en || new Date().toISOString() });
         pitar(true);
         var ale = alertaAlergia(d);
@@ -1262,11 +1272,13 @@ window.ADMIN = (function () {
     DB.comidas.listar().then(function (lista) {
       var html = '<h1>Comidas del evento</h1>' +
         '<p>Define aquí cada comida de cada día. Es lo que el staff podrá marcar al escanear. ' +
-        'El cronograma oficial de InterMUN 2026 es desayuno, almuerzo y cuatro meriendas por día, durante tres días: dieciocho en total.</p>';
+        'Cronograma oficial de InterMUN 2026: hay comidas solo el 5 y el 6 de noviembre (Día 2 y Día 3). ' +
+        'Cada día: Merienda 1 a las 10:00, Almuerzo a las 12:00 y Merienda 2 a las 14:30. ' +
+        'La hora hace que el Servicio de comidas abra solo en la comida que toca.</p>';
 
       html += '<details class="acordeon"><summary>Agregar una comida</summary><div class="cuerpo">' +
                 '<div class="fila-campos">' +
-                  campo('cmNombre', 'Nombre', 'Por ejemplo: Desayuno, Almuerzo, Merienda 1.') +
+                  campo('cmNombre', 'Nombre', 'Por ejemplo: Almuerzo, Merienda 1.') +
                   '<label class="campo" for="cmDia"><span>Día</span>' +
                     '<input type="number" id="cmDia" value="1" min="1" max="10"></label>' +
                   '<label class="campo" for="cmTipo"><span>Tipo</span><select id="cmTipo">' +
@@ -1275,6 +1287,8 @@ window.ADMIN = (function () {
                   '</select></label>' +
                   '<label class="campo" for="cmFecha"><span>Fecha, opcional</span>' +
                     '<input type="date" id="cmFecha"></label>' +
+                  '<label class="campo" for="cmHora"><span>Hora, opcional</span>' +
+                    '<input type="time" id="cmHora"></label>' +
                 '</div>' +
                 '<button type="button" class="btn" id="btnAddComida">Agregar comida</button>' +
               '</div></details>';
@@ -1285,15 +1299,18 @@ window.ADMIN = (function () {
         html += '<div class="tabla-env"><table class="datos">' +
                 '<caption class="solo-lector">Comidas programadas del evento</caption>' +
                 '<thead><tr><th scope="col">Día</th><th scope="col">Nombre</th><th scope="col">Tipo</th>' +
-                '<th scope="col">Fecha</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead><tbody>';
+                '<th scope="col">Fecha</th><th scope="col">Hora</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead><tbody>';
         lista.forEach(function (c) {
           html += '<tr>' +
             '<td class="num">' + c.dia + '</td>' +
             '<td><strong>' + UI.esc(c.nombre) + '</strong></td>' +
             '<td>' + UI.esc(c.tipo) + '</td>' +
             '<td>' + UI.esc(c.fecha || 'sin fecha') + '</td>' +
+            '<td class="mono">' + (c.hora ? UI.esc(UI.horaCorta(c.hora)) : 'sin hora') + '</td>' +
             '<td><span class="chip ' + (c.activa ? 'si' : 'no') + '">' + (c.activa ? 'Activa' : 'Oculta') + '</span></td>' +
             '<td>' +
+              '<button type="button" class="btn sec chico" data-hora="' + c.id + '" data-h="' + UI.esc(UI.horaCorta(c.hora)) + '">' +
+                'Cambiar hora<span class="solo-lector"> de ' + UI.esc(c.nombre) + ' del día ' + c.dia + '</span></button> ' +
               '<button type="button" class="btn sec chico" data-tog="' + c.id + '" data-a="' + (c.activa ? '1' : '0') + '">' +
                 (c.activa ? 'Ocultar' : 'Activar') +
                 '<span class="solo-lector"> ' + UI.esc(c.nombre) + ' del día ' + c.dia + '</span></button> ' +
@@ -1323,9 +1340,22 @@ window.ADMIN = (function () {
           clave: clave, nombre: nombre, dia: dia,
           tipo: UI.q('#cmTipo').value,
           fecha: UI.q('#cmFecha').value || null,
+          hora: UI.q('#cmHora').value || null,
           orden: (lista.length ? Math.max.apply(null, lista.map(function (x) { return x.orden || 0; })) : 0) + 1
         }).then(function () { UI.tostada('Comida agregada.', 'ok'); comidas(); })
           .catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); });
+      });
+
+      UI.qq('[data-hora]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var nueva = window.prompt('Hora de esta comida, en formato 24 horas (por ejemplo 12:00 o 14:30). Deja vacío para quitarla.', b.dataset.h || '');
+          if (nueva === null) return;
+          nueva = nueva.trim();
+          if (nueva && !/^([01]?\d|2[0-3]):[0-5]\d$/.test(nueva)) { UI.tostada('Escribe la hora así: 12:00 o 14:30.', 'err'); return; }
+          DB.comidas.actualizar(b.dataset.hora, { hora: nueva || null })
+            .then(function () { UI.tostada('Hora actualizada.', 'ok'); comidas(); })
+            .catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); });
+        });
       });
 
       UI.qq('[data-tog]').forEach(function (b) {

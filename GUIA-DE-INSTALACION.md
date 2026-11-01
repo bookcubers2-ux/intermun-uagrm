@@ -328,6 +328,7 @@ sistema/
 ├── INSTALACION-IDENTIDAD-Y-ROLES.sql PIN por delegado, comidas privadas, roles admin/operador
 ├── INSTALACION-CUENTAS-DELEGADOS.sql Datos privados, login por correo o ID, mi cuenta
 ├── INSTALACION-SECRETARIADO-CHAT.sql El administrador escribe en los foros como Secretariado
+├── INSTALACION-HORARIOS-COMIDAS.sql  Hora de cada comida
 ```
 
 Para cambiar textos del portal (reglas, glosario, consejos, curiosidades), edita `js/contenido.js`. Está escrito para que se pueda modificar sin saber programar.
@@ -376,9 +377,11 @@ La carga de las personas desde los Excel de inscripción se hace desde la carpet
 
 La pantalla **Servicio de comidas** (`#/escanear`, administradores y operadores) reemplaza al escáner anterior:
 
-- **Qué se entrega:** botones por día y por comida, con cuántas personas ya la recibieron (por ejemplo "Almuerzo, 23 de 59"). Abre sola en la comida de hoy según su fecha, y cada dispositivo recuerda la que eligió.
+- **Qué se entrega:** botones por día y por comida, con su hora y cuántas personas ya la recibieron (por ejemplo "Almuerzo 12:00, 23 de 59"). Abre sola en la comida que toca según el reloj (la última que ya empezó; se abre 30 minutos antes de su hora), y un dispositivo que ya venía entregando conserva su comida durante 20 minutos al recargar.
 - **Dos formas de registrar:** con la cámara (QR, un solo paso) o por lista (se toca *Entregar* junto al nombre; hay buscador y filtro por foro). Con la lista también se puede **entregar a todas las personas que faltan** de un foro, por ejemplo cuando el refrigerio se lleva a la sala.
 - **Resultado grande:** verde "Entregado", amarillo "Ya recibió" (con la hora y la estación, para no darle otra), rojo si la credencial no existe o está de baja. Si la persona tiene alergia, avisa antes de entregar.
 - **Deshacer con un toque**, desde la lista o desde el historial del dispositivo.
 - **En vivo entre dispositivos:** lo que entrega un teléfono aparece solo en los demás.
 - **En vivo para el delegado:** al registrar o deshacer una entrega, el servicio manda un aviso por el canal `entrega-<código>` (Realtime Broadcast, sin datos personales) y el teléfono del delegado vuelve a pedir sus comidas a la base. Si el aviso se pierde, su pantalla se actualiza sola cada 10 segundos. Las entregas siguen siendo privadas.
+
+**Horario oficial de las comidas (2026-11-01):** solo el 5 y el 6 de noviembre (Día 2 y Día 3). Cada día, Merienda 1 a las 10:00, Almuerzo a las 12:00 y Merienda 2 a las 14:30: seis comidas. Las comidas que no se usan quedan ocultas (se pueden reactivar desde **Comidas del evento**, donde también se cambia la hora de cada una). El delegado ve en **Mis comidas** la hora de cada comida y cuál es la que sigue.

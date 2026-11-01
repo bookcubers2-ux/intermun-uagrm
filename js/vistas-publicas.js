@@ -64,7 +64,7 @@ window.VISTAS = (function () {
         { href: '#/buscar',        ico: '&#127915;', t: 'Mi credencial',
           d: 'Tus datos de acreditación: nombre, país, comité e institución.' },
         { href: '#/mis-comidas',   ico: '&#127869;', t: 'Mis comidas',
-          d: 'Desayuno, almuerzo y meriendas de cada día: cuáles ya recibiste. Pide tu cuenta.' },
+          d: 'Tus comidas del evento, con su hora: cuáles ya recibiste y cuál sigue. Pide tu cuenta.' },
         { href: '#/mi-desempeno',  ico: '&#127942;', t: 'Mi desempeño',
           d: 'Tus puntos por criterio, tu puesto en el foro y el detalle de cada puntuación. Pide tu cuenta.' },
         { href: '#/material',      ico: '&#128220;', t: 'Material para delegados (nuevo)',
@@ -553,7 +553,7 @@ window.VISTAS = (function () {
             { href: '#/mi-cuenta',    ico: '&#128100;', t: 'Mi cuenta',
               d: 'Tu código QR, tu foro y todo lo tuyo en un solo lugar.' },
             { href: '#/mis-comidas',  ico: '&#127869;', t: 'Mis comidas',
-              d: 'Desayuno, almuerzo y meriendas de cada día: cuáles ya recibiste.' },
+              d: 'Tus comidas del evento, con su hora: cuáles ya recibiste y cuál sigue.' },
             { href: '#/mi-desempeno', ico: '&#127942;', t: 'Mi desempeño',
               d: 'Tus puntos por criterio, tu puesto en el foro y el detalle de cada puntuación.' },
             { href: '#/chat',         ico: '&#128172;', t: 'Chat por comités',
@@ -611,7 +611,9 @@ window.VISTAS = (function () {
 
     Object.keys(porDia).sort(function (a, b) { return a - b; }).forEach(function (dia) {
       var delDia = porDia[dia], hechas = delDia.filter(function (c) { return mapa[c.id]; }).length;
-      html += '<h3>Día ' + UI.esc(dia) + ' <small class="silencio">(' + hechas + ' de ' + delDia.length + ')</small></h3><ul class="lista-comidas" role="list">';
+      var fechaDia = delDia.filter(function (c) { return c.fecha; })[0];
+      html += '<h3>Día ' + UI.esc(dia) + (fechaDia ? ', ' + UI.esc(UI.fechaLarga(fechaDia.fecha)) : '') +
+              ' <small class="silencio">(' + hechas + ' de ' + delDia.length + ')</small></h3><ul class="lista-comidas" role="list">';
       delDia.forEach(function (c) {
         var e = mapa[c.id];
         var estado = e ? 'Ya entregado' : 'Pendiente';
@@ -623,7 +625,7 @@ window.VISTAS = (function () {
           '<li class="comida-fila">' +
             '<span class="marca-est ' + (e ? 'si' : 'no') + '" aria-hidden="true">' + (e ? '&#10003;' : '&middot;') + '</span>' +
             '<span class="info">' +
-              '<b>' + UI.esc(c.nombre) + '</b>' +
+              '<b>' + UI.esc(c.nombre) + (c.hora ? ' <span class="mono">' + UI.esc(UI.horaCorta(c.hora)) + '</span>' : '') + '</b>' +
               '<small>' + UI.esc(nombreTipo(c.tipo)) + '. ' + detalle + '.</small>' +
             '</span>' +
             (botones
@@ -690,8 +692,8 @@ window.VISTAS = (function () {
     }
     IDENT.exigir({
       titulo: 'Mis comidas',
-      intro: '<p>Durante los tres días del evento tienes desayuno, almuerzo y cuatro meriendas por día. ' +
-             'Aquí ves cuáles ya recibiste y a qué hora.</p>',
+      intro: '<p>Estas son las comidas del evento, con su hora. ' +
+             'Aquí ves cuáles ya recibiste y cuál sigue.</p>',
       boton: 'Ver mis comidas'
     }, function (yo) {
       UI.cargando('Cargando tus comidas');
@@ -757,6 +759,23 @@ window.VISTAS = (function () {
         UI.pintar('<h1>Mis comidas</h1>' + UI.aviso('err', 'No se pudieron cargar', UI.explicarError(e)));
       });
 
+      /* La comida que sigue: la primera que todavia no recibio y cuya hora no pasó hace más de una hora. */
+      function proximaComida() {
+        var recibidas = {};
+        entregas.forEach(function (e) { recibidas[e.comida_id] = true; });
+        var pendientes = listaComidas.filter(function (c) { return !recibidas[c.id]; });
+        if (!listaComidas.length) return '';
+        if (!pendientes.length) return UI.aviso('ok', 'Ya recibiste todas las comidas del evento. ', 'Gracias por participar en InterMUN.');
+        var ahora = Date.now(), hoy = UI.hoyISO();
+        var sig = pendientes.filter(function (c) { return UI.momentoComida(c) !== null && UI.momentoComida(c) >= ahora - 3600000; })
+          .sort(function (a, b) { return UI.momentoComida(a) - UI.momentoComida(b); })[0];
+        if (!sig) return '';
+        var manana = new Date(); manana.setDate(manana.getDate() + 1);
+        var m = manana.getFullYear() + '-' + ('0' + (manana.getMonth() + 1)).slice(-2) + '-' + ('0' + manana.getDate()).slice(-2);
+        var cuando = sig.fecha === hoy ? 'hoy' : (sig.fecha === m ? 'mañana' : 'el ' + UI.fechaLarga(sig.fecha));
+        return UI.aviso('info', 'Tu próxima comida: ', sig.nombre + ', ' + cuando + (sig.hora ? ' a las ' + UI.horaCorta(sig.hora) : '') + '.');
+      }
+
       function ultimaRecibida() {
         var e = entregas.slice().sort(function (a, b) { return a.entregado_en < b.entregado_en ? 1 : -1; })[0];
         if (!e) return UI.aviso('info', 'Todavía no recibiste ninguna comida. ', 'Cuando el personal te entregue una, aparece aquí al instante.');
@@ -771,6 +790,7 @@ window.VISTAS = (function () {
           '<h1>Mis comidas</h1>' +
           IDENT.lineaIdentidad(yo, 'mcCambiar') +
           ultimaRecibida() +
+          proximaComida() +
           '<section aria-labelledby="t-mc"><h2 id="t-mc">Todas tus comidas</h2>' +
             htmlComidas(listaComidas, entregas, false) +
           '</section>' +

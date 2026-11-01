@@ -108,7 +108,7 @@ window.CUENTA = (function () {
     /* ---- Módulos personales ---- */
     var modulos = [
       { href: '#/mis-comidas',  ico: '&#127869;', t: 'Mis comidas',
-        d: 'Desayuno, almuerzo y meriendas de cada día: cuáles ya recibiste y a qué hora.' },
+        d: 'Tus comidas del evento, con su hora: cuáles ya recibiste y cuál sigue.' },
       { href: '#/mi-desempeno', ico: '&#127942;', t: 'Mi desempeño',
         d: 'Tus puntos por criterio, tu puesto en el foro y el detalle de cada puntuación, en vivo.' }
     ];

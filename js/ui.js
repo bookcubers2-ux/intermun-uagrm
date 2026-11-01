@@ -104,6 +104,30 @@ window.UI = (function () {
     } catch (e) { return ''; }
   }
 
+  /* Fecha de hoy en el telefono (hora de Bolivia), como AAAA-MM-DD: la misma forma en que se guarda la fecha de cada comida. */
+  function hoyISO() {
+    var d = new Date();
+    return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+  }
+
+  /* "2026-11-05" -> "5 de noviembre" */
+  var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  function fechaLarga(iso) {
+    var p = String(iso || '').split('-');
+    if (p.length !== 3) return '';
+    return parseInt(p[2], 10) + ' de ' + MESES[parseInt(p[1], 10) - 1];
+  }
+
+  /* "12:00:00" -> "12:00" */
+  function horaCorta(t) { return t ? String(t).slice(0, 5) : ''; }
+
+  /* Momento exacto en que empieza una comida (fecha + hora), para saber cual sigue. */
+  function momentoComida(c) {
+    if (!c || !c.fecha) return null;
+    var f = String(c.fecha).split('-'), h = String(c.hora || '00:00').split(':');
+    return new Date(+f[0], +f[1] - 1, +f[2], +h[0], +h[1]).getTime();
+  }
+
   /* ---------- Descargar un archivo ---------- */
   function descargar(nombre, contenido, tipo) {
     var blob = new Blob(['﻿' + contenido], { type: (tipo || 'text/csv') + ';charset=utf-8;' });
@@ -180,6 +204,10 @@ window.UI = (function () {
     q: q, qq: qq,
     hora: hora,
     fechaHora: fechaHora,
+    hoyISO: hoyISO,
+    fechaLarga: fechaLarga,
+    horaCorta: horaCorta,
+    momentoComida: momentoComida,
     descargar: descargar,
     aCSV: aCSV,
     confirmar: confirmar,
