@@ -457,6 +457,18 @@ window.DB = (function () {
         return (r.data && r.data[0]) || null;
       });
     },
+    /* El foro y el país los asigna el Secretariado cuando ya la persona entró: se vuelve a leer lo
+       vigente para no tomar el chat equivocado con datos viejos guardados en el teléfono. */
+    refrescar: function () {
+      var yo = identidad.obtener();
+      if (!yo || !hayConexion()) return Promise.resolve(yo);
+      return delegados.porCodigo(yo.codigo).then(function (d) {
+        if (!d) return yo;
+        yo.nombre = d.nombre; yo.pais = d.pais || ''; yo.comite = d.comite || ''; yo.institucion = d.institucion || '';
+        try { localStorage.setItem('intermun_identidad', JSON.stringify(yo)); } catch (e) {}
+        return yo;
+      }).catch(function () { return yo; });
+    },
     limpiar: function () {
       try { localStorage.removeItem('intermun_identidad'); } catch (e) {}
       avisarIdentidad();
@@ -518,6 +530,8 @@ window.DB = (function () {
       'MENSAJE_VACIO': 'Escribe un mensaje o adjunta un PDF.',
       'MENSAJE_LARGO': 'El mensaje supera los 2000 caracteres.',
       'DEMASIADOS_MENSAJES': 'Estás enviando demasiados mensajes seguidos. Espera un minuto.',
+      'FORO_AJENO': 'Solo puedes escribir y compartir archivos en el chat de tu propio foro. En los demás foros puedes leer.',
+      'SIN_FORO': 'Todavía no tienes un foro asignado. Mientras tanto puedes escribir en la sala general.',
       'SOLO_ADMIN': 'Solo el administrador puede escribir como Secretariado. Vuelve a iniciar sesión como administrador.',
       'ARCHIVO_INVALIDO': 'El archivo no se subió a la carpeta del Secretariado. Vuelve a intentarlo.',
       'DEMASIADOS_INTENTOS': 'Demasiados intentos fallidos con esa cuenta. Espera diez minutos y vuelve a intentarlo, o acércate a la mesa de acreditación.'
@@ -589,14 +603,15 @@ window.DB = (function () {
         return r.data;
       });
     },
-    subirArchivo: function (codigo, file) {
-      var ruta = codigo + '/' + Date.now() + '-' + limpiarNombreArchivo(file.name);
+    subirArchivo: function (codigo, file, claveSala) {
+      /* La ruta lleva la sala: la base solo deja subir a la sala general y al propio foro. */
+      var ruta = codigo + '/' + claveSala + '/' + Date.now() + '-' + limpiarNombreArchivo(file.name);
       return exigir().storage.from('chat-archivos')
         .upload(ruta, file, { contentType: 'application/pdf', upsert: false })
         .then(function (r) {
           if (r.error) {
             var m = r.error.message || '';
-            if (/row-level security|policy|403|Unauthorized/i.test(m)) throw new Error('No se pudo subir el archivo: tu credencial no está autorizada.');
+            if (/row-level security|policy|403|Unauthorized/i.test(m)) throw new Error('No se pudo subir el archivo: solo puedes compartir archivos en la sala general y en el chat de tu propio foro.');
             if (/size|too large|413/i.test(m)) throw new Error('El archivo supera el tamaño permitido (10 MB).');
             if (/mime|type/i.test(m)) throw new Error('Solo se pueden adjuntar archivos PDF.');
             throw r.error;

@@ -330,6 +330,7 @@ sistema/
 ├── INSTALACION-SECRETARIADO-CHAT.sql El administrador escribe en los foros como Secretariado
 ├── INSTALACION-HORARIOS-COMIDAS.sql  Hora de cada comida
 ├── INSTALACION-AUTORIDADES.sql       Cargo de las autoridades de mesa
+├── INSTALACION-FOROS-EXCLUSIVOS.sql  Cada uno escribe solo en su foro
 ```
 
 Para cambiar textos del portal (reglas, glosario, consejos, curiosidades), edita `js/contenido.js`. Está escrito para que se pueda modificar sin saber programar.
@@ -398,3 +399,14 @@ Presidentes, moderadores y oficiales de conferencia son personas acreditadas com
 - En **Asignar foros** se cuentan aparte (columna *Autoridades de mesa*) y la "primera opción a todos" no las toca.
 - Comen como todos: el Servicio de comidas las incluye en los totales y en el foro, y avisa su alergia.
 - Si se vuelve a correr `INSTALACION-CUENTAS-DELEGADOS.sql`, correr después `INSTALACION-AUTORIDADES.sql` (recrea `mi_cuenta` con el cargo).
+
+## Cada delegado participa solo en su foro
+
+`INSTALACION-FOROS-EXCLUSIVOS.sql` aplica esta regla en la base de datos (no solo en la pantalla):
+
+- **Dónde se puede escribir y compartir archivos:** en la **Sala general** y en el **chat del propio foro** (el de `delegados.comite`). Quien todavía no tiene foro asignado solo escribe en la Sala general.
+- **Qué se puede hacer en los demás foros:** leer todos los mensajes y ver los puntajes y el ranking. No escribir ni subir archivos.
+- **Cómo se exige:** `chat_enviar` rechaza el mensaje (`FORO_AJENO` o `SIN_FORO`); los PDF se suben a `CODIGO/SALA/archivo.pdf` y la política de almacenamiento solo acepta una sala permitida; un mensaje solo puede citar un archivo de su propia carpeta y de su propia sala.
+- **Quién queda fuera de la regla:** el Secretariado (administrador) escribe en todas con `chat_enviar_secretariado`.
+- **En la pantalla:** la lista de salas marca "Tu foro: puedes escribir" y "Solo lectura"; en un foro ajeno no aparece el cuadro de mensaje. El foro se vuelve a leer al abrir el chat, así que un cambio del Secretariado se refleja sin que el delegado vuelva a iniciar sesión.
+- **Asignación:** el foro y el país de cada delegado salen de la "Lista de delegados" (una hoja por foro) con `python asignar_foros.py` y `python aplicar.py --foros` desde la carpeta privada `CARGA-DELEGADOS-2026`. Si se vuelve a correr el instalador `INSTALACION-INTERBOT-Y-CHAT.sql`, correr después este archivo (el otro restaura la subida sin regla de foro).

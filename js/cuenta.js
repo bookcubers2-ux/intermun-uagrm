@@ -80,6 +80,8 @@ window.CUENTA = (function () {
         html += '<p>Estás en <strong>' + UI.esc(c.comite) + '</strong>' +
           (c.pais ? ', representando a <strong>' + UI.esc(c.pais) + '</strong>.' : '. Tu país todavía se está asignando.') + '</p>';
       }
+      html += '<p>Puedes escribir y compartir archivos en el chat de tu foro y en la sala general. ' +
+        'En los demás foros puedes leer los mensajes y ver los puntajes, pero no participar.</p>';
       if (miForo) {
         html += '<div class="fila-btn">' +
           '<a class="btn" href="#/chat/' + encodeURIComponent(miForo.clave) + '">Abrir el chat de mi foro</a>' +

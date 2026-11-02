@@ -46,7 +46,20 @@ window.CHAT = (function () {
       });
       return;
     }
-    if (claveSala) sala(yo, claveSala); else listaSalas(yo);
+    /* El foro lo asigna el Secretariado en cualquier momento: se lee el vigente antes de pintar. */
+    var listo = (yo && !yo.secretariado) ? DB.identidad.refrescar().then(function (f) { return f || yo; }) : Promise.resolve(yo);
+    listo.then(function (y) {
+      if (claveSala) sala(y, claveSala); else listaSalas(y);
+    });
+  }
+
+  /* ¿Puede escribir y compartir archivos aquí? El Secretariado, en todas; los demás, en la sala
+     general y en su propio foro. La base de datos lo exige igual: esto solo evita el intento. */
+  function puedeEscribir(yo, s) {
+    if (!yo) return false;
+    if (yo.secretariado) return true;
+    if (s.tipo === 'general') return true;
+    return esMiForo(s, yo.comite);
   }
 
 
@@ -67,13 +80,23 @@ window.CHAT = (function () {
           var esPropia = propia && propia.id === s.id;
           html += '<li><a class="modulo" href="#/chat/' + encodeURIComponent(s.clave) + '">' +
                     UI.icono(s.tipo === 'general' ? '&#127760;' : '&#128172;') +
-                    '<strong>' + UI.esc(s.nombre) + (esPropia ? ' <span class="chip si">Tu comité</span>' : '') + '</strong>' +
+                    '<strong>' + UI.esc(s.nombre) +
+                      (esPropia ? ' <span class="chip si">Tu foro: puedes escribir</span>'
+                        : (yo && !yo.secretariado && s.tipo !== 'general' ? ' <span class="chip no">Solo lectura</span>' : '')) + '</strong>' +
                     '<span class="d">' + UI.esc(s.descripcion || (s.tipo === 'general' ? 'Para todas las personas acreditadas.' : 'Sala del comité ' + (s.comite || s.nombre) + '.')) + '</span>' +
                   '</a></li>';
         });
         html += '</ul>';
       }
 
+      if (yo && !yo.secretariado) {
+        html += yo.comite
+          ? UI.aviso('info', 'Dónde puedes escribir',
+              'Puedes escribir y compartir archivos en la sala general y en el chat de tu foro. ' +
+              'En los demás foros puedes leer todos los mensajes, pero no escribir ni subir archivos.')
+          : UI.aviso('warn', 'Todavía no tienes foro asignado',
+              'Cuando el Secretariado te asigne tu foro podrás escribir en su chat. Mientras tanto puedes escribir en la sala general y leer los demás foros.');
+      }
       html += UI.aviso('info', 'Normas del chat',
         'Trato respetuoso siempre, como en el comité. Los mensajes llevan tu nombre y tu código. ' +
         'El Secretariado puede retirar mensajes que falten a las normas. Solo se pueden adjuntar archivos PDF de hasta 10 MB.');
@@ -136,7 +159,7 @@ window.CHAT = (function () {
           '<div class="ch-log" id="chLog" role="log" aria-live="polite" aria-relevant="additions" aria-label="Mensajes de la sala"></div>' +
         '</section>' +
 
-        (yo
+        (yo && puedeEscribir(yo, s)
           ? '<section aria-labelledby="t-ch-escribir">' +
               '<h2 id="t-ch-escribir">Escribir</h2>' +
               '<label class="campo" for="chTexto"><span>Tu mensaje</span>' +
@@ -150,9 +173,15 @@ window.CHAT = (function () {
                 '<button type="button" class="btn" id="chEnviar">Enviar</button>' +
               '</div>' +
             '</section>'
-          : UI.aviso('info', 'Estás leyendo como staff',
-              'Con sesión de operador puedes leer todas las salas. Escribir como Secretariado es tarea del administrador; ' +
-              'para escribir con tu cuenta hace falta una credencial de delegado.'))
+          : (yo
+              ? UI.aviso('warn', 'Modo lectura: este no es tu foro. ',
+                  'Puedes leer todos los mensajes, pero solo puedes escribir y compartir archivos en la sala general' +
+                  (yo.comite ? ' y en el chat de tu foro, ' + yo.comite + '.' : '. Todavía no tienes un foro asignado.') +
+                  ' ') +
+                '<p><a class="btn" href="#/chat">Volver a las salas</a></p>'
+              : UI.aviso('info', 'Estás leyendo como staff',
+                  'Con sesión de operador puedes leer todas las salas. Escribir como Secretariado es tarea del administrador; ' +
+                  'para escribir con tu cuenta hace falta una credencial de delegado.')))
       );
 
       var log = UI.q('#chLog');
@@ -161,7 +190,7 @@ window.CHAT = (function () {
       actualizarConteo();
 
       enlazarCambiar(function () { vista(clave); });
-      if (!yo) return;
+      if (!yo || !puedeEscribir(yo, s)) return;
 
       UI.q('#chArchivo').addEventListener('change', function () {
         var f = this.files && this.files[0];
@@ -255,7 +284,7 @@ window.CHAT = (function () {
       var paso = Promise.resolve(null);
       if (archivoElegido) {
         estado.textContent = 'Subiendo el archivo, un momento.';
-        paso = DB.chat.subirArchivo(yo.codigo, archivoElegido);
+        paso = DB.chat.subirArchivo(yo.codigo, archivoElegido, s.clave);
       }
       paso.then(function (archivo) {
         estado.textContent = 'Enviando.';
