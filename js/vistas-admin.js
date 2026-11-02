@@ -112,7 +112,7 @@ window.ADMIN = (function () {
       { href: '#/delegados', ico: '&#128100;', t: 'Delegados y contraseñas',
         d: 'La lista de acreditados con su cuenta, su alergia y su contraseña (el carnet). Cambiar datos, dar de baja credenciales.' },
       { href: '#/foros',     ico: '&#127760;', t: 'Asignar foros',
-        d: 'Ver qué foros pidió cada delegado y asignarles su foro y su país. Los chairs puntúan a quien esté asignado.' },
+        d: 'Ver el foro y el país de cada delegado y corregirlos. Los chairs puntúan a quien esté asignado.' },
       { href: '#/comidas',   ico: '&#127869;', t: 'Comidas del evento',
         d: 'Ver o cambiar las comidas de cada día y su hora: Merienda 1, Almuerzo y Merienda 2.' },
       { href: '#/salas',     ico: '&#128172;', t: 'Salas de chat',
@@ -168,6 +168,8 @@ window.ADMIN = (function () {
     function sigla(t) { var m = /\(([^)]+)\)/.exec(t || ''); return m ? m[1] : (t || ''); }
     function norm(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
     function etiquetaComida(c) { return 'Día ' + c.dia + ', ' + c.nombre; }
+    /* Quien participa en dos foros lo guarda separado por punto y coma. */
+    function partesForo(d) { return String(d.comite || '').split(/\s*;\s*/).filter(Boolean); }
 
     Promise.all([DB.comidas.activas(), DB.delegados.listar(), DB.entregas.listar(), DB.dieta.listar()]).then(function (r) {
       est.comidas = r[0].sort(function (a, b) { return (a.dia - b.dia) || (a.orden - b.orden); });
@@ -235,7 +237,7 @@ window.ADMIN = (function () {
       var dias = [];
       est.comidas.forEach(function (c) { if (dias.indexOf(c.dia) < 0) dias.push(c.dia); });
       var foros = [];
-      est.delegados.forEach(function (d) { if (d.comite && foros.indexOf(d.comite) < 0) foros.push(d.comite); });
+      est.delegados.forEach(function (d) { partesForo(d).forEach(function (p) { if (foros.indexOf(p) < 0) foros.push(p); }); });
 
       UI.pintar(
         '<h1>Servicio de comidas</h1>' +
@@ -411,7 +413,7 @@ window.ADMIN = (function () {
         if (est.filtro === 'faltan' && ya) return false;
         if (est.filtro === 'entregadas' && !ya) return false;
         if (est.foro === '__sin__' && d.comite) return false;
-        if (est.foro && est.foro !== '__sin__' && d.comite !== est.foro) return false;
+        if (est.foro && est.foro !== '__sin__' && partesForo(d).indexOf(est.foro) < 0) return false;
         if (t && norm(d.nombre + ' ' + d.codigo).indexOf(t) < 0) return false;
         return true;
       });
@@ -433,7 +435,7 @@ window.ADMIN = (function () {
             '<span class="svc-quien"><strong>' + UI.esc(d.nombre) + '</strong> ' +
               '<span class="mono">' + UI.esc(d.codigo) + '</span>' +
               (d.cargo ? ' <span class="chip rol">' + UI.esc(d.cargo) + '</span>' : '') +
-              (d.comite ? ' <small>' + UI.esc(sigla(d.comite)) + '</small>' : '') +
+              (d.comite ? ' <small>' + UI.esc(partesForo(d).map(sigla).join(' + ')) + '</small>' : '') +
               (est.dietaDe[d.id] ? ' <span class="chip ojo">Alergia: ' + UI.esc(est.dietaDe[d.id]) + '</span>' : '') + '</span>' +
             (e
               ? '<span class="svc-estado"><span class="chip si">Recibió a las ' + UI.hora(e.entregado_en) + '</span> ' +
@@ -1120,51 +1122,43 @@ window.ADMIN = (function () {
 
       function nombreForo(s) { return s.comite || s.nombre; }
       function sigla(t) { var m = /\(([^)]+)\)/.exec(t || ''); return m ? m[1] : (t || ''); }
-      function norm(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
-      /* ¿El texto (foro pedido) se refiere a este foro? Por nombre exacto o por sigla. */
-      function esEse(texto, sala) {
-        if (!texto) return false;
-        var a = norm(texto), b = norm(nombreForo(sala));
-        return a === b || norm(sigla(texto)) === norm(sigla(nombreForo(sala)));
-      }
-      function foroAsignado(d) { return d.comite ? PUNTOS.foroDelDelegado(d, salas) : null; }
+      /* Los foros en que participa una persona: uno, o dos si figura en dos hojas de la lista. */
+      function asignados(d) { return d.comite ? PUNTOS.forosDelDelegado(d, salas) : []; }
+      function etiqueta(d) { return asignados(d).map(function (f) { return sigla(nombreForo(f)); }).join(' + '); }
 
       var html = '<h1>Asignar foros</h1>' +
         UI.aviso('info', 'Cómo funciona',
-          'Elige el foro de cada delegado en su fila y se guarda al instante. Quien tenga foro asignado ve ' +
-          'desde su cuenta el chat de su foro y los chairs lo ven al puntuar. También puedes asignar de una vez ' +
-          'la primera opción a todos los que todavía no tienen foro y corregir después a mano.') +
+          'El foro y el país de cada delegado salieron de la Lista de delegados. Aquí puedes corregirlos: elige el foro en su fila ' +
+          'y se guarda al instante. Quien tiene foro ve desde su cuenta el chat de su foro y los chairs lo ven al puntuar; en los ' +
+          'demás foros solo puede leer. Quien figura en dos foros aparece como "En varios foros"; si eliges un foro, se queda solo en ese.') +
         '<section aria-labelledby="t-resumen-foros"><h2 id="t-resumen-foros">Resumen por foro</h2>' +
           '<div id="resumenForos"></div></section>' +
         '<div class="fila-btn">' +
-          '<button type="button" class="btn" id="btnPrimeraOpcion">Asignar la primera opción a quienes no tienen foro</button>' +
           '<button type="button" class="btn sec" id="btnExpForos">Descargar la asignación para Excel</button>' +
         '</div>' +
         '<section aria-labelledby="t-asig"><h2 id="t-asig">Asignación por persona</h2>' +
-        '<label class="campo" for="filtroForos"><span>Buscar por nombre, código o foro</span>' +
+        '<label class="campo" for="filtroForos"><span>Buscar por nombre, código, país o foro</span>' +
           '<input type="search" id="filtroForos" autocomplete="off"></label>' +
         '<p class="solo-lector" role="status" aria-live="polite" id="conteoForos"></p>' +
         '<div class="tabla-env"><table class="datos" id="tablaForos">' +
-        '<caption class="solo-lector">Foro y país de cada delegado, con los foros que pidió</caption>' +
-        '<thead><tr><th scope="col">Código</th><th scope="col">Nombre</th><th scope="col">1ª opción</th>' +
-          '<th scope="col">2ª opción</th><th scope="col">Foro asignado</th><th scope="col">País que representa</th></tr></thead><tbody>';
+        '<caption class="solo-lector">Foro y país de cada persona acreditada</caption>' +
+        '<thead><tr><th scope="col">Código</th><th scope="col">Nombre</th>' +
+          '<th scope="col">Foro asignado</th><th scope="col">País que representa</th></tr></thead><tbody>';
 
       lista.forEach(function (d) {
-        var pv = privDe[d.id] || {};
-        var f = foroAsignado(d);
+        var f = asignados(d);
         html += '<tr data-id="' + d.id + '">' +
           '<td class="mono">' + UI.esc(d.codigo) + '</td>' +
           '<td>' + UI.esc(d.nombre) + (d.cargo ? ' <span class="chip rol">' + UI.esc(d.cargo) + '</span>' : '') + '</td>' +
-          '<td>' + (pv.foro_1 ? UI.esc(sigla(pv.foro_1)) : '<span class="silencio">sin dato</span>') + '</td>' +
-          '<td>' + (pv.foro_2 ? UI.esc(sigla(pv.foro_2)) : '<span class="silencio">sin dato</span>') + '</td>' +
           '<td><label class="solo-lector" for="foro-' + d.id + '">Foro de ' + UI.esc(d.nombre) + '</label>' +
             '<select id="foro-' + d.id + '" data-foro="' + d.id + '">' +
               '<option value="">Sin foro</option>' +
               salas.map(function (s) {
-                return '<option value="' + UI.esc(nombreForo(s)) + '"' + (f && f.id === s.id ? ' selected' : '') + '>' +
+                return '<option value="' + UI.esc(nombreForo(s)) + '"' + (f.length === 1 && f[0].id === s.id ? ' selected' : '') + '>' +
                        UI.esc(sigla(nombreForo(s))) + '</option>';
               }).join('') +
-              (d.comite && !f ? '<option value="' + UI.esc(d.comite) + '" selected>Otro: ' + UI.esc(d.comite) + '</option>' : '') +
+              (f.length > 1 ? '<option value="' + UI.esc(d.comite) + '" selected>En varios foros: ' + UI.esc(etiqueta(d)) + '</option>' : '') +
+              (d.comite && !f.length ? '<option value="' + UI.esc(d.comite) + '" selected>Otro: ' + UI.esc(d.comite) + '</option>' : '') +
             '</select></td>' +
           '<td><label class="solo-lector" for="pais-' + d.id + '">País de ' + UI.esc(d.nombre) + '</label>' +
             '<input type="text" id="pais-' + d.id + '" data-pais="' + d.id + '" value="' + UI.esc(d.pais || '') + '" autocomplete="off"></td>' +
@@ -1175,20 +1169,19 @@ window.ADMIN = (function () {
 
       function resumen() {
         var filas = salas.map(function (s) {
-          var enForo = lista.filter(function (d) { var f = foroAsignado(d); return f && f.id === s.id; });
-          var asig = enForo.filter(function (d) { return !d.cargo; }).length;
-          var mesa = enForo.length - asig;
-          var p1 = lista.filter(function (d) { return esEse((privDe[d.id] || {}).foro_1, s); }).length;
-          var p2 = lista.filter(function (d) { return esEse((privDe[d.id] || {}).foro_2, s); }).length;
-          return '<tr><th scope="row">' + UI.esc(nombreForo(s)) + '</th><td>' + p1 + '</td><td>' + p2 + '</td><td><strong>' + asig + '</strong></td><td>' + mesa + '</td></tr>';
+          var en = lista.filter(function (d) { return asignados(d).some(function (f) { return f.id === s.id; }); });
+          var mesa = en.filter(function (d) { return d.cargo; }).length;
+          return '<tr><th scope="row">' + UI.esc(nombreForo(s)) + '</th><td><strong>' + (en.length - mesa) + '</strong></td><td>' + mesa + '</td></tr>';
         });
-        var sin = lista.filter(function (d) { return !d.cargo && !foroAsignado(d); }).length;
+        var sin = lista.filter(function (d) { return !d.cargo && !asignados(d).length; }).length;
+        var varios = lista.filter(function (d) { return asignados(d).length > 1; }).length;
         UI.q('#resumenForos').innerHTML =
-          '<div class="tabla-env"><table class="datos"><caption class="solo-lector">Cuántas personas pidieron y tienen cada foro</caption>' +
-          '<thead><tr><th scope="col">Foro</th><th scope="col">La pidieron 1ª</th><th scope="col">La pidieron 2ª</th><th scope="col">Delegados asignados</th><th scope="col">Autoridades de mesa</th></tr></thead><tbody>' +
+          '<div class="tabla-env"><table class="datos"><caption class="solo-lector">Cuántas personas tiene cada foro</caption>' +
+          '<thead><tr><th scope="col">Foro</th><th scope="col">Delegados</th><th scope="col">Autoridades de mesa</th></tr></thead><tbody>' +
           filas.join('') + '</tbody></table></div>' +
           '<p>' + (sin === 0 ? 'Todas las personas tienen foro asignado.' :
-            (sin === 1 ? 'Queda 1 persona sin foro.' : 'Quedan ' + sin + ' personas sin foro.')) + '</p>';
+            (sin === 1 ? 'Queda 1 persona sin foro.' : 'Quedan ' + sin + ' personas sin foro.')) +
+            (varios ? ' ' + (varios === 1 ? '1 delegado participa en más de un foro.' : varios + ' delegados participan en más de un foro.') : '') + '</p>';
       }
       resumen();
 
@@ -1202,7 +1195,7 @@ window.ADMIN = (function () {
             d.comite = valor;
             sel.disabled = false;
             resumen();
-            UI.tostada(valor ? d.nombre + ': ' + sigla(valor) + '.' : d.nombre + ' quedó sin foro.', 'ok');
+            UI.tostada(valor ? d.nombre + ': ' + (etiqueta(d) || sigla(valor)) + '.' : d.nombre + ' quedó sin foro.', 'ok');
           }).catch(function (e) { sel.disabled = false; UI.tostada(UI.explicarError(e), 'err'); });
         });
       });
@@ -1222,8 +1215,7 @@ window.ADMIN = (function () {
         var t = this.value.toLowerCase(), n = 0;
         UI.qq('#tablaForos tbody tr').forEach(function (tr) {
           var d = lista.filter(function (x) { return x.id === tr.dataset.id; })[0];
-          var f = d ? foroAsignado(d) : null;
-          var texto = (tr.textContent + ' ' + (f ? nombreForo(f) : '')).toLowerCase();
+          var texto = (tr.textContent + ' ' + (d ? d.pais || '' : '') + ' ' + (d ? asignados(d).map(nombreForo).join(' ') : '')).toLowerCase();
           var ok = texto.indexOf(t) >= 0;
           tr.style.display = ok ? '' : 'none';
           if (ok) n++;
@@ -1231,34 +1223,13 @@ window.ADMIN = (function () {
         conteo.textContent = n + (n === 1 ? ' persona encontrada.' : ' personas encontradas.');
       });
 
-      /* La primera opción a todos los que no tienen foro, un foro por vez. */
-      UI.q('#btnPrimeraOpcion').addEventListener('click', function () {
-        var porForo = {};
-        lista.forEach(function (d) {
-          if (foroAsignado(d) || d.cargo) return;
-          var pv = privDe[d.id] || {};
-          var s = salas.filter(function (x) { return esEse(pv.foro_1, x); })[0];
-          if (s) (porForo[s.id] = porForo[s.id] || { sala: s, ids: [] }).ids.push(d.id);
-        });
-        var grupos = Object.keys(porForo).map(function (k) { return porForo[k]; });
-        var total = grupos.reduce(function (n, g) { return n + g.ids.length; }, 0);
-        if (!total) { UI.tostada('No hay nadie pendiente con una primera opción registrada.', 'err'); return; }
-        if (!UI.confirmar('Vas a asignar la primera opción a ' + total + (total === 1 ? ' persona' : ' personas') +
-                          ' que todavía no tienen foro. Después puedes corregir cada caso. Confirmas?')) return;
-        var b = UI.q('#btnPrimeraOpcion');
-        b.disabled = true; b.textContent = 'Asignando, un momento';
-        Promise.all(grupos.map(function (g) { return DB.delegados.actualizarVarios(g.ids, { comite: nombreForo(g.sala) }); }))
-          .then(function () { UI.tostada(total + (total === 1 ? ' persona asignada.' : ' personas asignadas.'), 'ok'); foros(); })
-          .catch(function (e) { UI.tostada(UI.explicarError(e), 'err'); b.disabled = false; b.textContent = 'Asignar la primera opción a quienes no tienen foro'; });
-      });
-
       UI.q('#btnExpForos').addEventListener('click', function () {
         var filas = lista.map(function (d) {
           var pv = privDe[d.id] || {};
-          return [d.codigo, d.nombre, pv.tipo || '', pv.foro_1 || '', pv.foro_2 || '', d.comite || '', d.pais || ''];
+          return [d.codigo, d.nombre, pv.tipo || '', d.cargo || '', d.comite || '', d.pais || ''];
         });
         UI.descargar('intermun-asignacion-de-foros.csv',
-          UI.aCSV(['Código', 'Nombre', 'Tipo', 'Foro 1ª opción', 'Foro 2ª opción', 'Foro asignado', 'País'], filas));
+          UI.aCSV(['Código', 'Nombre', 'Tipo', 'Cargo', 'Foro asignado', 'País'], filas));
         UI.tostada('Asignación descargada.', 'ok');
       });
     }).catch(function (e) {
@@ -1573,7 +1544,7 @@ window.ADMIN = (function () {
 
       var html = '<h1>Salas de chat</h1>' +
         '<p>Cada sala es un espacio de conversación con archivos PDF. La sala general es para todas las personas ' +
-        'acreditadas; las demás corresponden a los diez foros oficiales de InterMUN. Puedes cerrarlas temporalmente ' +
+        'acreditadas; las demás corresponden a los seis foros de InterMUN. Puedes cerrarlas temporalmente ' +
         'o crear una adicional si el Secretariado lo decide.</p>';
 
       html += '<details class="acordeon"><summary>Crear una sala</summary><div class="cuerpo">' +

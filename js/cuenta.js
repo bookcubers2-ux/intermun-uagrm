@@ -60,7 +60,9 @@ window.CUENTA = (function () {
   function pintar(yo, c, salas) {
     var foros = PUNTOS.soloForos(salas);
     var general = salas.filter(function (s) { return s.tipo === 'general'; })[0] || null;
-    var miForo = c.comite ? PUNTOS.foroDelDelegado(c, foros) : null;
+    var misForos = c.comite ? PUNTOS.forosDelDelegado(c, foros) : [];   /* casi siempre uno; quien figura en dos hojas, dos */
+    var miForo = misForos[0] || null;
+    var siglas = misForos.map(function (f) { return sigla(f.comite || f.nombre); });
     var url = urlCredencial(c.codigo);
 
     var esAutoridad = !!c.cargo;
@@ -76,28 +78,28 @@ window.CUENTA = (function () {
       html += '<p>Eres <strong>' + UI.esc(c.cargo) + '</strong> de <strong>' + UI.esc(c.comite) + '</strong>.</p>';
     }
     if (c.comite) {
-      if (!esAutoridad) {
+      if (!esAutoridad && misForos.length > 1) {
+        html += '<p>Participas en <strong>' + misForos.length + ' foros</strong>: ' + UI.esc(siglas.join(' y ')) + '.' +
+          (c.pais ? ' Representas a <strong>' + UI.esc(c.pais) + '</strong>.' : '') + '</p>';
+      } else if (!esAutoridad) {
         html += '<p>Estás en <strong>' + UI.esc(c.comite) + '</strong>' +
           (c.pais ? ', representando a <strong>' + UI.esc(c.pais) + '</strong>.' : '. Tu país todavía se está asignando.') + '</p>';
       }
-      html += '<p>Puedes escribir y compartir archivos en el chat de tu foro y en la sala general. ' +
-        'En los demás foros puedes leer los mensajes y ver los puntajes, pero no participar.</p>';
-      if (miForo) {
-        html += '<div class="fila-btn">' +
-          '<a class="btn" href="#/chat/' + encodeURIComponent(miForo.clave) + '">Abrir el chat de mi foro</a>' +
-          '<a class="btn sec" href="#/puntuaciones/' + encodeURIComponent(miForo.clave) + '">Ver el ranking del foro</a>' +
-        '</div>';
+      html += '<p>Puedes escribir y compartir archivos en ' + (misForos.length > 1 ? 'el chat de cada uno de tus foros' : 'el chat de tu foro') +
+        ' y en la sala general. En los demás foros puedes leer los mensajes y ver los puntajes, pero no participar.</p>';
+      if (misForos.length) {
+        html += '<div class="fila-btn">' + misForos.map(function (f, i) {
+          return '<a class="btn' + (i ? ' sec' : '') + '" href="#/chat/' + encodeURIComponent(f.clave) + '">Abrir el chat ' +
+                 (misForos.length > 1 ? 'de ' + UI.esc(siglas[i]) : 'de mi foro') + '</a>';
+        }).join('') + '</div><div class="fila-btn">' + misForos.map(function (f, i) {
+          return '<a class="btn sec" href="#/puntuaciones/' + encodeURIComponent(f.clave) + '">Ranking ' +
+                 (misForos.length > 1 ? 'de ' + UI.esc(siglas[i]) : 'del foro') + '</a>';
+        }).join('') + '</div>';
       }
     } else {
       html += UI.aviso('info', 'Tu foro todavía no está asignado. ',
         'El Secretariado asigna los foros y, cuando lo haga, aparece aquí y se abre el chat de tu foro. ' +
         'Mientras tanto puedes usar la sala general.');
-      if (!esAutoridad && (c.foro_1 || c.foro_2)) {
-        html += '<p>Lo que pediste al inscribirte:</p><ul>' +
-          (c.foro_1 ? '<li>Primera opción: <strong>' + UI.esc(c.foro_1) + '</strong></li>' : '') +
-          (c.foro_2 ? '<li>Segunda opción: <strong>' + UI.esc(c.foro_2) + '</strong></li>' : '') +
-        '</ul>';
-      }
     }
     html += '</section>';
 
@@ -120,8 +122,10 @@ window.CUENTA = (function () {
     ];
     if (!esAutoridad) modulos.push({ href: '#/mi-desempeno', ico: '&#127942;', t: 'Mi desempeño',
       d: 'Tus puntos por criterio, tu puesto en el foro y el detalle de cada puntuación, en vivo.' });
-    if (miForo) modulos.push({ href: '#/chat/' + encodeURIComponent(miForo.clave), ico: '&#128172;', t: 'Chat de mi foro',
-      d: 'La sala de ' + sigla(miForo.comite || miForo.nombre) + ': conversa con tu comité y comparte archivos PDF.' });
+    misForos.forEach(function (f, i) {
+      modulos.push({ href: '#/chat/' + encodeURIComponent(f.clave), ico: '&#128172;', t: 'Chat de ' + (misForos.length > 1 ? siglas[i] : 'mi foro'),
+        d: 'La sala de ' + siglas[i] + ': conversa con tu comité y comparte archivos PDF.' });
+    });
     if (general) modulos.push({ href: '#/chat/' + encodeURIComponent(general.clave), ico: '&#127760;', t: 'Sala general',
       d: 'El chat de todas las personas acreditadas en InterMUN.' });
     modulos.push(

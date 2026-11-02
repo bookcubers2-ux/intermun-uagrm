@@ -45,8 +45,14 @@ var PUNTOS = (function () {
     return (salas || []).filter(function (s) { return s.tipo !== 'general'; });
   }
 
+  /* Todos los foros en que participa una persona: casi siempre uno, pero quien figura en dos hojas de la
+     lista de delegados participa en los dos (su "comité" los nombra separados por punto y coma). */
+  function forosDelDelegado(d, foros) {
+    return foros.filter(function (f) { return coincide(f, d.comite); });
+  }
+
   function foroDelDelegado(d, foros) {
-    return foros.filter(function (f) { return coincide(f, d.comite); })[0] || null;
+    return forosDelDelegado(d, foros)[0] || null;
   }
 
   /* Solo las delegaciones: las autoridades de mesa (presidente, moderador, oficial) tienen foro
@@ -275,15 +281,18 @@ var PUNTOS = (function () {
      Devuelve HTML listo; la credencial ya cargo delegado, foros y
      puntos del delegado y del foro.
      ================================================================ */
-  function seccionCredencial(delegado, foros, misPuntos, puntosForo, delegadosForo) {
-    var foro = foroDelDelegado(delegado, foros);
-    var html = '<section aria-labelledby="t-puntos"><h2 id="t-puntos">Mis puntuaciones</h2>';
+  function seccionCredencial(delegado, foros, misPuntos, puntosForo, delegadosForo, op) {
+    op = op || {};
+    var foro = op.foro || foroDelDelegado(delegado, foros);
+    var idT = 't-puntos' + (op.sufijo || '');
+    var html = '<section aria-labelledby="' + idT + '"><h2 id="' + idT + '">' + UI.esc(op.titulo || 'Mis puntuaciones') + '</h2>';
 
     if (!foro) {
       html += '<p>Tu credencial no tiene un foro asignado todavía. Cuando el Secretariado lo asigne, aquí verás tus puntos.</p></section>';
       return html;
     }
 
+    if (op.foro) misPuntos = misPuntos.filter(function (p) { return p.foro === foro.clave; });   /* los puntos de este foro */
     var total = misPuntos.reduce(function (s, p) { return s + (Number(p.puntos) || 0); }, 0);
     var filas = ranking(delegadosForo, puntosForo);
     var mia = filas.filter(function (f) { return f.delegado.id === delegado.id; })[0];
@@ -528,6 +537,7 @@ var PUNTOS = (function () {
     seccionCredencial: seccionCredencial,
     soloForos: soloForos,
     foroDelDelegado: foroDelDelegado,
+    forosDelDelegado: forosDelDelegado,
     delegadosDelForo: delegadosDelForo
   };
 })();

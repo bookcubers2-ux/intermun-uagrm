@@ -8,7 +8,7 @@
    comidas siempre tiene que trabajar con datos frescos.
    ==================================================================== */
 
-var CACHE = 'intermun-v20-foros-exclusivos';
+var CACHE = 'intermun-v21-seis-foros';
 
 var ARCHIVOS = [
   './',

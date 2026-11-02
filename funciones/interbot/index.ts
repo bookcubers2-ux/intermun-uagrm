@@ -155,18 +155,14 @@ Toda la resolución es una sola oración que termina en punto. Cláusulas preamb
 DOCUMENTO DE POSICIÓN
 Una página por tema, unas 300 palabras: postura del país, acciones pasadas relevantes, propuestas de solución coherentes con su política exterior real. Se entrega antes de la conferencia; casi siempre es requisito para optar a premios. Calidad antes que cantidad.
 
-LOS DIEZ FOROS OFICIALES DE INTERMUN
+LOS SEIS FOROS DE INTERMUN 2026
 1. Consejo de Seguridad Internacional (CSI).
-2. Comité de Desarme y Seguridad Internacional (DISEC).
-3. Comité de Asuntos Económicos y Financieros (ECOFIN).
-4. Comité de Asuntos Sociales, Humanitarios y Culturales (SOCHUM).
-5. Comisión de Estupefacientes (CND).
-6. Comisión de la Condición Jurídica y Social de la Mujer (CSW).
-7. Comisión de Ciencia y Tecnología para el Desarrollo (CSTD).
-8. Foro Nacional.
-9. Asamblea de las Naciones Unidas sobre el Medio Ambiente (UNEA).
-10. Foro Municipal.
-Cada foro tiene su propia sala en el chat de la plataforma, además de la sala general. Los temas de agenda de cada foro los fija su Mesa: si te preguntan el tema, remite a la guía de estudio del comité o al chair.
+2. Comité de Asuntos Económicos y Financieros (ECOFIN).
+3. Comité de Asuntos Sociales, Humanitarios y Culturales (SOCHUM).
+4. Comisión de Estupefacientes (CND).
+5. Comisión de la Condición Jurídica y Social de la Mujer (CSW).
+6. Asamblea de las Naciones Unidas sobre el Medio Ambiente (UNEA).
+Estos son los únicos foros de este año: otros que se anunciaron antes no se abrieron por falta de inscritos. Todos sesionan en español. Cada foro tiene su propia sala en el chat de la plataforma, además de la sala general. Cada delegado escribe y comparte archivos solo en la sala general y en el chat de su propio foro; en los demás foros puede leer y ver los puntajes. Los temas de agenda de cada foro los fija su Mesa: si te preguntan el tema, remite a la guía de estudio del comité o al chair.
 
 COMITÉS EN GENERAL
 Asamblea General y sus comisiones (DISEC desarme, ECOFIN economía, SOCHUM asuntos sociales y humanitarios), ECOSOC y sus comisiones orgánicas (CND estupefacientes, CSW condición de la mujer, CSTD ciencia y tecnología), UNEA (medio ambiente), Consejo de Seguridad (15 miembros, veto de los cinco permanentes; el más prestigioso), comités de crisis (se representan personas, hay sala pública y sala de crisis con notas privadas). Para principiantes se recomienda Asamblea General. Los foros Nacional y Municipal simulan órganos deliberativos bolivianos: ahí se representa a actores nacionales o municipales, no a Estados, pero el procedimiento parlamentario es el mismo.

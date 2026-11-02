@@ -410,3 +410,9 @@ Presidentes, moderadores y oficiales de conferencia son personas acreditadas com
 - **Quién queda fuera de la regla:** el Secretariado (administrador) escribe en todas con `chat_enviar_secretariado`.
 - **En la pantalla:** la lista de salas marca "Tu foro: puedes escribir" y "Solo lectura"; en un foro ajeno no aparece el cuadro de mensaje. El foro se vuelve a leer al abrir el chat, así que un cambio del Secretariado se refleja sin que el delegado vuelva a iniciar sesión.
 - **Asignación:** el foro y el país de cada delegado salen de la "Lista de delegados" (una hoja por foro) con `python asignar_foros.py` y `python aplicar.py --foros` desde la carpeta privada `CARGA-DELEGADOS-2026`. Si se vuelve a correr el instalador `INSTALACION-INTERBOT-Y-CHAT.sql`, correr después este archivo (el otro restaura la subida sin regla de foro).
+
+### Los seis foros
+
+InterMUN 2026 sesiona en **seis foros**: CSI, ECOFIN, SOCHUM, CND, CSW y UNEA. DISEC, CSTD, Foro Nacional y Foro Municipal se retiraron por falta de inscritos: no tienen sala de chat ni ficha en "Comités y tópicos". Para volver a abrir uno, crea su sala en **Salas de chat** (panel de control) y agrega su ficha en `js/contenido.js`.
+
+**Un delegado en más de un foro:** si la Lista de delegados lo incluye en dos hojas, queda asignado a los dos (`delegados.comite` guarda los nombres separados por punto y coma) y puede escribir en cada uno; el ranking lo cuenta en los dos.

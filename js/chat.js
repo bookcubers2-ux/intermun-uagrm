@@ -74,10 +74,9 @@ window.CHAT = (function () {
       if (!salas.length) {
         html += UI.vacio('&#128172;', 'Todavía no hay salas abiertas. El Secretariado las habilita desde el panel de control.');
       } else {
-        var propia = yo ? salas.filter(function (s) { return esMiForo(s, yo.comite); })[0] : null;
         html += '<h2>Salas disponibles</h2><ul class="rejilla" role="list">';
         salas.forEach(function (s) {
-          var esPropia = propia && propia.id === s.id;
+          var esPropia = !!yo && !yo.secretariado && s.tipo !== 'general' && esMiForo(s, yo.comite);
           html += '<li><a class="modulo" href="#/chat/' + encodeURIComponent(s.clave) + '">' +
                     UI.icono(s.tipo === 'general' ? '&#127760;' : '&#128172;') +
                     '<strong>' + UI.esc(s.nombre) +

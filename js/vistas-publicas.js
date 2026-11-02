@@ -76,7 +76,7 @@ window.VISTAS = (function () {
         { href: '#/guia',          ico: '&#128218;', t: 'Guía del delegado',
           d: 'Protocolo, formas de tratamiento, vestimenta y consejos prácticos.' },
         { href: '#/comites',       ico: '&#127760;', t: 'Comités y tópicos',
-          d: 'Los diez foros oficiales de InterMUN 2026 con sus tópicos. Uno de ellos sesiona en inglés.' },
+          d: 'Los seis foros de InterMUN 2026 con sus tópicos.' },
         { href: '#/puntuaciones',  ico: '&#128202;', t: 'Ranking por foro',
           d: 'El ranking público de cada foro, actualizado en vivo cuando los chairs puntúan.' },
         { href: '#/datos',         ico: '&#128161;', t: 'Curiosidades',
@@ -203,12 +203,9 @@ window.VISTAS = (function () {
      ================================================================ */
   function comites() {
     var html = '<h1>Comités y tópicos oficiales</h1>' +
-      '<p>InterMUN 2026 sesiona en diez foros, del 4 al 6 de noviembre. Cada delegación debate los tópicos ' +
+      '<p>InterMUN 2026 sesiona en seis foros, del 4 al 6 de noviembre. Cada delegación debate los tópicos ' +
         'de su foro desde la política exterior del país que representa. La asignación de foro y país la hace ' +
-        'la Secretaría Académica al confirmar la inscripción.</p>' +
-      UI.aviso('info', 'Un comité en inglés',
-        'La Primera Comisión (DISEC) sesiona íntegramente en inglés: discursos, mociones, documento de posición y ' +
-        'resoluciones. Los otros nueve foros sesionan en español.');
+        'la Secretaría Académica, y la ves en <a href="#/mi-cuenta">Mi cuenta</a>.</p>';
 
     var secciones = [];
     C.comites.forEach(function (c) { if (secciones.indexOf(c.seccion) < 0) secciones.push(c.seccion); });
@@ -237,9 +234,9 @@ window.VISTAS = (function () {
       html += '</section>';
     });
 
-    html += UI.aviso('info', 'Cómo se asigna el foro',
-      'Se toma como prioritaria la primera opción marcada en el formulario de inscripción. Si ese foro ya está completo, ' +
-      'se asigna la segunda opción u otro foro. El país se asigna según la experiencia previa en modelos y no se cambia.');
+    html += UI.aviso('info', 'Cómo funcionan los foros en la plataforma',
+      'Cada delegado escribe y comparte archivos en el chat de su foro y en la sala general. En los demás foros puede ' +
+      'leer los mensajes y ver los puntajes, pero no participar.');
     UI.pintar(html);
   }
 
@@ -821,18 +818,18 @@ window.VISTAS = (function () {
       boton: 'Ver mi desempeño'
     }, function (yo) {
       UI.cargando('Cargando tu desempeño');
-      var delegado = null, foros = [], misPuntos = [], puntosForo = [], delegadosForo = [], miForo = null;
+      var delegado = null, foros = [], misPuntos = [], datos = [];   /* datos: un elemento por foro en que participa */
 
       function cargar() {
-        return Promise.all([DB.chat.salasActivas(), DB.puntos.deDelegado(delegado.id)])
+        return Promise.all([DB.chat.salasActivas(), DB.puntos.deDelegado(delegado.id), DB.delegados.listar()])
           .then(function (r) {
             foros = PUNTOS.soloForos(r[0]);
             misPuntos = r[1];
-            miForo = PUNTOS.foroDelDelegado(delegado, foros);
-            if (!miForo) { puntosForo = []; delegadosForo = []; return; }
-            return Promise.all([DB.puntos.deForo(miForo.clave), DB.delegados.listar()]).then(function (q) {
-              puntosForo = q[0];
-              delegadosForo = PUNTOS.delegadosDelForo(q[1], miForo);
+            var mios = PUNTOS.forosDelDelegado(delegado, foros);
+            return Promise.all(mios.map(function (f) { return DB.puntos.deForo(f.clave); })).then(function (pf) {
+              datos = mios.map(function (f, i) {
+                return { foro: f, puntosForo: pf[i], delegadosForo: PUNTOS.delegadosDelForo(r[2], f) };
+              });
             });
           });
       }
@@ -859,7 +856,12 @@ window.VISTAS = (function () {
           '<h1>Mi desempeño</h1>' +
           IDENT.lineaIdentidad(yo, 'mdCambiar') +
           tarjetaCredencial(delegado) +
-          PUNTOS.seccionCredencial(delegado, foros, misPuntos, puntosForo, delegadosForo) +
+          (datos.length
+            ? datos.map(function (d) {
+                return PUNTOS.seccionCredencial(delegado, foros, misPuntos, d.puntosForo, d.delegadosForo,
+                  { foro: d.foro, sufijo: '-' + d.foro.clave, titulo: datos.length > 1 ? 'Mis puntuaciones en ' + (/\(([^)]+)\)/.exec(d.foro.comite || d.foro.nombre) || [0, d.foro.nombre])[1] : '' });
+              }).join('')
+            : PUNTOS.seccionCredencial(delegado, foros, misPuntos, [], [])) +
           '<div class="fila-btn"><a class="btn sec" href="#/mis-comidas">Ver mis comidas</a><a class="btn sec" href="#/">Inicio</a></div>',
           { transitorio: !!transitorio });
         UI.q('#mdCambiar').addEventListener('click', function () { DB.identidad.limpiar(); miDesempeno(); });

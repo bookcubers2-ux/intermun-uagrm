@@ -21,7 +21,7 @@ create table if not exists public.puntuaciones (
 );
 
 comment on table  public.puntuaciones is 'Puntajes otorgados a los delegados en cada foro. Lectura publica, escritura de staff.';
-comment on column public.puntuaciones.foro is 'Clave del foro, la misma que la sala de chat: csi, disec, ecofin, sochum, cstd, unea, csw, cnd, foro-nacional, foro-municipal';
+comment on column public.puntuaciones.foro is 'Clave del foro, la misma que la sala de chat: csi, ecofin, sochum, unea, csw, cnd';
 comment on column public.puntuaciones.criterio is 'Clave del criterio definido en js/config.js (CRITERIOS_PUNTAJE)';
 
 create index if not exists idx_puntuaciones_delegado on public.puntuaciones (delegado_id);
