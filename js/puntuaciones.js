@@ -49,8 +49,12 @@ var PUNTOS = (function () {
     return foros.filter(function (f) { return coincide(f, d.comite); })[0] || null;
   }
 
+  /* Solo las delegaciones: las autoridades de mesa (presidente, moderador, oficial) tienen foro
+     pero no se puntúan a sí mismas. */
   function delegadosDelForo(lista, foro) {
-    return lista.filter(function (d) { return d.activo !== false && coincide(foro, d.comite); });
+    return lista.filter(function (d) {
+      return d.activo !== false && (d.rol || 'delegado') === 'delegado' && coincide(foro, d.comite);
+    });
   }
 
   function num(n) {

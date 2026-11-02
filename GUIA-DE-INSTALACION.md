@@ -329,6 +329,7 @@ sistema/
 ├── INSTALACION-CUENTAS-DELEGADOS.sql Datos privados, login por correo o ID, mi cuenta
 ├── INSTALACION-SECRETARIADO-CHAT.sql El administrador escribe en los foros como Secretariado
 ├── INSTALACION-HORARIOS-COMIDAS.sql  Hora de cada comida
+├── INSTALACION-AUTORIDADES.sql       Cargo de las autoridades de mesa
 ```
 
 Para cambiar textos del portal (reglas, glosario, consejos, curiosidades), edita `js/contenido.js`. Está escrito para que se pueda modificar sin saber programar.
@@ -385,3 +386,15 @@ La pantalla **Servicio de comidas** (`#/escanear`, administradores y operadores)
 - **En vivo para el delegado:** al registrar o deshacer una entrega, el servicio manda un aviso por el canal `entrega-<código>` (Realtime Broadcast, sin datos personales) y el teléfono del delegado vuelve a pedir sus comidas a la base. Si el aviso se pierde, su pantalla se actualiza sola cada 10 segundos. Las entregas siguen siendo privadas.
 
 **Horario oficial de las comidas (2026-11-01):** solo el 5 y el 6 de noviembre (Día 2 y Día 3). Cada día, Merienda 1 a las 10:00, Almuerzo a las 12:00 y Merienda 2 a las 14:30: seis comidas. Las comidas que no se usan quedan ocultas (se pueden reactivar desde **Comidas del evento**, donde también se cambia la hora de cada una). El delegado ve en **Mis comidas** la hora de cada comida y cuál es la que sigue.
+
+## Autoridades de mesa
+
+Presidentes, moderadores y oficiales de conferencia son personas acreditadas como cualquier delegado (QR, cuenta con correo o ID y carnet, comidas, chat de su foro), con un **cargo** y un **foro ya asignado**. Se instalan con `INSTALACION-AUTORIDADES.sql` y se cargan desde la carpeta privada `CARGA-DELEGADOS-2026` junto con los delegados (`python generar.py` y `python aplicar.py`).
+
+- Su QR (`InterMUN/QR-AUTORIDADES/`) lleva debajo del código su **cargo en una franja azul con letra blanca muy grande**, y el foro.
+- Tienen `rol = chair` y el cargo en `delegados.cargo` (público, como el resto de la credencial). En su credencial figura el cargo en lugar del rol.
+- **No entran al ranking ni a Puntuar**: solo se puntúa a quien tiene rol `delegado`.
+- En **Mi cuenta** ven "Eres Presidente de ..." y no ven "Mi desempeño".
+- En **Asignar foros** se cuentan aparte (columna *Autoridades de mesa*) y la "primera opción a todos" no las toca.
+- Comen como todos: el Servicio de comidas las incluye en los totales y en el foro, y avisa su alergia.
+- Si se vuelve a correr `INSTALACION-CUENTAS-DELEGADOS.sql`, correr después `INSTALACION-AUTORIDADES.sql` (recrea `mi_cuenta` con el cargo).

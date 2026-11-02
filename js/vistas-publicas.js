@@ -576,7 +576,7 @@ window.VISTAS = (function () {
     return '<div class="credencial">' +
       '<p class="cred-cod">Código ' + UI.esc(delegado.codigo) + '</p>' +
       '<h2>' + UI.esc(delegado.nombre) + '</h2>' +
-      '<p><span class="chip-cred">' + UI.esc(delegado.rol || 'delegado') + '</span></p>' +
+      '<p><span class="chip-cred">' + UI.esc(delegado.cargo || delegado.rol || 'delegado') + '</span></p>' +
       '<div class="cred-datos">' +
         dato('País que representa', delegado.pais) +
         dato('Comité', delegado.comite) +

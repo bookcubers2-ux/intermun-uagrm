@@ -63,6 +63,7 @@ window.CUENTA = (function () {
     var miForo = c.comite ? PUNTOS.foroDelDelegado(c, foros) : null;
     var url = urlCredencial(c.codigo);
 
+    var esAutoridad = !!c.cargo;
     var html = '<h1>Mi cuenta</h1>' +
       '<p class="silencio">Entraste como <strong>' + UI.esc(c.nombre) + '</strong> ' +
         '<span class="mono">(' + UI.esc(c.codigo) + ')</span>. ' +
@@ -71,20 +72,25 @@ window.CUENTA = (function () {
 
     /* ---- Foro ---- */
     html += '<section aria-labelledby="t-cu-foro"><h2 id="t-cu-foro">Mi foro</h2>';
+    if (c.comite && esAutoridad) {
+      html += '<p>Eres <strong>' + UI.esc(c.cargo) + '</strong> de <strong>' + UI.esc(c.comite) + '</strong>.</p>';
+    }
     if (c.comite) {
-      html += '<p>Estás en <strong>' + UI.esc(c.comite) + '</strong>' +
-        (c.pais ? ', representando a <strong>' + UI.esc(c.pais) + '</strong>.' : '. Tu país todavía se está asignando.') + '</p>';
+      if (!esAutoridad) {
+        html += '<p>Estás en <strong>' + UI.esc(c.comite) + '</strong>' +
+          (c.pais ? ', representando a <strong>' + UI.esc(c.pais) + '</strong>.' : '. Tu país todavía se está asignando.') + '</p>';
+      }
       if (miForo) {
         html += '<div class="fila-btn">' +
           '<a class="btn" href="#/chat/' + encodeURIComponent(miForo.clave) + '">Abrir el chat de mi foro</a>' +
-          '<a class="btn sec" href="#/puntuaciones/' + encodeURIComponent(miForo.clave) + '">Ver el ranking de mi foro</a>' +
+          '<a class="btn sec" href="#/puntuaciones/' + encodeURIComponent(miForo.clave) + '">Ver el ranking del foro</a>' +
         '</div>';
       }
     } else {
       html += UI.aviso('info', 'Tu foro todavía no está asignado. ',
         'El Secretariado asigna los foros y, cuando lo haga, aparece aquí y se abre el chat de tu foro. ' +
         'Mientras tanto puedes usar la sala general.');
-      if (c.foro_1 || c.foro_2) {
+      if (!esAutoridad && (c.foro_1 || c.foro_2)) {
         html += '<p>Lo que pediste al inscribirte:</p><ul>' +
           (c.foro_1 ? '<li>Primera opción: <strong>' + UI.esc(c.foro_1) + '</strong></li>' : '') +
           (c.foro_2 ? '<li>Segunda opción: <strong>' + UI.esc(c.foro_2) + '</strong></li>' : '') +
@@ -109,9 +115,9 @@ window.CUENTA = (function () {
     var modulos = [
       { href: '#/mis-comidas',  ico: '&#127869;', t: 'Mis comidas',
         d: 'Tus comidas del evento, con su hora: cuáles ya recibiste y cuál sigue.' },
-      { href: '#/mi-desempeno', ico: '&#127942;', t: 'Mi desempeño',
-        d: 'Tus puntos por criterio, tu puesto en el foro y el detalle de cada puntuación, en vivo.' }
     ];
+    if (!esAutoridad) modulos.push({ href: '#/mi-desempeno', ico: '&#127942;', t: 'Mi desempeño',
+      d: 'Tus puntos por criterio, tu puesto en el foro y el detalle de cada puntuación, en vivo.' });
     if (miForo) modulos.push({ href: '#/chat/' + encodeURIComponent(miForo.clave), ico: '&#128172;', t: 'Chat de mi foro',
       d: 'La sala de ' + sigla(miForo.comite || miForo.nombre) + ': conversa con tu comité y comparte archivos PDF.' });
     if (general) modulos.push({ href: '#/chat/' + encodeURIComponent(general.clave), ico: '&#127760;', t: 'Sala general',
@@ -130,7 +136,7 @@ window.CUENTA = (function () {
       '<li>Cuenta: <strong>' + UI.esc(c.correo || 'sin correo registrado') + '</strong> o tu ID <strong>' + UI.esc(c.codigo) + '</strong></li>' +
       '<li>Contraseña: tu número de carnet</li>' +
       (c.celular ? '<li>Celular registrado: ' + UI.esc(c.celular) + '</li>' : '') +
-      (c.tipo ? '<li>Inscripción: ' + (c.tipo === 'externo' ? 'participante externo' : 'estudiante de la UAGRM') + '</li>' : '') +
+      (c.tipo ? '<li>Inscripción: ' + (c.tipo === 'autoridad' ? 'autoridad de mesa' : (c.tipo === 'externo' ? 'participante externo' : 'estudiante de la UAGRM')) + '</li>' : '') +
       '<li>Alergia o restricción alimentaria: <strong>' + UI.esc(c.alergia || 'ninguna registrada') + '</strong></li>' +
     '</ul><p class="silencio">Si algún dato está mal, avísale al Secretariado en la mesa de acreditación.</p></section>';
 

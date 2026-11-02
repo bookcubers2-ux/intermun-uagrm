@@ -432,6 +432,7 @@ window.ADMIN = (function () {
           return '<li class="svc-fila' + (e ? ' svc-hecha' : '') + '">' +
             '<span class="svc-quien"><strong>' + UI.esc(d.nombre) + '</strong> ' +
               '<span class="mono">' + UI.esc(d.codigo) + '</span>' +
+              (d.cargo ? ' <span class="chip rol">' + UI.esc(d.cargo) + '</span>' : '') +
               (d.comite ? ' <small>' + UI.esc(sigla(d.comite)) + '</small>' : '') +
               (est.dietaDe[d.id] ? ' <span class="chip ojo">Alergia: ' + UI.esc(est.dietaDe[d.id]) + '</span>' : '') + '</span>' +
             (e
@@ -935,6 +936,7 @@ window.ADMIN = (function () {
         html += '<tr>' +
           '<td class="mono"><a href="#/c/' + encodeURIComponent(d.codigo) + '">' + UI.esc(d.codigo) + '</a></td>' +
           '<td>' + UI.esc(d.nombre) +
+            (d.cargo ? ' <span class="chip rol">' + UI.esc(d.cargo) + '</span>' : '') +
             (pv.tipo === 'externo' ? ' <span class="chip rol">externo</span>' : '') +
             (dietaDe[d.id] ? ' <span class="chip ojo">Alergia: ' + UI.esc(dietaDe[d.id]) + '</span>' : '') + '</td>' +
           '<td>' + (pv.correo ? UI.esc(pv.correo) : '<span class="silencio">sin correo, entra con el ID</span>') + '</td>' +
@@ -1152,7 +1154,7 @@ window.ADMIN = (function () {
         var f = foroAsignado(d);
         html += '<tr data-id="' + d.id + '">' +
           '<td class="mono">' + UI.esc(d.codigo) + '</td>' +
-          '<td>' + UI.esc(d.nombre) + '</td>' +
+          '<td>' + UI.esc(d.nombre) + (d.cargo ? ' <span class="chip rol">' + UI.esc(d.cargo) + '</span>' : '') + '</td>' +
           '<td>' + (pv.foro_1 ? UI.esc(sigla(pv.foro_1)) : '<span class="silencio">sin dato</span>') + '</td>' +
           '<td>' + (pv.foro_2 ? UI.esc(sigla(pv.foro_2)) : '<span class="silencio">sin dato</span>') + '</td>' +
           '<td><label class="solo-lector" for="foro-' + d.id + '">Foro de ' + UI.esc(d.nombre) + '</label>' +
@@ -1173,15 +1175,17 @@ window.ADMIN = (function () {
 
       function resumen() {
         var filas = salas.map(function (s) {
-          var asig = lista.filter(function (d) { var f = foroAsignado(d); return f && f.id === s.id; }).length;
+          var enForo = lista.filter(function (d) { var f = foroAsignado(d); return f && f.id === s.id; });
+          var asig = enForo.filter(function (d) { return !d.cargo; }).length;
+          var mesa = enForo.length - asig;
           var p1 = lista.filter(function (d) { return esEse((privDe[d.id] || {}).foro_1, s); }).length;
           var p2 = lista.filter(function (d) { return esEse((privDe[d.id] || {}).foro_2, s); }).length;
-          return '<tr><th scope="row">' + UI.esc(nombreForo(s)) + '</th><td>' + p1 + '</td><td>' + p2 + '</td><td><strong>' + asig + '</strong></td></tr>';
+          return '<tr><th scope="row">' + UI.esc(nombreForo(s)) + '</th><td>' + p1 + '</td><td>' + p2 + '</td><td><strong>' + asig + '</strong></td><td>' + mesa + '</td></tr>';
         });
-        var sin = lista.filter(function (d) { return !foroAsignado(d); }).length;
+        var sin = lista.filter(function (d) { return !d.cargo && !foroAsignado(d); }).length;
         UI.q('#resumenForos').innerHTML =
           '<div class="tabla-env"><table class="datos"><caption class="solo-lector">Cuántas personas pidieron y tienen cada foro</caption>' +
-          '<thead><tr><th scope="col">Foro</th><th scope="col">La pidieron 1ª</th><th scope="col">La pidieron 2ª</th><th scope="col">Asignadas</th></tr></thead><tbody>' +
+          '<thead><tr><th scope="col">Foro</th><th scope="col">La pidieron 1ª</th><th scope="col">La pidieron 2ª</th><th scope="col">Delegados asignados</th><th scope="col">Autoridades de mesa</th></tr></thead><tbody>' +
           filas.join('') + '</tbody></table></div>' +
           '<p>' + (sin === 0 ? 'Todas las personas tienen foro asignado.' :
             (sin === 1 ? 'Queda 1 persona sin foro.' : 'Quedan ' + sin + ' personas sin foro.')) + '</p>';
@@ -1231,7 +1235,7 @@ window.ADMIN = (function () {
       UI.q('#btnPrimeraOpcion').addEventListener('click', function () {
         var porForo = {};
         lista.forEach(function (d) {
-          if (foroAsignado(d)) return;
+          if (foroAsignado(d) || d.cargo) return;
           var pv = privDe[d.id] || {};
           var s = salas.filter(function (x) { return esEse(pv.foro_1, x); })[0];
           if (s) (porForo[s.id] = porForo[s.id] || { sala: s, ids: [] }).ids.push(d.id);

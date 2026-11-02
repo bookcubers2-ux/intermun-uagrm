@@ -131,6 +131,9 @@ grant execute on function public.login_delegado(text, text) to anon, authenticat
 --    Lo que cada delegado ve de si mismo. Verifica el par igual que
 --    mis_entregas; no filtra nada de otras personas.
 -- --------------------------------------------------------------
+-- Se vuelve a crear desde cero para poder correr este archivo otra vez aunque INSTALACION-AUTORIDADES.sql
+-- ya haya cambiado la funcion (corre INSTALACION-AUTORIDADES.sql despues para recuperar el cargo).
+drop function if exists public.mi_cuenta(text, text);
 create or replace function public.mi_cuenta(p_codigo text, p_pin text)
 returns table (id uuid, codigo text, nombre text, pais text, comite text, institucion text, rol text,
                tipo text, correo text, celular text, foro_1 text, foro_2 text, alergia text)
